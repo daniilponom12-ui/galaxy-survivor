@@ -1,0 +1,60 @@
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Segoe UI',Arial,sans-serif}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+#ui-overlay{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
+#ui-overlay *{pointer-events:auto}
+.hud{position:fixed;top:10px;left:10px;color:#fff;font-size:14px;text-shadow:1px 1px 2px #000;z-index:20}
+.hud div{margin-bottom:4px}
+.hp-bar,.xp-bar{width:200px;height:14px;background:#333;border-radius:7px;overflow:hidden;border:1px solid #555}
+.hp-fill{height:100%;background:linear-gradient(90deg,#f44,#f77);transition:width .3s;border-radius:7px}
+.xp-fill{height:100%;background:linear-gradient(90deg,#4af,#7cf);transition:width .3s;border-radius:7px}
+.menu-screen{position:fixed;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.85);z-index:50;color:#fff}
+.menu-screen h1{font-size:48px;margin-bottom:10px;background:linear-gradient(135deg,#f0a,#4af);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.menu-screen .subtitle{font-size:16px;color:#aaa;margin-bottom:30px}
+.menu-screen button{padding:14px 48px;font-size:20px;border:none;border-radius:12px;cursor:pointer;margin:8px;font-weight:700;transition:transform .15s,box-shadow .15s}
+.menu-screen button:active{transform:scale(.95)}
+.btn-play{background:linear-gradient(135deg,#4f8,#2d2);color:#fff;box-shadow:0 4px 20px rgba(68,255,136,.3)}
+.btn-play:hover{box-shadow:0 6px 30px rgba(68,255,136,.5)}
+.btn-shop{background:linear-gradient(135deg,#f84,#fa2);color:#fff}
+.btn-leaderboard{background:linear-gradient(135deg,#4af,#28f);color:#fff}
+.garage-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;padding:10px;max-width:680px;width:92%}
+.garage-item{border:2px solid #444;border-radius:12px;background:rgba(255,255,255,.05);padding:14px;text-align:center;color:#fff;cursor:pointer;transition:all .15s}
+.garage-item:hover{transform:scale(1.04)}
+.garage-item.locked{opacity:.55;border-color:#666}
+.garage-item.selected{border-color:#4af;box-shadow:0 0 16px rgba(74,170,255,.5)}
+.garage-item .g-preview{width:60px;height:60px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center}
+.garage-item .g-preview svg{width:54px;height:54px}
+.garage-item .g-name{font-weight:700;font-size:14px}
+.garage-item .g-desc{font-size:11px;color:#aaa;margin-top:2px}
+.garage-item .g-hint{margin-top:8px;font-size:12px;font-weight:700;color:#fa2}
+.garage-item .g-selected{color:#4af;font-size:12px}
+.btn-close{position:absolute;top:10px;right:16px;background:none;border:none;color:#fff;font-size:34px;cursor:pointer;line-height:1}
+.menu-scroll{overflow-y:auto;max-height:90vh;width:100%;display:flex;flex-direction:column;align-items:center}
+.booster-row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:6px}
+.booster-chip{padding:10px 16px;border-radius:10px;border:2px solid #555;background:rgba(255,255,255,.07);color:#fff;cursor:pointer;text-align:center;font-size:13px;transition:all .15s}
+.booster-chip:hover{transform:scale(1.05)}
+.booster-chip.active{border-color:#ff0;background:rgba(255,255,0,.15);box-shadow:0 0 12px rgba(255,255,0,.3)}
+.booster-chip .b-cost{display:block;margin-top:4px;color:#fa2;font-size:11px;font-weight:700}
+.levelup-screen{position:fixed;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.8);z-index:50;color:#fff}
+.levelup-screen h2{font-size:32px;margin-bottom:20px;color:#ff0}
+.upgrade-choice{padding:14px 24px;margin:8px;border:2px solid #555;border-radius:10px;background:rgba(255,255,255,.08);color:#fff;font-size:16px;cursor:pointer;min-width:260px;text-align:left;transition:all .15s}
+.upgrade-choice:hover{border-color:#4af;background:rgba(74,170,255,.15);transform:scale(1.03)}
+.upgrade-choice .uname{font-weight:700;color:#4af}
+.upgrade-choice .udesc{font-size:13px;color:#aaa;margin-top:2px}
+.gameover-screen{position:fixed;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.9);z-index:50;color:#fff}
+.gameover-screen h2{font-size:42px;color:#f44;margin-bottom:10px}
+.gameover-screen .stats{font-size:18px;margin:6px;color:#ccc}
+.pause-btn{position:fixed;top:10px;right:10px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.15);border:2px solid #fff;color:#fff;font-size:20px;cursor:pointer;z-index:30;display:flex;align-items:center;justify-content:center}
+.mini-map{position:fixed;bottom:10px;right:10px;width:120px;height:120px;border:2px solid rgba(255,255,255,.3);border-radius:8px;background:rgba(0,0,0,.5);z-index:20;overflow:hidden}
+.wave-announce{position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);font-size:36px;color:#ff0;font-weight:700;text-shadow:0 0 20px rgba(255,255,0,.5);z-index:40;pointer-events:none;animation:fadeUp 2s forwards}
+@keyframes fadeUp{0%{opacity:1;transform:translate(-50%,-50%)}100%{opacity:0;transform:translate(-50%,-80%)}}
+.weapon-hud{position:fixed;bottom:10px;left:10px;display:flex;gap:6px;z-index:20}
+.weapon-icon{width:44px;height:44px;border-radius:8px;background:rgba(255,255,255,.1);border:2px solid #555;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff}
+.weapon-icon.active{border-color:#4af;box-shadow:0 0 10px rgba(74,170,255,.4)}
+@media(max-width:600px){
+.hp-bar,.xp-bar{width:140px}
+.hud{font-size:12px}
+.menu-screen h1{font-size:32px}
+.levelup-screen h2{font-size:24px}
+.upgrade-choice{min-width:200px;padding:10px 16px;font-size:14px}
+}
