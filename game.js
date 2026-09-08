@@ -652,14 +652,14 @@ var text = t('top10');
 
   /* ============ ENEMIES ============ */
   var ENEMY_TYPES = {
-    chaser: { r: 16, hp: 12, speed: 55, dmg: 8, xp: 3, color: '#c33', score: 10 },
-    fast: { r: 12, hp: 8, speed: 95, dmg: 6, xp: 4, color: '#4af', score: 15 },
-    tank: { r: 26, hp: 60, speed: 30, dmg: 16, xp: 10, color: '#a83', score: 30 },
-    splitter: { r: 14, hp: 10, speed: 60, dmg: 7, xp: 3, color: '#fa4', score: 20, splits: 2 },
-    shooter: { r: 15, hp: 14, speed: 40, dmg: 5, xp: 6, color: '#c4f', score: 25, shoot: true },
-    boss: { r: 55, hp: 600, speed: 24, dmg: 22, xp: 80, color: '#e02', score: 300, boss: true },
-    boss_gunner: { r: 62, hp: 1000, speed: 30, dmg: 16, xp: 120, color: '#b0f', score: 450, boss: true, shoot: true },
-    boss_titan: { r: 85, hp: 2400, speed: 16, dmg: 38, xp: 200, color: '#f90', score: 700, boss: true, minSpeed: true }
+    chaser: { r: 16, hp: 12, speed: 80, dmg: 8, xp: 3, color: '#c33', score: 10 },
+    fast: { r: 12, hp: 8, speed: 140, dmg: 6, xp: 4, color: '#4af', score: 15 },
+    tank: { r: 26, hp: 60, speed: 45, dmg: 16, xp: 10, color: '#a83', score: 30 },
+    splitter: { r: 14, hp: 10, speed: 85, dmg: 7, xp: 3, color: '#fa4', score: 20, splits: 2 },
+    shooter: { r: 15, hp: 14, speed: 60, dmg: 5, xp: 6, color: '#c4f', score: 25, shoot: true },
+    boss: { r: 55, hp: 600, speed: 36, dmg: 22, xp: 80, color: '#e02', score: 300, boss: true },
+    boss_gunner: { r: 62, hp: 1000, speed: 45, dmg: 16, xp: 120, color: '#b0f', score: 450, boss: true, shoot: true },
+    boss_titan: { r: 85, hp: 2400, speed: 24, dmg: 38, xp: 200, color: '#f90', score: 700, boss: true, minSpeed: true }
   };
 
   function spawnEnemy(type) {
