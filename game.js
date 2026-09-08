@@ -777,8 +777,14 @@ var text = t('top10');
       for (var s = 0; s < total; s++) {
         var off = total <= 1 ? 0 : (s - (total - 1) / 2) * spreadStep;
         var ang = a + off;
-        var p = { x: player.x, y: player.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, dmg: WEAPONS.auto.dmg * (ammo.dmgMult || 1) * (player.upDmg || 1) * (critType ? 2 : 1) * (1 + 0.5 * (player.dmgBoost || 0)), r: ammo.r || 5, c: critType ? '#fff' : ammo.color, life: 1.6, splash: hasSplash, pierce: !!ammo.pierce || !!player.pierceAll, pierceHits: (ammo.pierce || player.pierceAll) ? 6 : 0, rocket: !!ammo.rocket, laser: player.skinModel === 'jet' && w.id === 'auto' };
+        var isLaser = player.skinModel === 'jet' && w.id === 'auto';
+        var p = { x: player.x, y: player.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, dmg: WEAPONS.auto.dmg * (ammo.dmgMult || 1) * (player.upDmg || 1) * (critType ? 2 : 1) * (1 + 0.5 * (player.dmgBoost || 0)) * (isLaser ? 1.15 : 1), r: ammo.r || 5, c: critType ? '#fff' : (isLaser ? '#af0' : ammo.color), life: isLaser ? 2 : 1.6, splash: hasSplash, pierce: isLaser || !!ammo.pierce || !!player.pierceAll, pierceHits: (isLaser || ammo.pierce || player.pierceAll) ? 8 : 0, rocket: !!ammo.rocket, laser: isLaser };
         projectiles.push(p);
+        if (isLaser && total % 2 === 1) {
+          var parAng = ang + 0.12;
+          var p2 = { x: player.x, y: player.y, vx: Math.cos(parAng) * sp, vy: Math.sin(parAng) * sp, dmg: Math.round(p.dmg * 0.45), r: (ammo.r * 0.7) || 4, c: '#8f0', life: 2, splash: hasSplash, pierce: true, pierceHits: 6, laser: true };
+          projectiles.push(p2);
+        }
       }
     }
   }
@@ -1695,38 +1701,67 @@ var text = t('top10');
       ctx.shadowColor = '#4af'; ctx.shadowBlur = 20;
       // ship
       if (player.skinModel === 'jet') {
-        // реактивный истребитель: форма меняется во времени (морфинг)
+        // ИСТРЕБИТЕЛЬ-КРАВЛИК: стреловидные крылья, канарды, двойной хвост, пульсирующий реактор
         var mt = gameTime * 2.4;
-        var sweep = Math.sin(mt) * 3;              // крылья сходятся-расходятся
-        var flex = 1 + Math.sin(mt * 1.3) * 0.12;   // фюзеляж тянется/сжимается
+        var sweep = Math.sin(mt) * 3.5;             // крылья машут
+        var flex = 1 + Math.sin(mt * 1.3) * 0.1;    // фюзеляж дышит
+        var pulse = 0.5 + Math.sin(mt * 3) * 0.5;   // реактор
+        ctx.shadowColor = skinColor; ctx.shadowBlur = 18;
+        // корпус
         ctx.fillStyle = skinColor;
         ctx.beginPath();
-        ctx.moveTo(22 * flex, 0);
-        ctx.lineTo(2, 5);
-        ctx.lineTo(2, 16 * flex);
+        ctx.moveTo(20 * flex, 0);
+        ctx.lineTo(4, 5);
+        ctx.lineTo(4, 12 * flex);
         ctx.lineTo(-4, 8);
-        ctx.lineTo(-9 * flex, 14 + sweep);
-        ctx.lineTo(-12 - sweep, 8);
-        ctx.lineTo(-(20 + sweep * 2), 5);
-        ctx.lineTo(-(20 + sweep * 2), -5);
-        ctx.lineTo(-12 - sweep, -8);
-        ctx.lineTo(-9 * flex, -14 - sweep);
+        ctx.lineTo(-8 * flex, 12 + sweep);
+        ctx.lineTo(-14 - sweep, 7);
+        ctx.lineTo(-18 - sweep * 1.5, 4);
+        ctx.lineTo(-18 - sweep * 1.5, -4);
+        ctx.lineTo(-14 - sweep, -7);
+        ctx.lineTo(-8 * flex, -12 - sweep);
         ctx.lineTo(-4, -8);
-        ctx.lineTo(2, -16 * flex);
-        ctx.lineTo(2, -5);
+        ctx.lineTo(4, -12 * flex);
+        ctx.lineTo(4, -5);
         ctx.closePath();
         ctx.fill();
+        // канарды (передние крылья)
+        ctx.fillStyle = skinColor;
+        ctx.beginPath();
+        ctx.moveTo(6, 3);
+        ctx.lineTo(-4, 6 + sweep * 0.5);
+        ctx.lineTo(-6, 2);
+        ctx.closePath();
+        ctx.moveTo(6, -3);
+        ctx.lineTo(-4, -6 - sweep * 0.5);
+        ctx.lineTo(-6, -2);
+        ctx.closePath();
+        ctx.fill();
+        // двойной хвост
+        ctx.fillStyle = skinColor;
+        ctx.beginPath();
+        ctx.moveTo(-12, 2);
+        ctx.lineTo(-22 - sweep, 6);
+        ctx.lineTo(-19 - sweep, 0);
+        ctx.closePath();
+        ctx.moveTo(-12, -2);
+        ctx.lineTo(-22 - sweep, -6);
+        ctx.lineTo(-19 - sweep, 0);
+        ctx.closePath();
+        ctx.fill();
+        // кабина
         ctx.fillStyle = '#fff';
         ctx.beginPath();
-        ctx.moveTo(13, 0);
-        ctx.lineTo(-3, 4);
-        ctx.lineTo(-6, 0);
-        ctx.lineTo(-3, -4);
+        ctx.moveTo(14 * flex, 0);
+        ctx.lineTo(-2, 3);
+        ctx.lineTo(-5, 0);
+        ctx.lineTo(-2, -3);
         ctx.closePath();
         ctx.fill();
-        ctx.fillStyle = 'rgba(0,180,255,0.5)';
+        // пульсирующий реактор в корме
+        ctx.fillStyle = 'rgba(150,240,255,' + (0.5 + pulse * 0.4) + ')';
         ctx.beginPath();
-        ctx.arc(-8, 0, 4 + Math.sin(mt * 2) * 1.2, 0, Math.PI * 2);
+        ctx.arc(-13 - sweep, 0, 3 + pulse * 2, 0, Math.PI * 2);
         ctx.fill();
       } else {
         ctx.fillStyle = skinColor;
