@@ -302,7 +302,7 @@ var text = t('top10');
     return {
       x: WORLD_W / 2, y: WORLD_H / 2, r: 18, speed: 190 * (1 + 0.06 * (upg.speed || 0)), hp: 100 + 15 * (upg.hp || 0), maxHp: 100 + 15 * (upg.hp || 0),
       xp: 0, xpNeed: 30, lvl: 1, iframes: 0,
-      skinColor: skin.color, ang: 0, aimAng: 0, speedBoost: 0, dmgBoost: 0,
+      skinColor: skin.color, ang: 0, aimAng: 0, speedBoost: 0, dmgBoost: 0, skinModel: skin.model || 'classic',
       upDmg: 1 + 0.1 * (upg.dmg || 0), pickupR: 60 * (1 + 0.2 * (upg.magnet || 0)),
       upRateMul: Math.pow(0.92, upg.rate || 0), shield: upg.shield || 0, critChance: 0.08 * (upg.crit || 0), xpMul: 1 + 0.1 * (upg.xp || 0),
       weapons: [{ id: 'auto', lvl: 1 }],
@@ -392,7 +392,8 @@ var text = t('top10');
     s4: { name: 'Изумруд', color: '#0f6', price: 2, gcost: 180, desc: 'Смертоносный изумруд', icon: '❖' },
     s5: { name: 'Ледяной Страж', color: '#7ef', price: 3, gcost: 240, desc: 'Холодная сталь', icon: '✚' },
     s6: { name: 'Кобальт', color: '#38f', price: 4, gcost: 360, desc: 'Атомная мощь кобальта', icon: '♠' },
-    s7: { name: 'Некрон', color: '#f26', price: 5, gcost: 480, desc: 'Повелитель самоцветов', icon: 'ꙮ' }
+    s7: { name: 'Некрон', color: '#f26', price: 5, gcost: 480, desc: 'Повелитель самоцветов', icon: 'ꙮ' },
+    s8: { name: 'Истребитель', color: '#9f3', price: 6, gcost: 720, desc: 'Реактивный и со следом', icon: '✈', model: 'jet' }
   };
   var MUSIC = {
     m1: { name: 'Космический драйв', price: 0 },
@@ -1305,6 +1306,12 @@ var text = t('top10');
     var len = Math.sqrt(dx * dx + dy * dy);
     if (len > 1) { dx /= len; dy /= len; }
     p.vx = dx; p.vy = dy;
+    var thr = (dx !== 0 || dy !== 0);
+    if (thr && parts.length < 260) {
+      if (Math.random() < 0.7) {
+        parts.push({ x: p.x - dx * 20 + (Math.random() - 0.5) * 6, y: p.y - dy * 20 + (Math.random() - 0.5) * 6, vx: -dx * 30 + (Math.random() - 0.5) * 20, vy: -dy * 30 + (Math.random() - 0.5) * 20, life: 0.5 + Math.random() * 0.2, maxLife: 0.7, r: 3 + Math.random() * 3, c: p.dmgBoost ? '#ffb84d' : '#4af' });
+      }
+    }
     p.x += dx * p.speed * (1 + 0.25 * (p.speedBoost || 0)) * dt;
     p.y += dy * p.speed * (1 + 0.25 * (p.speedBoost || 0)) * dt;
     wrapRelax();
@@ -1668,22 +1675,55 @@ var text = t('top10');
       ctx.rotate(pAng);
       ctx.shadowColor = '#4af'; ctx.shadowBlur = 20;
       // ship
-      ctx.fillStyle = skinColor;
-      ctx.beginPath();
-      ctx.moveTo(18, 0);
-      ctx.lineTo(-10, 11);
-      ctx.lineTo(-6, 0);
-      ctx.lineTo(-10, -11);
-      ctx.closePath();
-      ctx.fill();
-      ctx.fillStyle = '#fff';
-      ctx.beginPath();
-      ctx.moveTo(10, 0);
-      ctx.lineTo(-2, 4);
-      ctx.lineTo(0, 0);
-      ctx.lineTo(-2, -4);
-      ctx.closePath();
-      ctx.fill();
+      if (player.skinModel === 'jet') {
+        // реактивный истребитель: длинный фюзеляж + стреловидные крылья
+        ctx.fillStyle = skinColor;
+        ctx.beginPath();
+        ctx.moveTo(22, 0);
+        ctx.lineTo(2, 5);
+        ctx.lineTo(2, 16);
+        ctx.lineTo(-4, 8);
+        ctx.lineTo(-9, 14);
+        ctx.lineTo(-12, 8);
+        ctx.lineTo(-20, 5);
+        ctx.lineTo(-20, -5);
+        ctx.lineTo(-12, -8);
+        ctx.lineTo(-9, -14);
+        ctx.lineTo(-4, -8);
+        ctx.lineTo(2, -16);
+        ctx.lineTo(2, -5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.moveTo(13, 0);
+        ctx.lineTo(-3, 4);
+        ctx.lineTo(-6, 0);
+        ctx.lineTo(-3, -4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = 'rgba(0,0,0,0.35)';
+        ctx.beginPath();
+        ctx.arc(-8, 0, 4, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.fillStyle = skinColor;
+        ctx.beginPath();
+        ctx.moveTo(18, 0);
+        ctx.lineTo(-10, 11);
+        ctx.lineTo(-6, 0);
+        ctx.lineTo(-10, -11);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.moveTo(10, 0);
+        ctx.lineTo(-2, 4);
+        ctx.lineTo(0, 0);
+        ctx.lineTo(-2, -4);
+        ctx.closePath();
+        ctx.fill();
+      }
       // engine flame
       if (player.vx !== undefined && (player.vx !== 0 || player.vy !== 0)) {
         ctx.fillStyle = '#f80';
@@ -1693,6 +1733,15 @@ var text = t('top10');
         ctx.lineTo(-8, -3);
         ctx.closePath();
         ctx.fill();
+        if (player.skinModel === 'jet') {
+          ctx.fillStyle = '#fd0';
+          ctx.beginPath();
+          ctx.moveTo(-18, 4);
+          ctx.lineTo(-26 - Math.random() * 10, 0);
+          ctx.lineTo(-18, -4);
+          ctx.closePath();
+          ctx.fill();
+        }
       }
       // shield
       if (player.freezeCd > 0 || freezeTimer > 0) {
@@ -1712,7 +1761,7 @@ var text = t('top10');
       ctx.globalAlpha = clamp(pa.life / pa.maxLife, 0, 1);
       ctx.fillStyle = pa.c;
       ctx.beginPath();
-      ctx.arc(pa.x, pa.y, pa.r, 0, Math.PI * 2);
+      ctx.arc(pa.x, pa.y, pa.r * 1.5, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
