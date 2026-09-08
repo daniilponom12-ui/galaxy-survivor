@@ -1375,6 +1375,7 @@ var text = t('top10');
       pr.x += pr.vx * dt; pr.y += pr.vy * dt; pr.life -= dt;
       var dead = pr.life <= 0;
       for (var j = enemies.length - 1; j >= 0 && !dead; j--) {
+        if (pr.enemy) continue;
         var e = enemies[j];
         if (dist(pr, e) < e.r + pr.r) {
           damageEnemy(j, pr.dmg);
