@@ -698,16 +698,21 @@ var text = t('top10');
     waveNum++;
     announceWave();
     var bossPool = pickBossPool(waveNum);
-    var bossCount = 2 + Math.floor(waveNum / 8);
-    if (waveNum >= 16) bossCount = 3 + Math.floor(waveNum / 8);
-    if (waveNum >= 30) bossCount = 4 + Math.floor(waveNum / 10);
-    if (bossCount > 6) bossCount = 6;
+    var liveBoss = 0;
+    for (var lb = 0; lb < enemies.length; lb++) { if (enemies[lb].boss) liveBoss++; }
+    var bossCount = 1;
+    if (waveNum >= 8) bossCount = 2;
+    if (waveNum >= 15) bossCount = 3;
+    if (waveNum >= 24) bossCount = 4;
+    if (bossCount > 4) bossCount = 4;
+    var maxLive = 3 + Math.floor(waveNum / 8);
+    if (bossCount > maxLive - liveBoss) bossCount = Math.max(0, maxLive - liveBoss);
     for (var bi = 0; bi < bossCount; bi++) {
       var pool = pickBossPool(waveNum);
       spawnEnemy(pool[Math.min(bi, pool.length - 1)]);
     }
-    hud(t('bossAlert'), '#f44');
-    if (SDK.showInterstitial) {
+    if (bossCount > 0) hud(t('bossAlert'), '#f44');
+    if (SDK.showInterstitial && waveNum % 3 === 0) {
       if (SDK.inited) { SDK.showInterstitial(function () {}); }
     }
     spawnTimer = 0.5;
@@ -1285,9 +1290,9 @@ var text = t('top10');
 
     // waves
     spawnTimer -= dt;
-    if (spawnTimer <= 0 && enemies.length < 420) {
+    if (spawnTimer <= 0 && enemies.length < 240) {
       var pool = waveEnemyPool();
-      var n = Math.min(30 + Math.floor(waveNum * 3), 80);
+      var n = Math.min(22 + Math.floor(waveNum * 2.5), 55);
       for (var i = 0; i < n; i++) {
         var t = pool[Math.floor(Math.random() * pool.length)];
         spawnEnemy(t);
@@ -1295,9 +1300,9 @@ var text = t('top10');
       spawnTimer = nextWaveTime();
     }
     // дополнительные мини-волны между основными (если на поле мало врагов)
-    if (enemies.length < waveNum * 8 + 20 && spawnTimer > 1.2) {
+    if (enemies.length < waveNum * 4 + 10 && enemies.length < 150 && spawnTimer > 1.2) {
       spawnTimer = Math.max(spawnTimer - 0.5, 0);
-      var miniN = Math.min(10 + Math.floor(waveNum / 2), 30);
+      var miniN = Math.min(5 + Math.floor(waveNum / 2), 15);
       for (var mi6 = 0; mi6 < miniN; mi6++) {
         spawnEnemy(waveEnemyPool()[Math.floor(Math.random() * waveEnemyPool().length)]);
       }
@@ -1499,13 +1504,10 @@ var text = t('top10');
     for (var gi = 0; gi < gems.length; gi++) {
       var gm = gems[gi];
       ctx.save();
-      ctx.shadowColor = gm.c; ctx.shadowBlur = 12;
       ctx.fillStyle = gm.c;
       ctx.beginPath();
       ctx.arc(gm.x, gm.y, gm.r, 0, Math.PI * 2);
       ctx.fill();
-      ctx.restore();
-      ctx.save();
       ctx.globalAlpha = 0.6 + Math.sin(gameTime * 6 + gm.x) * 0.3;
       ctx.fillStyle = '#fff';
       ctx.beginPath();
@@ -1535,7 +1537,6 @@ var text = t('top10');
     for (var pj = 0; pj < projectiles.length; pj++) {
       var pt2 = projectiles[pj];
       ctx.save();
-      ctx.shadowColor = pt2.c; ctx.shadowBlur = 10;
       ctx.fillStyle = pt2.c;
       ctx.beginPath();
       ctx.arc(pt2.x, pt2.y, pt2.r, 0, Math.PI * 2);
@@ -1552,12 +1553,13 @@ var text = t('top10');
       ctx.save();
       if (fl) ctx.globalAlpha = 1;
       // body
-      var grad = ctx.createRadialGradient(en2.x, en2.y, 2, en2.x, en2.y, en2.r);
-      grad.addColorStop(0, fl ? '#fff' : en2.color);
-      grad.addColorStop(1, '#200');
-      ctx.fillStyle = grad;
+      ctx.fillStyle = fl ? '#fff' : en2.color;
       ctx.beginPath();
       ctx.arc(en2.x, en2.y, en2.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.beginPath();
+      ctx.arc(en2.x, en2.y, en2.r * 0.55, 0, Math.PI * 2);
       ctx.fill();
       // spikes for boss
       if (en2.boss) {
