@@ -777,7 +777,7 @@ var text = t('top10');
       for (var s = 0; s < total; s++) {
         var off = total <= 1 ? 0 : (s - (total - 1) / 2) * spreadStep;
         var ang = a + off;
-        var p = { x: player.x, y: player.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, dmg: WEAPONS.auto.dmg * (ammo.dmgMult || 1) * (player.upDmg || 1) * (critType ? 2 : 1) * (1 + 0.5 * (player.dmgBoost || 0)), r: ammo.r || 5, c: critType ? '#fff' : ammo.color, life: 1.6, splash: hasSplash, pierce: !!ammo.pierce || !!player.pierceAll, pierceHits: (ammo.pierce || player.pierceAll) ? 6 : 0, rocket: !!ammo.rocket };
+        var p = { x: player.x, y: player.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, dmg: WEAPONS.auto.dmg * (ammo.dmgMult || 1) * (player.upDmg || 1) * (critType ? 2 : 1) * (1 + 0.5 * (player.dmgBoost || 0)), r: ammo.r || 5, c: critType ? '#fff' : ammo.color, life: 1.6, splash: hasSplash, pierce: !!ammo.pierce || !!player.pierceAll, pierceHits: (ammo.pierce || player.pierceAll) ? 6 : 0, rocket: !!ammo.rocket, laser: player.skinModel === 'jet' && w.id === 'auto' };
         projectiles.push(p);
       }
     }
@@ -1586,10 +1586,29 @@ var text = t('top10');
     for (var pj = 0; pj < projectiles.length; pj++) {
       var pt2 = projectiles[pj];
       ctx.save();
-      ctx.fillStyle = pt2.c;
-      ctx.beginPath();
-      ctx.arc(pt2.x, pt2.y, pt2.r, 0, Math.PI * 2);
-      ctx.fill();
+      if (pt2.laser) {
+        var lv = Math.sqrt(pt2.vx * pt2.vx + pt2.vy * pt2.vy) || 1;
+        var lx = pt2.vx / lv, ly = pt2.vy / lv;
+        ctx.strokeStyle = pt2.c;
+        ctx.globalAlpha = 0.35;
+        ctx.lineWidth = pt2.r * 3;
+        ctx.beginPath();
+        ctx.moveTo(pt2.x - lx * 14, pt2.y - ly * 14);
+        ctx.lineTo(pt2.x + lx * 16, pt2.y + ly * 16);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = pt2.r;
+        ctx.beginPath();
+        ctx.moveTo(pt2.x - lx * 8, pt2.y - ly * 8);
+        ctx.lineTo(pt2.x + lx * 18, pt2.y + ly * 18);
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = pt2.c;
+        ctx.beginPath();
+        ctx.arc(pt2.x, pt2.y, pt2.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
       ctx.restore();
     }
 
@@ -1676,21 +1695,24 @@ var text = t('top10');
       ctx.shadowColor = '#4af'; ctx.shadowBlur = 20;
       // ship
       if (player.skinModel === 'jet') {
-        // реактивный истребитель: длинный фюзеляж + стреловидные крылья
+        // реактивный истребитель: форма меняется во времени (морфинг)
+        var mt = gameTime * 2.4;
+        var sweep = Math.sin(mt) * 3;              // крылья сходятся-расходятся
+        var flex = 1 + Math.sin(mt * 1.3) * 0.12;   // фюзеляж тянется/сжимается
         ctx.fillStyle = skinColor;
         ctx.beginPath();
-        ctx.moveTo(22, 0);
+        ctx.moveTo(22 * flex, 0);
         ctx.lineTo(2, 5);
-        ctx.lineTo(2, 16);
+        ctx.lineTo(2, 16 * flex);
         ctx.lineTo(-4, 8);
-        ctx.lineTo(-9, 14);
-        ctx.lineTo(-12, 8);
-        ctx.lineTo(-20, 5);
-        ctx.lineTo(-20, -5);
-        ctx.lineTo(-12, -8);
-        ctx.lineTo(-9, -14);
+        ctx.lineTo(-9 * flex, 14 + sweep);
+        ctx.lineTo(-12 - sweep, 8);
+        ctx.lineTo(-(20 + sweep * 2), 5);
+        ctx.lineTo(-(20 + sweep * 2), -5);
+        ctx.lineTo(-12 - sweep, -8);
+        ctx.lineTo(-9 * flex, -14 - sweep);
         ctx.lineTo(-4, -8);
-        ctx.lineTo(2, -16);
+        ctx.lineTo(2, -16 * flex);
         ctx.lineTo(2, -5);
         ctx.closePath();
         ctx.fill();
@@ -1702,9 +1724,9 @@ var text = t('top10');
         ctx.lineTo(-3, -4);
         ctx.closePath();
         ctx.fill();
-        ctx.fillStyle = 'rgba(0,0,0,0.35)';
+        ctx.fillStyle = 'rgba(0,180,255,0.5)';
         ctx.beginPath();
-        ctx.arc(-8, 0, 4, 0, Math.PI * 2);
+        ctx.arc(-8, 0, 4 + Math.sin(mt * 2) * 1.2, 0, Math.PI * 2);
         ctx.fill();
       } else {
         ctx.fillStyle = skinColor;
