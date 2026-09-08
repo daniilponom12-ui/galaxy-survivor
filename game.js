@@ -18,6 +18,122 @@
   window.addEventListener('resize', resize);
   resize();
 
+  /* ============ LOCALIZATION ============ */
+  var CUR_LANG = 'ru';
+  function normalizeLang(lng) {
+    lng = (lng || '').toLowerCase();
+    if (lng.indexOf('en') === 0) return 'en';
+    return 'ru';
+  }
+  try {
+    if (typeof window.YaGames === 'undefined') { CUR_LANG = normalizeLang(navigator.language || 'ru'); }
+  } catch (e) {}
+
+  var I18N = {
+    ru: {
+      play: '▶ ИГРАТЬ', shop: '🛒 Магазин (реклама)', top: '🏆 Топ игроков',
+      recordLbl: 'Рекорд: ',
+      subtitle: 'Выживай среди орд космических монстров!<br>Собирай XP, прокачивайся и ставь рекорды',
+      controls: 'WASD/стрелки/тач-джойстик — движение<br>Пробел — заморозка врагов',
+      gameOver: 'GAME OVER', waveReached: 'Достигнута волна: ', kills: 'Убито врагов: ',
+      scoreFinal: 'Очки: ', timeSurv: 'Время выживания: ', recordFinal: 'Рекорд: ',
+      newRecord: 'НОВЫЙ РЕКОРД!', again: 'Играть снова',
+      reviveBtn: '💎 Вернуться (+1 жизнь) — смотри рекламу',
+      lbBtn: '🏆 Лидерборд', menuBtn: 'Меню',
+      waveLbl: 'Волна: ', waveTitle: 'Волна ', lvlLbl: 'Ур: ', ptsLbl: 'Очки: ', frozen: '  |  ❄',
+      levelT: 'УРОВЕНЬ ',
+      shopTitle: '🛒 МАГАЗИН', shipsSec: '🚀 Корабли (просмотр рекламы)',
+      ammoSec: '🔫 Снаряды (просмотр рекламы)',
+      ammoCountSec: '🔁 Количество снарядов за выстрел',
+      boostSec: '⚡ Усиления на матч (просмотр рекламы)', back: 'Назад',
+      skSel: '✓ Выбран', ammoSel: '✓ В бою', choose: 'Выбрать', watch: '▶ Реклама (',
+      maxLabel: 'Максимум', watchPlus: '▶ Реклама +1', barrels: 'Стволы: ', baseLbl: 'база ',
+      boostDmg: '⚔ Урон', boostHp: '❤ HP', boostSpeed: '⚡ Скорость',
+      top10: 'Топ-10 игроков\n', playerName: 'Игрок', noRecords: 'Пока нет рекордов. Ты будешь первым!\n',
+      lbEmpty: 'Лидерборд пока пуст!', lbFail: 'Не удалось загрузить лидерборд :(',
+      lbUnavailable: 'Лидерборд недоступен', lbInGames: 'Лидерборд будет доступен при запуске в Яндекс Играх',
+      bossAlert: 'Осторожно — БОСС!', bossKilledLbl: 'БОСС ПОБЕЖДЁН! +', frozenLbl: 'ЗАМОРОЗКА!',
+      reviveHp: 'ВОЗВРАЩЕНИЕ! +60% HP', ammoUnlocked: 'Снаряд разблокирован!', skinUnlocked: 'Скин разблокирован!',
+      adNotDone: 'Реклама не досмотрена', adNotDoneEnd: 'Реклама не досмотрена до конца',
+      maxAmmo: 'Максимум снарядов!', ammoPlus: 'Количество снарядов +1', boosterGot: 'Усиление получено!',
+      ammoPlusTest: 'Количество снарядов +1', boosterGotTest: 'Усиление получено',
+      u_hp: 'Макс. здоровье +25%', u_hp_d: 'Увеличивает максимальное здоровье и лечит',
+      u_heal: 'Полное лечение', u_heal_d: 'Восстанавливает всё здоровье',
+      u_speed: 'Быстрее +15%', u_speed_d: 'Увеличивает скорость передвижения',
+      u_auto: 'Бластер +', u_auto_d: 'Урон и скорость стрельбы +',
+      u_orbit: 'Новый орбитальный диск', u_orbit_d: 'Добавляет вращающийся диск',
+      u_orbitplus: 'Диски быстрее', u_orbitplus_d: 'Орбитальные диски вращаются быстрее',
+      u_nova: 'Новая энерговолна', u_nova_d: 'Добавляет волну урона',
+      u_splash: 'Взрывной выстрел', u_splash_d: 'Выстрелы бластера взрываются',
+      u_magnet: 'Магнит опыта', u_magnet_d: 'XP-кристаллы сами летят к тебе',
+      u_freeze: 'Замедление', u_freeze_d: 'Враги замедляются на 5 сек (абилка)',
+      u_mines: 'Минное поле', u_mines_d: 'Разбрасывает мины вокруг',
+      w_auto: 'Автоматический бластер', w_auto_d: 'Автоматически стреляет по ближайшему врагу',
+      w_orbit: 'Орбитальный диск', w_orbit_d: 'Вращающиеся лезвия вокруг героя',
+      w_nova: 'Энергетическая волна', w_nova_d: 'Периодически испускает волну урона',
+      w_mine: 'Разбрасыватель мин', w_mine_d: 'Ставит мины, взрывающиеся при касании',
+      sk_s1: 'Классик', sk_s1_d: 'Стандартный истребитель', sk_s2: 'Неон-Фантом', sk_s2_d: 'Фиолетовый с неоном',
+      sk_s3: 'Золотой Герой', sk_s3_d: 'Сверхзвуковой золотой', sk_s4: 'Изумруд', sk_s4_d: 'Смертоносный изумруд',
+      sk_s5: 'Ледяной Страж', sk_s5_d: 'Холодная сталь',
+      am_a1: 'Бластер', am_a1_d: 'Уверенный средний урон', am_a2: 'Лазер', am_a2_d: 'Пронзает врагов насквозь',
+      am_a3: 'Дробовик', am_a3_d: 'Веер из осколков', am_a4: 'Ракеты', am_a4_d: 'Взрываются при попадании',
+      am_a5: 'Плазма', am_a5_d: 'Быстрая и мощная'
+    },
+    en: {
+      play: '▶ PLAY', shop: '🛒 Shop (ads)', top: '🏆 Leaderboards',
+      recordLbl: 'Best: ',
+      subtitle: 'Survive hordes of space monsters!<br>Collect XP, level up and set records',
+      controls: 'WASD / arrows / touch stick — move<br>Space — freeze enemies',
+      gameOver: 'GAME OVER', waveReached: 'Reached wave: ', kills: 'Enemies killed: ',
+      scoreFinal: 'Score: ', timeSurv: 'Survival time: ', recordFinal: 'Best: ',
+      newRecord: 'NEW RECORD!', again: 'Play again',
+      reviveBtn: '💎 Come back (+1 life) — watch ad',
+      lbBtn: '🏆 Leaderboard', menuBtn: 'Menu',
+      waveLbl: 'Wave: ', waveTitle: 'Wave ', lvlLbl: 'Lvl: ', ptsLbl: 'Score: ', frozen: '  |  ❄',
+      levelT: 'LEVEL ',
+      shopTitle: '🛒 SHOP', shipsSec: '🚀 Ships (watch ads)',
+      ammoSec: '🔫 Ammo (watch ads)',
+      ammoCountSec: '🔁 Projectiles per shot',
+      boostSec: '⚡ Match boosts (watch ads)', back: 'Back',
+      skSel: '✓ Selected', ammoSel: '✓ Active', choose: 'Select', watch: '▶ Watch ad (',
+      maxLabel: 'Max', watchPlus: '▶ Watch ad +1', barrels: 'Barrels: ', baseLbl: 'base ',
+      boostDmg: '⚔ Damage', boostHp: '❤ HP', boostSpeed: '⚡ Speed',
+      top10: 'Top-10 players\n', playerName: 'Player', noRecords: 'No records yet. Be the first!\n',
+      lbEmpty: 'Leaderboard is empty!', lbFail: 'Failed to load leaderboard :(',
+      lbUnavailable: 'Leaderboard unavailable', lbInGames: 'Leaderboard will be available on Yandex Games',
+      bossAlert: 'Warning — BOSS!', bossKilledLbl: 'BOSS DOWN! +', frozenLbl: 'FROZEN!',
+      reviveHp: 'BACK! +60% HP', ammoUnlocked: 'Ammo unlocked!', skinUnlocked: 'Skin unlocked!',
+      adNotDone: 'Ad not finished', adNotDoneEnd: 'Ad was not watched till the end',
+      maxAmmo: 'Max ammo count!', ammoPlus: 'Ammo count +1', boosterGot: 'Boost received!',
+      ammoPlusTest: 'Ammo count +1', boosterGotTest: 'Boost received',
+      u_hp: 'Max HP +25%', u_hp_d: 'Increases max HP and heals',
+      u_heal: 'Full heal', u_heal_d: 'Restores all HP',
+      u_speed: 'Faster +15%', u_speed_d: 'Increases move speed',
+      u_auto: 'Blaster +', u_auto_d: 'Damage and fire rate +',
+      u_orbit: 'New orbital disc', u_orbit_d: 'Adds one rotating disc',
+      u_orbitplus: 'Faster discs', u_orbitplus_d: 'Orbital discs spin faster',
+      u_nova: 'New energy wave', u_nova_d: 'Adds a damage wave',
+      u_splash: 'Blast shot', u_splash_d: 'Blaster shots explode',
+      u_magnet: 'XP magnet', u_magnet_d: 'XP crystals fly to you',
+      u_freeze: 'Slowdown', u_freeze_d: 'Enemies slow for 5 sec (ability)',
+      u_mines: 'Mine field', u_mines_d: 'Throws mines around',
+      w_auto: 'Auto blaster', w_auto_d: 'Automatically shoots nearest enemy',
+      w_orbit: 'Orbital disc', w_orbit_d: 'Rotating blades around hero',
+      w_nova: 'Energy wave', w_nova_d: 'Periodically emits a damage wave',
+      w_mine: 'Mine thrower', w_mine_d: 'Plants mines that explode on contact',
+      sk_s1: 'Classic', sk_s1_d: 'Standard fighter', sk_s2: 'Neon Phantom', sk_s2_d: 'Purple with neon',
+      sk_s3: 'Golden Hero', sk_s3_d: 'Supersonic gold', sk_s4: 'Emerald', sk_s4_d: 'Deadly emerald',
+      sk_s5: 'Ice Guardian', sk_s5_d: 'Cold steel',
+      am_a1: 'Blaster', am_a1_d: 'Steady medium damage', am_a2: 'Laser', am_a2_d: 'Pierces through enemies',
+      am_a3: 'Shotgun', am_a3_d: 'Fan of shards', am_a4: 'Rockets', am_a4_d: 'Explode on hit',
+      am_a5: 'Plasma', am_a5_d: 'Fast and powerful'
+    }
+  };
+  function t(key) {
+    var d = I18N[CUR_LANG] || I18N.ru;
+    return d[key] !== undefined ? d[key] : (I18N.ru[key] !== undefined ? I18N.ru[key] : key);
+  }
+
   /* ============ YANDEX GAMES SDK ============ */
   var SDK = { inited: false, adsReady: false, playingRewarded: false };
   function initSDK(onDone) {
@@ -32,6 +148,11 @@
         YaGames.init().then(function (ysdk) {
           SDK.ysdk = ysdk;
           SDK.inited = true;
+          try {
+            if (ysdk.environment && ysdk.environment.i18n && ysdk.environment.i18n.lang) {
+              CUR_LANG = normalizeLang(ysdk.environment.i18n.lang);
+            }
+          } catch (e) {}
           try {
             if (ysdk.adv) {
               ysdk.adv.getBannerAdvStatus && ysdk.adv.getBannerAdvStatus().then(function (s) {
@@ -104,20 +225,19 @@
       try {
         SDK.ysdk.getLeaderboards().then(function (lb) {
           lb.getLeaderboardEntries('galaxy-survivor', { includeUser: true, quantityTop: 10 }).then(function (res) {
-            var text = 'Топ-10 игроков\n';
+var text = t('top10');
             if (res && res.entries) {
               res.entries.forEach(function (e, i) {
-                var name = (e.player && (e.player.publicName || e.player.scopePermissions)) ? (e.player.publicName || 'Игрок') : 'Игрок';
+                var name = (e.player && (e.player.publicName || e.player.scopePermissions)) ? (e.player.publicName || t('playerName')) : t('playerName');
                 if (e.player && e.player.scopePermissions && e.player.range) { name = e.player.getAvatarSrc ? '' : name; }
                 text += (i + 1) + '. ' + name + ' — ' + e.score + '\n';
               });
-            } else { text += 'Пока нет рекордов. Ты будешь первым!'; }
+            } else { text += t('noRecords'); }
             alert(text);
-            onDone && onDone();
-          }).catch(function(){ alert('Лидерборд пока пуст!'); onDone && onDone(); });
-        }).catch(function(){ alert('Не удалось загрузить лидерборд :('); onDone && onDone(); });
-      } catch (e) { alert('Лидерборд недоступен'); onDone && onDone(); }
-    } else { alert('Лидерборд будет доступен при запуске в Яндекс Играх'); onDone && onDone(); }
+          }).catch(function(){ alert(t('lbEmpty')); onDone && onDone(); });
+        }).catch(function(){ alert(t('lbFail')); onDone && onDone(); });
+      } catch (e) { alert(t('lbUnavailable')); onDone && onDone(); }
+    } else { alert(t('lbInGames')); onDone && onDone(); }
   };
 
   /* ============ GAME STATE ============ */
@@ -257,16 +377,16 @@
       // нет SDK — разблокируем бесплатно в режиме теста
       if (item.type === 'skin') { unlockSkin(item.id); showShop(); return true; }
       else if (item.type === 'music') { unlockMusic(item.id); showShop(); return true; }
-      else if (item.type === 'ammo') { unlockAmmo(item.id); hud('Снаряд разблокирован!', '#0f0'); showShop(); return true; }
+      else if (item.type === 'ammo') { unlockAmmo(item.id); hud(t('ammoUnlocked'), '#0f0'); showShop(); return true; }
       return true;
     }
     SDK.showRewarded(function (ok) {
       if (ok) {
-        if (item.type === 'skin') { unlockSkin(item.id); hud('Скин разблокирован!', '#0f0'); }
-        else if (item.type === 'music') { unlockMusic(item.id); hud('Музыка разблокирована!', '#0f0'); }
-        else if (item.type === 'ammo') { unlockAmmo(item.id); hud('Снаряд разблокирован!', '#0f0'); }
+        if (item.type === 'skin') { unlockSkin(item.id); hud(t('skinUnlocked'), '#0f0'); }
+        else if (item.type === 'music') { unlockMusic(item.id); hud(t('ammoUnlocked'), '#0f0'); }
+        else if (item.type === 'ammo') { unlockAmmo(item.id); hud(t('ammoUnlocked'), '#0f0'); }
       } else {
-        hud('Реклама не досмотрена до конца', '#f44');
+        hud(t('adNotDoneEnd'), '#f44');
       }
       showShop();
     });
@@ -274,25 +394,25 @@
   }
 
   function buyAmmoCount() {
-    if (progress.ammoCount >= MAX_AMMO_COUNT) { hud('Максимум снарядов!', '#f44'); return; }
+    if (progress.ammoCount >= MAX_AMMO_COUNT) { hud(t('maxAmmo'), '#f44'); return; }
     if (SDK.adv && SDK.adv.showRewardedVideo) {
       SDK.showRewarded(function (ok) {
-        if (ok) { progress.ammoCount++; saveProgress(); hud('Количество снарядов +1', '#0f0'); showShop(); }
-        else { hud('Реклама не досмотрена', '#f44'); }
+        if (ok) { progress.ammoCount++; saveProgress(); hud(t('ammoPlus'), '#0f0'); showShop(); }
+        else { hud(t('adNotDone'), '#f44'); }
       });
     } else {
-      progress.ammoCount++; saveProgress(); hud('Количество снарядов +1 (тест)', '#0f0'); showShop();
+      progress.ammoCount++; saveProgress(); hud(t('ammoPlus'), '#0f0'); showShop();
     }
   }
 
   function buyBooster(bid) {
     if (SDK.adv && SDK.adv.showRewardedVideo) {
       SDK.showRewarded(function (ok) {
-        if (ok) { progress.boosters[bid] = (progress.boosters[bid] || 0) + 1; saveProgress(); hud('Усиление получено!', '#0f0'); showShop(); }
-        else { hud('Реклама не досмотрена', '#f44'); }
+        if (ok) { progress.boosters[bid] = (progress.boosters[bid] || 0) + 1; saveProgress(); hud(t('boosterGot'), '#0f0'); showShop(); }
+        else { hud(t('adNotDone'), '#f44'); }
       });
     } else {
-      progress.boosters[bid] = (progress.boosters[bid] || 0) + 1; saveProgress(); hud('Усиление получено (тест)', '#0f0'); showShop();
+      progress.boosters[bid] = (progress.boosters[bid] || 0) + 1; saveProgress(); hud(t('boosterGot'), '#0f0'); showShop();
     }
   }
 
@@ -304,17 +424,17 @@
     scr.className = 'menu-screen';
     scr.innerHTML =
       '<button class="btn-close" onclick="window.__closeShop()">×</button>' +
-      '<h1 style="font-size:32px">🛒 МАГАЗИН</h1>' +
+      '<h1 style="font-size:32px">' + t('shopTitle') + '</h1>' +
       '<div class="menu-scroll">' +
-      '<div style="width:100%;max-width:680px;color:#fff;margin:10px 0 4px;font-size:18px;text-align:left">🚀 Корабли (просмотр рекламы)</div>' +
+      '<div style="width:100%;max-width:680px;color:#fff;margin:10px 0 4px;font-size:18px;text-align:left">' + t('shipsSec') + '</div>' +
       '<div class="garage-grid" id="gg-skins"></div>' +
-      '<div style="width:100%;max-width:680px;color:#fff;margin:24px 0 4px;font-size:18px;text-align:left">🔫 Снаряды (просмотр рекламы)</div>' +
+      '<div style="width:100%;max-width:680px;color:#fff;margin:24px 0 4px;font-size:18px;text-align:left">' + t('ammoSec') + '</div>' +
       '<div class="garage-grid" id="gg-ammo"></div>' +
-      '<div style="width:100%;max-width:680px;color:#fff;margin:14px 0 4px;font-size:14px;text-align:left">🔁 Количество снарядов за выстрел</div>' +
+      '<div style="width:100%;max-width:680px;color:#fff;margin:14px 0 4px;font-size:14px;text-align:left">' + t('ammoCountSec') + '</div>' +
       '<div class="booster-row" id="bb-ammo-count"></div>' +
-      '<div style="width:100%;max-width:680px;color:#fff;margin:24px 0 4px;font-size:18px;text-align:left">⚡ Усиления на матч (просмотр рекламы)</div>' +
+      '<div style="width:100%;max-width:680px;color:#fff;margin:24px 0 4px;font-size:18px;text-align:left">' + t('boostSec') + '</div>' +
       '<div class="booster-row" id="bb-boost"></div>' +
-      '<div style="margin-top:14px"><button class="btn-play" style="padding:12px 40px" onclick="window.__closeShop()">Назад</button></div>' +
+      '<div style="margin-top:14px"><button class="btn-play" style="padding:12px 40px" onclick="window.__closeShop()">' + t('back') + '</button></div>' +
       '</div>';
     document.body.appendChild(scr);
 
@@ -327,9 +447,9 @@
       var d = document.createElement('div');
       d.className = 'garage-item' + (owned ? (selected ? ' selected' : '') : ' locked');
       var body = '<div class="g-preview" style="color:' + s.color + ';font-size:40px">' + s.icon + '</div>' +
-        '<div class="g-name">' + s.name + '</div><div class="g-desc">' + s.desc + '</div>';
-      if (owned) { body += selected ? '<div class="g-selected">✓ Выбран</div>' : '<div class="g-hint" style="color:#4af">Выбрать</div>'; }
-      else { body += '<div class="g-hint">▶ Реклама (' + s.price + ')</div>'; }
+        '<div class="g-name">' + t('sk_' + id) + '</div><div class="g-desc">' + t('sk_' + id + '_d') + '</div>';
+      if (owned) { body += selected ? '<div class="g-selected">' + t('skSel') + '</div>' : '<div class="g-hint" style="color:#4af">' + t('choose') + '</div>'; }
+      else { body += '<div class="g-hint">' + t('watch') + s.price + ')</div>'; }
       d.innerHTML = body;
       d.onclick = function () {
         if (!owned) { watchForReward({ type: 'skin', id: id }); }
@@ -346,10 +466,10 @@
       var selected = progress.selectedAmmo === id;
       var d = document.createElement('div');
       d.className = 'garage-item' + (owned ? (selected ? ' selected' : '') : ' locked');
-      var body = '<div class="g-preview" style="font-size:36px">🔫</div><div class="g-name">' + am.name + '</div>' +
-        '<div class="g-desc">' + am.desc + '</div>';
-      if (owned) { body += selected ? '<div class="g-selected">✓ В бою</div>' : '<div class="g-hint" style="color:#4af">Выбрать</div>'; }
-      else { body += '<div class="g-hint">▶ Реклама (' + am.price + ')</div>'; }
+      var body = '<div class="g-preview" style="font-size:36px">🔫</div><div class="g-name">' + t('am_' + id) + '</div>' +
+        '<div class="g-desc">' + t('am_' + id + '_d') + '</div>';
+      if (owned) { body += selected ? '<div class="g-selected">' + t('ammoSel') + '</div>' : '<div class="g-hint" style="color:#4af">' + t('choose') + '</div>'; }
+      else { body += '<div class="g-hint">' + t('watch') + am.price + ')</div>'; }
       d.innerHTML = body;
       d.onclick = function () {
         if (!owned) { watchForReward({ type: 'ammo', id: id }); }
@@ -364,18 +484,18 @@
     var curCount = AMMO_TYPES[progress.selectedAmmo] ? (AMMO_TYPES[progress.selectedAmmo].count || 1) + (progress.ammoCount || 0) : (progress.ammoCount || 0);
     var maxReached = progress.ammoCount >= MAX_AMMO_COUNT;
     countChip.className = 'booster-chip' + (progress.ammoCount > 0 ? ' active' : '');
-    countChip.innerHTML = 'Стволы: <b>' + curCount + '</b> (база ' + (AMMO_TYPES[progress.selectedAmmo] ? AMMO_TYPES[progress.selectedAmmo].count : 1) + ' + ' + (progress.ammoCount || 0) + ')<span class="b-cost">' + (maxReached ? 'Максимум' : '▶ Реклама +1') + '</span>';
+    countChip.innerHTML = t('barrels') + ' <b>' + curCount + '</b> (' + t('baseLbl') + (AMMO_TYPES[progress.selectedAmmo] ? AMMO_TYPES[progress.selectedAmmo].count : 1) + ' + ' + (progress.ammoCount || 0) + ')<span class="b-cost">' + (maxReached ? t('maxLabel') : t('watchPlus')) + '</span>';
     countChip.onclick = function () { buyAmmoCount(); };
     gac.appendChild(countChip);
 
     // boosters
     var gb = document.getElementById('bb-boost');
-    var BOOST = { dmg: '⚔ Урон', hp: '❤ HP', speed: '⚡ Скорость' };
+    var BOOST = { dmg: t('boostDmg'), hp: t('boostHp'), speed: t('boostSpeed') };
     Object.keys(BOOST).forEach(function (bid) {
       var b = document.createElement('div');
       var count = progress.boosters[bid] || 0;
       b.className = 'booster-chip' + (count > 0 ? ' active' : '');
-      b.innerHTML = BOOST[bid] + ' <span style="color:#0f6">×' + count + '</span><span class="b-cost">▶ Реклама +1</span>';
+      b.innerHTML = BOOST[bid] + ' <span style="color:#0f6">×' + count + '</span><span class="b-cost">' + t('watchPlus') + '</span>';
       b.onclick = function () { buyBooster(bid); };
       gb.appendChild(b);
     });
@@ -462,7 +582,7 @@
     announceWave();
     if (waveNum === 5 || waveNum % 7 === 0) {
       spawnEnemy('boss');
-      hud('Осторожно — БОСС!', '#f44');
+      hud(t('bossAlert'), '#f44');
       if (SDK.showInterstitial) {
         if (waveNum === 5 || waveNum % 7 === 0) {
           if (SDK.inited) { SDK.showInterstitial(function () {}); }
@@ -475,7 +595,7 @@
   function announceWave() {
     var el = document.createElement('div');
     el.className = 'wave-announce';
-    el.textContent = 'Волна ' + waveNum;
+    el.textContent = t('waveTitle') + waveNum;
     document.body.appendChild(el);
     setTimeout(function () { el.remove(); }, 2200);
   }
@@ -660,7 +780,7 @@
     if (e.boss) {
       soundBigBoom();
       shake = 20;
-      hud('БОСС ПОБЕЖДЁН! +' + e.xp + ' XP', '#ff0');
+      hud(t('bossKilledLbl') + e.xp + ' XP', '#ff0');
       for (var i = 0; i < 40; i++) {
         var a = Math.random() * Math.PI * 2;
         parts.push({ x: e.x, y: e.y, vx: Math.cos(a) * 300, vy: Math.sin(a) * 300, life: 1, maxLife: 1.5, r: 4, c: '#ff0' });
@@ -694,11 +814,11 @@
     var options = pickUpgrades(3);
     var scr = document.createElement('div');
     scr.className = 'levelup-screen';
-    scr.innerHTML = '<h2>УРОВЕНЬ ' + player.lvl + '!</h2>';
+    scr.innerHTML = '<h2>' + t('levelT') + player.lvl + '!</h2>';
     options.forEach(function (u) {
       var b = document.createElement('button');
       b.className = 'upgrade-choice';
-      b.innerHTML = '<div class="uname">' + (u.icon || '⭐') + ' ' + u.name + '</div><div class="udesc">' + u.desc + '</div>';
+      b.innerHTML = '<div class="uname">' + (u.icon || '⭐') + ' ' + t('u_' + u.id) + '</div><div class="udesc">' + t('u_' + u.id + '_d') + '</div>';
       b.onclick = function () {
         applyUpgrade(u.id);
         scr.remove();
@@ -799,7 +919,7 @@
     freezeTimer = 2.5;
     fx.push({ type: 'boom', x: player.x, y: player.y, r: 400, life: 0.8, maxLife: 0.8, c: '#4ff' });
     blip(300, 0.3, 'sine', 0.06);
-    hud('ЗАМОРОЗКА!', '#4ff');
+    hud(t('frozenLbl'), '#4ff');
   }
 
   function togglePause() {
@@ -856,16 +976,16 @@
     }
     var scr = document.createElement('div');
     scr.className = 'gameover-screen';
-    scr.innerHTML = '<h2>GAME OVER</h2>' +
-      '<div class="stats">Достигнута волна: <b>' + waveNum + '</b></div>' +
-      '<div class="stats">Убито врагов: <b>' + kills + '</b></div>' +
-      '<div class="stats">Очки: <b>' + Math.round(score) + '</b></div>' +
-      '<div class="stats">Время выживания: <b>' + fmtTime(gameTime) + '</b></div>' +
-      '<div class="stats">Рекорд: <b>' + bestScore + '</b>' + (isBest ? ' <span style="color:#ff0">НОВЫЙ РЕКОРД!</span>' : '') + '</div>' +
-      '<button class="btn-play" onclick="window.__restart()">Играть снова</button>' +
-      '<button class="btn-revive" onclick="window.__revive()" style="padding:14px 48px;font-size:20px;border:none;border-radius:12px;cursor:pointer;margin:8px;font-weight:700;background:linear-gradient(135deg,#fa2,#f80);color:#fff">💎 Вернуться (+1 жизнь) — смотри рекламу</button>' +
-      '<button class="btn-leaderboard" onclick="window.__lb()">🏆 Лидерборд</button>' +
-      '<button class="btn-shop" onclick="window.__menu()">Меню</button>';
+    scr.innerHTML = '<h2>' + t('gameOver') + '</h2>' +
+      '<div class="stats">' + t('waveReached') + '<b>' + waveNum + '</b></div>' +
+      '<div class="stats">' + t('kills') + '<b>' + kills + '</b></div>' +
+      '<div class="stats">' + t('scoreFinal') + '<b>' + Math.round(score) + '</b></div>' +
+      '<div class="stats">' + t('timeSurv') + '<b>' + fmtTime(gameTime) + '</b></div>' +
+      '<div class="stats">' + t('recordFinal') + '<b>' + bestScore + '</b>' + (isBest ? ' <span style="color:#ff0">' + t('newRecord') + '</span>' : '') + '</div>' +
+      '<button class="btn-play" onclick="window.__restart()">' + t('again') + '</button>' +
+      '<button class="btn-revive" onclick="window.__revive()" style="padding:14px 48px;font-size:20px;border:none;border-radius:12px;cursor:pointer;margin:8px;font-weight:700;background:linear-gradient(135deg,#fa2,#f80);color:#fff">' + t('reviveBtn') + '</button>' +
+      '<button class="btn-leaderboard" onclick="window.__lb()">' + t('lbBtn') + '</button>' +
+      '<button class="btn-shop" onclick="window.__menu()">' + t('menuBtn') + '</button>';
     document.body.appendChild(scr);
     window.__restart = function () { if (SDK.inited) SDK.showInterstitial(function(){}); startGame(); };
     window.__revive = function () {
@@ -878,12 +998,12 @@
           enemies.forEach(function (e) { e.hp = Math.max(e.hp / 3, 1); });
           player.iframes = 2.5;
           fx.push({ type: 'boom', x: player.x, y: player.y, r: 200, life: 1, maxLife: 1, c: '#0f0' });
-          hud('ВОЗВРАЩЕНИЕ! +60% HP', '#0f0');
+          hud(t('reviveHp'), '#0f0');
         });
       } else {
         state = 'playing';
         player.hp = player.maxHp * 0.6; player.iframes = 2.5;
-        hud('ВОЗВРАЩЕНИЕ! +60% HP', '#0f0');
+        hud(t('reviveHp'), '#0f0');
       }
     };
     window.__lb = function () { SDK.showLeaderboard(function () {}); };
@@ -900,12 +1020,12 @@
     var scr = document.createElement('div');
     scr.className = 'menu-screen';
     scr.innerHTML = '<h1>🛸 GALAXY SURVIVOR</h1>' +
-      '<div class="subtitle">Выживай среди орд космических монстров!<br>Собирай XP, прокачивайся и ставь рекорды</div>' +
-      '<div class="subtitle" style="color:#4af">Рекорд: ' + bestScore + '</div>' +
-      '<button class="btn-play" onclick="window.__play()">▶ ИГРАТЬ</button>' +
-      '<button class="btn-shop" onclick="window.__shop()">🛒 Магазин (реклама)</button>' +
-      '<button class="btn-leaderboard" onclick="window.__lb2()">🏆 Топ игроков</button>' +
-      '<div class="subtitle" style="font-size:13px;color:#666;margin-top:20px">WASD/стрелки/тач-джойстик — движение<br>Пробел — заморозка врагов</div>';
+      '<div class="subtitle">' + t('subtitle') + '</div>' +
+      '<div class="subtitle" style="color:#4af">' + t('recordLbl') + bestScore + '</div>' +
+      '<button class="btn-play" onclick="window.__play()">' + t('play') + '</button>' +
+      '<button class="btn-shop" onclick="window.__shop()">' + t('shop') + '</button>' +
+      '<button class="btn-leaderboard" onclick="window.__lb2()">' + t('top') + '</button>' +
+      '<div class="subtitle" style="font-size:13px;color:#666;margin-top:20px">' + t('controls') + '</div>';
     document.body.appendChild(scr);
     window.__play = function () { startGame(); };
     window.__shop = function () { showShop(); };
@@ -934,7 +1054,7 @@
     if (!hudEl || !player) return;
     if (hpEl) hpEl.style.width = Math.max(0, player.hp / player.maxHp * 100) + '%';
     if (xpEl) xpEl.style.width = Math.min(100, player.xp / player.xpNeed * 100) + '%';
-    if (infoEl) infoEl.innerHTML = 'Волна: ' + waveNum + '  |  Ур: ' + player.lvl + '  |  Очки: ' + Math.round(score) + '  |  <span style="color:#0f6">💎' + gems.length + '</span>' + (player.freezeUnlocked && player.freezeCd > 0 ? '  |  ❄' + Math.ceil(player.freezeCd) : '');
+    if (infoEl) infoEl.innerHTML = t('waveLbl') + waveNum + '  |  ' + t('lvlLbl') + player.lvl + '  |  ' + t('ptsLbl') + Math.round(score) + '  |  <span style="color:#0f6">💎' + gems.length + '</span>' + (player.freezeUnlocked && player.freezeCd > 0 ? t('frozen') + Math.ceil(player.freezeCd) : '');
   }
 
   /* ============ MAIN LOOP ============ */
