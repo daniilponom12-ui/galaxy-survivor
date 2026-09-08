@@ -734,6 +734,8 @@ var text = t('top10');
 
   /* ============ PARTICLES / FX ============ */
   function boom(x, y, color, n) {
+    if (parts.length > 520) return;
+    if (fx.length > 260) return;
     for (var i = 0; i < n; i++) {
       var a = Math.random() * Math.PI * 2, sp = 60 + Math.random() * 200;
       parts.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.4 + Math.random() * 0.5, maxLife: 0.9, r: 2 + Math.random() * 3, c: color });
@@ -742,6 +744,7 @@ var text = t('top10');
   }
 
   function textFx(x, y, txt, color) {
+    if (fx.length > 260) return;
     fx.push({ type: 'text', x: x, y: y, txt: txt, life: 0.7, c: color });
   }
 
@@ -1256,11 +1259,18 @@ var text = t('top10');
 
   /* ============ MAIN LOOP ============ */
   var dt = 0.016;
+  var __errs = [];
   function loop(ts) {
     dt = Math.min((ts - lastTime) / 1000, 0.05);
     lastTime = ts;
-    if (state === 'playing') { update(); updateHUD(); }
-    render();
+    try {
+      if (state === 'playing') { update(); updateHUD(); }
+      render();
+    } catch (err) {
+      if (__errs.length < 10) {
+        __errs.push((err.message || String(err)) + ' @ ' + ((err.stack || '').split('\n')[1] || '').trim());
+      }
+    }
     animFrame = requestAnimationFrame(loop);
   }
 
