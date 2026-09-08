@@ -302,7 +302,7 @@ var text = t('top10');
     return {
       x: WORLD_W / 2, y: WORLD_H / 2, r: 18, speed: 190 * (1 + 0.06 * (upg.speed || 0)), hp: 100 + 15 * (upg.hp || 0), maxHp: 100 + 15 * (upg.hp || 0),
       xp: 0, xpNeed: 30, lvl: 1, iframes: 0,
-      skinColor: skin.color, ang: 0, aimAng: 0, speedBoost: 0, dmgBoost: 0, skinModel: skin.model || 'classic',
+      skinColor: skin.color, ang: 0, aimAng: 0, speedBoost: 0, dmgBoost: 0, skinModel: 'jet',
       upDmg: 1 + 0.1 * (upg.dmg || 0), pickupR: 60 * (1 + 0.2 * (upg.magnet || 0)),
       upRateMul: Math.pow(0.92, upg.rate || 0), shield: upg.shield || 0, critChance: 0.08 * (upg.crit || 0), xpMul: 1 + 0.1 * (upg.xp || 0),
       weapons: [{ id: 'auto', lvl: 1 }],
@@ -777,7 +777,7 @@ var text = t('top10');
       for (var s = 0; s < total; s++) {
         var off = total <= 1 ? 0 : (s - (total - 1) / 2) * spreadStep;
         var ang = a + off;
-        var isLaser = player.skinModel === 'jet' && w.id === 'auto';
+        var isLaser = w.id === 'auto';
         var p = { x: player.x, y: player.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, dmg: WEAPONS.auto.dmg * (ammo.dmgMult || 1) * (player.upDmg || 1) * (critType ? 2 : 1) * (1 + 0.5 * (player.dmgBoost || 0)) * (isLaser ? 1.15 : 1), r: ammo.r || 5, c: critType ? '#fff' : (isLaser ? '#af0' : ammo.color), life: isLaser ? 2 : 1.6, splash: hasSplash, pierce: isLaser || !!ammo.pierce || !!player.pierceAll, pierceHits: (isLaser || ammo.pierce || player.pierceAll) ? 8 : 0, rocket: !!ammo.rocket, laser: isLaser };
         projectiles.push(p);
         if (isLaser && total % 2 === 1) {
