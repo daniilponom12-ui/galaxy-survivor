@@ -77,7 +77,12 @@
       sk_s5: 'Ледяной Страж', sk_s5_d: 'Холодная сталь',
       am_a1: 'Бластер', am_a1_d: 'Уверенный средний урон', am_a2: 'Лазер', am_a2_d: 'Пронзает врагов насквозь',
       am_a3: 'Дробовик', am_a3_d: 'Веер из осколков', am_a4: 'Ракеты', am_a4_d: 'Взрываются при попадании',
-      am_a5: 'Плазма', am_a5_d: 'Быстрая и мощная'
+      am_a5: 'Плазма', am_a5_d: 'Быстрая и мощная',
+      diamSec: '💎 Улучшения за алмазы', diamBal: 'Алмазов: ', puLvl: 'Уровень ', puMax: 'МАКС',
+      pu_dmg: 'Урон +10%', pu_dmg_d: 'Постоянно увеличивает урон оружия',
+      pu_hp: 'Макс. HP +15', pu_hp_d: 'Постоянно увеличивает запас здоровья',
+      pu_magnet: 'Сбор +20%', pu_magnet_d: 'Увеличивает радиус подбора кристаллов',
+      diamNo: 'Не хватает алмазов!', diamBuy: 'Куплено!', diamGot: 'Алмаз!'
     },
     en: {
       play: '▶ PLAY', shop: '🛒 Shop (ads)', top: '🏆 Leaderboards',
@@ -126,7 +131,12 @@
       sk_s5: 'Ice Guardian', sk_s5_d: 'Cold steel',
       am_a1: 'Blaster', am_a1_d: 'Steady medium damage', am_a2: 'Laser', am_a2_d: 'Pierces through enemies',
       am_a3: 'Shotgun', am_a3_d: 'Fan of shards', am_a4: 'Rockets', am_a4_d: 'Explode on hit',
-      am_a5: 'Plasma', am_a5_d: 'Fast and powerful'
+      am_a5: 'Plasma', am_a5_d: 'Fast and powerful',
+      diamSec: '💎 Gem upgrades', diamBal: 'Gems: ', puLvl: 'Level ', puMax: 'MAX',
+      pu_dmg: 'Damage +10%', pu_dmg_d: 'Permanently increases weapon damage',
+      pu_hp: 'Max HP +15', pu_hp_d: 'Permanently increases health pool',
+      pu_magnet: 'Pickup +20%', pu_magnet_d: 'Increases crystal pickup radius',
+      diamNo: 'Not enough gems!', diamBuy: 'Bought!', diamGot: 'Gem!'
     }
   };
   function t(key) {
@@ -265,10 +275,12 @@ var text = t('top10');
 
   function makePlayer() {
     var skin = SKINS[progress.selectedSkin] || SKINS.s1;
+    var upg = progress.upg || {};
     return {
-      x: WORLD_W / 2, y: WORLD_H / 2, r: 18, speed: 190, hp: 100, maxHp: 100,
+      x: WORLD_W / 2, y: WORLD_H / 2, r: 18, speed: 190, hp: 100 + 15 * (upg.hp || 0), maxHp: 100 + 15 * (upg.hp || 0),
       xp: 0, xpNeed: 30, lvl: 1, iframes: 0,
       skinColor: skin.color, ang: 0, aimAng: 0,
+      upDmg: 1 + 0.1 * (upg.dmg || 0), pickupR: 60 * (1 + 0.2 * (upg.magnet || 0)),
       weapons: [{ id: 'auto', lvl: 1 }],
       orbitWeps: [], aoeWeps: [], specials: []
     };
@@ -327,7 +339,7 @@ var text = t('top10');
 
   /* ============ SHOP / SKINS / MUSIC / BOOSTERS (за рекламу) ============ */
   var SAVE_KEY = 'gs_progress_v2';
-  var progress = { skinsUnlocked: ['s1'], musicUnlocked: ['m1'], ammoUnlocked: ['a1'], selectedSkin: 's1', selectedMusic: 'm1', selectedAmmo: 'a1', ammoCount: 0, boosters: {} };
+  var progress = { skinsUnlocked: ['s1'], musicUnlocked: ['m1'], ammoUnlocked: ['a1'], selectedSkin: 's1', selectedMusic: 'm1', selectedAmmo: 'a1', ammoCount: 0, boosters: {}, diamonds: 0, upg: { dmg: 0, hp: 0, magnet: 0 } };
   try {
     var saved = localStorage.getItem(SAVE_KEY);
     if (saved) { var sp = JSON.parse(saved); if (sp && typeof sp === 'object') { for (var k in sp) progress[k] = sp[k]; } }
@@ -416,6 +428,23 @@ var text = t('top10');
     }
   }
 
+  var UPG_COSTS = { dmg: [40, 100, 200, 350, 550], hp: [50, 120, 250, 450, 800], magnet: [30, 80, 180] };
+  var UPG_ICONS = { dmg: '🔥', hp: '❤', magnet: '🧲' };
+
+  function buyUpgrade(id) {
+    var upg = progress.upg || {};
+    var lvl = upg[id] || 0;
+    var costs = UPG_COSTS[id] || [];
+    if (lvl >= costs.length) { hud(t('puMax'), '#f80'); return; }
+    var cost = costs[lvl];
+    if ((progress.diamonds || 0) < cost) { hud(t('diamNo'), '#f44'); return; }
+    progress.diamonds -= cost;
+    upg[id] = lvl + 1;
+    saveProgress();
+    hud(t('diamBuy'), '#0f0');
+    showShop();
+  }
+
   function showShop() {
     state = 'shop';
     // удалить старые экраны магазина
@@ -424,7 +453,7 @@ var text = t('top10');
     scr.className = 'menu-screen';
     scr.innerHTML =
       '<button class="btn-close" onclick="window.__closeShop()">×</button>' +
-      '<h1 style="font-size:32px">' + t('shopTitle') + '</h1>' +
+      '<h1 style="font-size:32px">' + t('shopTitle') + ' <span style="color:#4ff;font-size:22px">💎' + (progress.diamonds || 0) + '</span></h1>' +
       '<div class="menu-scroll">' +
       '<div style="width:100%;max-width:680px;color:#fff;margin:10px 0 4px;font-size:18px;text-align:left">' + t('shipsSec') + '</div>' +
       '<div class="garage-grid" id="gg-skins"></div>' +
@@ -434,6 +463,8 @@ var text = t('top10');
       '<div class="booster-row" id="bb-ammo-count"></div>' +
       '<div style="width:100%;max-width:680px;color:#fff;margin:24px 0 4px;font-size:18px;text-align:left">' + t('boostSec') + '</div>' +
       '<div class="booster-row" id="bb-boost"></div>' +
+      '<div style="width:100%;max-width:680px;color:#fff;margin:24px 0 4px;font-size:18px;text-align:left">' + t('diamSec') + '</div>' +
+      '<div class="booster-row" id="bb-diam"></div>' +
       '<div style="margin-top:14px"><button class="btn-play" style="padding:12px 40px" onclick="window.__closeShop()">' + t('back') + '</button></div>' +
       '</div>';
     document.body.appendChild(scr);
@@ -498,6 +529,22 @@ var text = t('top10');
       b.innerHTML = BOOST[bid] + ' <span style="color:#0f6">×' + count + '</span><span class="b-cost">' + t('watchPlus') + '</span>';
       b.onclick = function () { buyBooster(bid); };
       gb.appendChild(b);
+    });
+
+    // gem upgrades
+    var gd2 = document.getElementById('bb-diam');
+    var upg = progress.upg || {};
+    ['dmg', 'hp', 'magnet'].forEach(function (uid) {
+      var b = document.createElement('div');
+      var lvl = upg[uid] || 0;
+      var costs = UPG_COSTS[uid] || [];
+      var maxed = lvl >= costs.length;
+      var cost = maxed ? 0 : costs[lvl];
+      b.className = 'booster-chip' + (lvl > 0 ? ' active' : '');
+      b.innerHTML = UPG_ICONS[uid] + ' ' + t('pu_' + uid) + '<br><span style="font-size:12px;opacity:.7">' + t('pu_' + uid + '_d') + '</span><br><span style="color:' + (lvl > 0 ? '#4ff' : '#888') + '">' + t('puLvl') + lvl + (maxed ? '/' + costs.length : '') + '</span>' +
+        '<span class="b-cost">' + (maxed ? t('puMax') : cost + '💎') + '</span>';
+      b.onclick = function () { buyUpgrade(uid); };
+      gd2.appendChild(b);
     });
 
     window.__closeShop = function () { showMenu(); };
@@ -581,21 +628,20 @@ var text = t('top10');
   }
 
   /* ============ WAVES ============ */
-  var BOSS_TYPES = ['boss', 'boss', 'boss_gunner', 'boss_titan'];
-  function pickBossPool() {
-    if (waveNum % 10 === 0) { return ['boss_titan', 'boss_titan']; }
-    if (waveNum % 7 === 0) { return ['boss', 'boss_gunner']; }
-    return ['boss', 'boss']; 
+  function pickBossPool(w) {
+    if (w >= 20 && w % 10 === 0) return ['boss_titan', 'boss_titan'];
+    if (w >= 15 && w % 5 === 0) return ['boss_titan', 'boss_gunner'];
+    return ['boss', 'boss_gunner'];
   }
   function spawnWave() {
     waveNum++;
     announceWave();
-    var hasBoss = waveNum === 5 || waveNum % 5 === 0 || waveNum % 7 === 0;
+    var hasBoss = waveNum >= 3 && (waveNum % 2 === 1 || waveNum % 5 === 0);
     if (hasBoss) {
-      var bossPool = pickBossPool();
+      var bossPool = pickBossPool(waveNum);
       var bossCount = 1;
-      if (waveNum >= 14) bossCount = 2;
-      if (waveNum >= 21) bossCount = 3;
+      if (waveNum >= 12) bossCount = 2;
+      if (waveNum >= 18) bossCount = 3;
       for (var bi = 0; bi < bossCount; bi++) {
         spawnEnemy(bossPool[Math.min(bi, bossPool.length - 1)]);
       }
@@ -691,7 +737,7 @@ var text = t('top10');
       for (var s = 0; s < total; s++) {
         var off = total <= 1 ? 0 : (s - (total - 1) / 2) * spreadStep;
         var ang = a + off;
-        var p = { x: player.x, y: player.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, dmg: WEAPONS.auto.dmg * (ammo.dmgMult || 1), r: ammo.r || 5, c: ammo.color, life: 1.6, splash: hasSplash, pierce: !!ammo.pierce, pierceHits: ammo.pierce ? 6 : 0, rocket: !!ammo.rocket };
+        var p = { x: player.x, y: player.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, dmg: WEAPONS.auto.dmg * (ammo.dmgMult || 1) * (player.upDmg || 1), r: ammo.r || 5, c: ammo.color, life: 1.6, splash: hasSplash, pierce: !!ammo.pierce, pierceHits: ammo.pierce ? 6 : 0, rocket: !!ammo.rocket };
         projectiles.push(p);
       }
     }
@@ -792,6 +838,15 @@ var text = t('top10');
     kills++;
     score += e.score || 10;
     gems.push({ x: e.x, y: e.y, vx: (Math.random() - 0.5) * 60, vy: (Math.random() - 0.5) * 60, val: e.xp, r: e.boss ? 12 : 5, c: e.boss ? '#ff0' : '#0f6' });
+    if (e.boss) {
+      var dn = 4 + Math.floor(Math.random() * 4);
+      for (var di2 = 0; di2 < dn; di2++) {
+        var da2 = Math.random() * Math.PI * 2;
+        gems.push({ x: e.x + Math.cos(da2) * e.r * 0.5, y: e.y + Math.sin(da2) * e.r * 0.5, vx: (Math.random() - 0.5) * 80, vy: (Math.random() - 0.5) * 80, val: 2, r: 9, c: '#4ff', d: true });
+      }
+    } else if (Math.random() < 0.2) {
+      gems.push({ x: e.x, y: e.y, vx: (Math.random() - 0.5) * 60, vy: (Math.random() - 0.5) * 60, val: 1, r: 7, c: '#4ff', d: true });
+    }
     if (e.boss) {
       soundBigBoom();
       shake = 20;
@@ -1046,9 +1101,10 @@ var text = t('top10');
     window.__test = function () {
       var bc = 0;
       for (var ti = 0; ti < enemies.length; ti++) { if (enemies[ti].boss) bc++; }
-      return { enemies: enemies.length, waveNum: waveNum, bosses: bc, types: enemies.map(function (e) { return e.type; }).slice(0, 10) };
+      return { enemies: enemies.length, waveNum: waveNum, bosses: bc, diamonds: progress.diamonds, upg: progress.upg, types: enemies.map(function (e) { return e.type; }).slice(0, 10) };
     };
     window.__test.forceWave = function () { spawnWave(); return window.__test(); };
+    window.__test.giveDiam = function (n) { progress.diamonds += n; saveProgress(); return progress.diamonds; };
     window.__shop = function () { showShop(); };
     window.__lb2 = function () { SDK.showLeaderboard(function () {}); };
   }
@@ -1075,7 +1131,11 @@ var text = t('top10');
     if (!hudEl || !player) return;
     if (hpEl) hpEl.style.width = Math.max(0, player.hp / player.maxHp * 100) + '%';
     if (xpEl) xpEl.style.width = Math.min(100, player.xp / player.xpNeed * 100) + '%';
-    if (infoEl) infoEl.innerHTML = t('waveLbl') + waveNum + '  |  ' + t('lvlLbl') + player.lvl + '  |  ' + t('ptsLbl') + Math.round(score) + '  |  <span style="color:#0f6">💎' + gems.length + '</span>' + (player.freezeUnlocked && player.freezeCd > 0 ? t('frozen') + Math.ceil(player.freezeCd) : '');
+    if (infoEl) {
+      var xpField = 0;
+      for (var hI = 0; hI < gems.length; hI++) { if (!gems[hI].d) xpField++; }
+      infoEl.innerHTML = t('waveLbl') + waveNum + '  |  ' + t('lvlLbl') + player.lvl + '  |  ' + t('ptsLbl') + Math.round(score) + '  |  <span style="color:#4ff">💎' + progress.diamonds + '</span>' + (xpField > 0 ? '  <span style="color:#0f6">✦' + xpField + '</span>' : '') + (player.freezeUnlocked && player.freezeCd > 0 ? t('frozen') + Math.ceil(player.freezeCd) : '');
+    }
   }
 
   /* ============ MAIN LOOP ============ */
@@ -1132,9 +1192,9 @@ var text = t('top10');
 
     // waves
     spawnTimer -= dt;
-    if (spawnTimer <= 0 && enemies.length < 260) {
+    if (spawnTimer <= 0 && enemies.length < 320) {
       var pool = waveEnemyPool();
-      var n = Math.min(14 + Math.floor(waveNum * 1.7), 46);
+      var n = Math.min(18 + Math.floor(waveNum * 2), 55);
       for (var i = 0; i < n; i++) {
         var t = pool[Math.floor(Math.random() * pool.length)];
         spawnEnemy(t);
@@ -1142,9 +1202,9 @@ var text = t('top10');
       spawnTimer = nextWaveTime();
     }
     // дополнительные мини-волны между основными (если на поле мало врагов)
-    if (enemies.length < waveNum * 5 + 8 && spawnTimer > 1.2) {
-      spawnTimer = Math.max(spawnTimer - 0.45, 0);
-      var miniN = Math.min(4 + Math.floor(waveNum / 2), 14);
+    if (enemies.length < waveNum * 6 + 10 && spawnTimer > 1.2) {
+      spawnTimer = Math.max(spawnTimer - 0.5, 0);
+      var miniN = Math.min(6 + Math.floor(waveNum / 2), 18);
       for (var mi6 = 0; mi6 < miniN; mi6++) {
         spawnEnemy(waveEnemyPool()[Math.floor(Math.random() * waveEnemyPool().length)]);
       }
@@ -1259,7 +1319,8 @@ var text = t('top10');
       gem.x += gem.vx * dt * (hasFreezeFreeze ? 0.5 : 1);
       gem.y += gem.vy * dt * 0.3;
       var gd = dist(gem, p);
-      var pull = (player.magnet || gd < 60) ? 1 : 0;
+      var pullR = player.pickupR || 60;
+      var pull = (player.magnet || gd < pullR) ? 1 : 0;
       if (pull && gd > 20) {
         var ga = Math.atan2(p.y - gem.y, p.x - gem.x);
         gem.x += Math.cos(ga) * 340 * dt;
@@ -1267,8 +1328,14 @@ var text = t('top10');
         var gd2 = dist(gem, { x: player.x, y: player.y });
         if (gd2 < p.r + 8) {
           gems.splice(g, 1);
-          gainXp(gem.val);
-          blip(400 + Math.random() * 200, 0.04, 'sine', 0.03);
+          if (gem.d) {
+            progress.diamonds += gem.val;
+            saveProgress();
+            blip(900 + Math.random() * 300, 0.05, 'sine', 0.03);
+          } else {
+            gainXp(gem.val);
+            blip(400 + Math.random() * 200, 0.04, 'sine', 0.03);
+          }
         }
       }
       if (gd > 1000) gems.splice(g, 1);
