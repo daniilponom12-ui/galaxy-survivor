@@ -284,6 +284,7 @@ var text = t('top10');
   var enemies = [], projectiles = [], gems = [], parts = [], fx = [], orbHit = [], magnet = [];
   var waves = [], spawnTimer = 0;
   var gameTime = 0, waveNum = 0, score = 0, kills = 0;
+  var combo = 0, comboTimer = 0, maxCombo = 0;
   var bestScore = 0;
   try { bestScore = +(localStorage.getItem('gs_best') || 0); } catch (e) {}
   var freezeTimer = 0;
@@ -301,7 +302,7 @@ var text = t('top10');
     return {
       x: WORLD_W / 2, y: WORLD_H / 2, r: 18, speed: 190 * (1 + 0.06 * (upg.speed || 0)), hp: 100 + 15 * (upg.hp || 0), maxHp: 100 + 15 * (upg.hp || 0),
       xp: 0, xpNeed: 30, lvl: 1, iframes: 0,
-      skinColor: skin.color, ang: 0, aimAng: 0,
+      skinColor: skin.color, ang: 0, aimAng: 0, speedBoost: 0, dmgBoost: 0,
       upDmg: 1 + 0.1 * (upg.dmg || 0), pickupR: 60 * (1 + 0.2 * (upg.magnet || 0)),
       upRateMul: Math.pow(0.92, upg.rate || 0), shield: upg.shield || 0, critChance: 0.08 * (upg.crit || 0), xpMul: 1 + 0.1 * (upg.xp || 0),
       weapons: [{ id: 'auto', lvl: 1 }],
@@ -608,35 +609,7 @@ var text = t('top10');
   }
 
   function startMusic() {
-    var a = audio();
-    if (!a) return;
-    try {
-      if (musicNodes) { try { musicNodes.gain.gain.value = 0; } catch (e) {} }
-      stopMusic();
-      var freq = { m1: 55, m2: 65.4, m3: 49, m4: 73.4 }[progress.selectedMusic || 'm1'] || 55;
-      var g = a.createGain();
-      g.gain.value = 0.05;
-      g.connect(a.destination);
-      var oscs = [];
-      for (var i = 0; i < 2; i++) {
-        var o = a.createOscillator();
-        o.type = i === 0 ? 'sawtooth' : 'triangle';
-        o.frequency.value = freq * (i === 0 ? 1 : 0.5);
-        o.connect(g);
-        o.start();
-        oscs.push(o);
-      }
-      // simple bass pulse
-      musicNodes = { gain: g, oscs: oscs };
-      curTrack = progress.selectedMusic || 'm1';
-      musicTimer = setInterval(function () {
-        try {
-          var note = freq * (0.9 + Math.random() * 0.3);
-          oscs[0].frequency.setTargetAtTime(note, a.currentTime, 0.2);
-          oscs[0].frequency.setTargetAtTime(freq, a.currentTime + 0.5, 0.2);
-        } catch (e) {}
-      }, 700);
-    } catch (e) {}
+    // музыка отключена
   }
 
   function stopMusic() {
@@ -803,7 +776,7 @@ var text = t('top10');
       for (var s = 0; s < total; s++) {
         var off = total <= 1 ? 0 : (s - (total - 1) / 2) * spreadStep;
         var ang = a + off;
-        var p = { x: player.x, y: player.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, dmg: WEAPONS.auto.dmg * (ammo.dmgMult || 1) * (player.upDmg || 1) * (critType ? 2 : 1), r: ammo.r || 5, c: critType ? '#fff' : ammo.color, life: 1.6, splash: hasSplash, pierce: !!ammo.pierce || !!player.pierceAll, pierceHits: (ammo.pierce || player.pierceAll) ? 6 : 0, rocket: !!ammo.rocket };
+        var p = { x: player.x, y: player.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, dmg: WEAPONS.auto.dmg * (ammo.dmgMult || 1) * (player.upDmg || 1) * (critType ? 2 : 1) * (1 + 0.5 * (player.dmgBoost || 0)), r: ammo.r || 5, c: critType ? '#fff' : ammo.color, life: 1.6, splash: hasSplash, pierce: !!ammo.pierce || !!player.pierceAll, pierceHits: (ammo.pierce || player.pierceAll) ? 6 : 0, rocket: !!ammo.rocket };
         projectiles.push(p);
       }
     }
@@ -902,7 +875,15 @@ var text = t('top10');
     if (!e) return;
     enemies.splice(idx, 1);
     kills++;
-    score += e.score || 10;
+    combo++;
+    comboTimer = 3;
+    if (combo > maxCombo) maxCombo = combo;
+    var combMult = 1 + Math.floor(combo / 8);
+    if (combMult > 10) combMult = 10;
+    score += (e.score || 10) * combMult;
+    if (combo > 0 && combo % 8 === 0) {
+      hud('COMBO x' + combMult, '#ff8');
+    }
     if (player && player.leech && player.hp < player.maxHp) { player.hp = Math.min(player.maxHp, player.hp + 3); }
     gems.push({ x: e.x, y: e.y, vx: (Math.random() - 0.5) * 60, vy: (Math.random() - 0.5) * 60, val: e.xp, r: e.boss ? 12 : 5, c: e.boss ? '#ff0' : '#0f6' });
     if (e.boss) {
@@ -913,6 +894,8 @@ var text = t('top10');
       }
     } else if (Math.random() < 0.2) {
       gems.push({ x: e.x, y: e.y, vx: (Math.random() - 0.5) * 60, vy: (Math.random() - 0.5) * 60, val: 1, r: 7, c: '#4ff', d: true });
+    } else if (Math.random() < 0.015) {
+      gems.push({ x: e.x, y: e.y, vx: (Math.random() - 0.5) * 60, vy: (Math.random() - 0.5) * 60, val: 0, r: 9, c: '#fd0', bonus: true });
     }
     if (e.boss) {
       soundBigBoom();
@@ -936,6 +919,54 @@ var text = t('top10');
   }
 
   /* ============ XP ============ */
+  function doBonusPickup() {
+    var p = player;
+    if (!p) return;
+    var b = [];
+    if (p.lives < 3) b.push('life');
+    b.push('dmg', 'speed', 'heal', 'shield', 'diam');
+    var pick = b[Math.floor(Math.random() * b.length)];
+    var txt = '';
+    switch (pick) {
+      case 'life':
+        p.lives = (p.lives || 0) + 1;
+        txt = '❤ +1 LIFE';
+        soundLevel();
+        break;
+      case 'dmg':
+        p.dmgBoost = (p.dmgBoost || 0) + 1;
+        txt = '⚔ DMG +50%';
+        soundLevel();
+        break;
+      case 'speed':
+        p.speedBoost = (p.speedBoost || 0) + 1;
+        txt = '💨 SPEED +25%';
+        soundLevel();
+        break;
+      case 'heal':
+        p.hp = Math.min(p.maxHp, p.hp + p.maxHp * 0.35);
+        txt = '❤ +35% HP';
+        soundLevel();
+        break;
+      case 'shield':
+        p.shield = (p.shield || 0) + 1;
+        txt = '🛡 SHIELD +1';
+        soundLevel();
+        break;
+      default:
+        progress.diamonds += 5;
+        saveProgress();
+        txt = '💎 +5 GEMS';
+        blip(900, 0.1, 'sine', 0.06);
+    }
+    hud(txt, '#fd0');
+    for (var bi = 0; bi < 26; bi++) {
+      var bAng = Math.random() * Math.PI * 2;
+      parts.push({ x: p.x, y: p.y, vx: Math.cos(bAng) * 220, vy: Math.sin(bAng) * 220, life: 0.9, maxLife: 0.9, r: 3, c: '#fd0' });
+    }
+    fx.push({ type: 'boom', x: p.x, y: p.y, r: 80, life: 0.5, maxLife: 0.5 });
+  }
+
   function gainXp(v) {
     player.xp += v * (player.xpMul || 1);
     if (player.xp >= player.xpNeed) {
@@ -1092,6 +1123,7 @@ var text = t('top10');
     player = makePlayer();
     enemies = []; projectiles = []; gems = []; parts = []; fx = []; orbHit = []; magnet = [];
     waves = []; gameTime = 0; waveNum = 0; spawnTimer = 0; kills = 0; score = 0; freezeTimer = 0; shake = 0;
+    combo = 0; comboTimer = 0;
     autoTimers = {}; hasSplash = false; hasFreezeFreeze = false;
 
     // apply boosters (потратить 1 за матч)
@@ -1205,7 +1237,13 @@ var text = t('top10');
     if (infoEl) {
       var xpField = 0;
       for (var hI = 0; hI < gems.length; hI++) { if (!gems[hI].d) xpField++; }
-      infoEl.innerHTML = t('waveLbl') + waveNum + '  |  ' + t('lvlLbl') + player.lvl + '  |  ' + t('ptsLbl') + Math.round(score) + '  |  <span style="color:#4ff">💎' + progress.diamonds + '</span>' + (xpField > 0 ? '  <span style="color:#0f6">✦' + xpField + '</span>' : '') + (player.freezeUnlocked && player.freezeCd > 0 ? t('frozen') + Math.ceil(player.freezeCd) : '');
+      var combHtml = '';
+      if (combo >= 4) {
+        var cm = 1 + Math.floor(combo / 8);
+        if (cm > 10) cm = 10;
+        combHtml = '  <span style="color:#ff8;font-weight:700">COMBO ' + combo + ' (x' + cm + ')</span>';
+      }
+      infoEl.innerHTML = t('waveLbl') + waveNum + '  |  ' + t('lvlLbl') + player.lvl + '  |  ' + t('ptsLbl') + Math.round(score) + '  |  <span style="color:#4ff">💎' + progress.diamonds + '</span>' + (xpField > 0 ? '  <span style="color:#0f6">✦' + xpField + '</span>' : '') + combHtml + (player.freezeUnlocked && player.freezeCd > 0 ? t('frozen') + Math.ceil(player.freezeCd) : '');
     }
   }
 
@@ -1229,6 +1267,7 @@ var text = t('top10');
       return false;
     }
     p.hp -= dmgv;
+    combo = 0; comboTimer = 0;
     p.iframes = 0.8;
     shake = Math.min(shake + 6, 15);
     fx.push({ type: 'boom', x: p.x, y: p.y, r: 40, life: 0.3, maxLife: 0.3, c: '#f55' });
@@ -1266,8 +1305,8 @@ var text = t('top10');
     var len = Math.sqrt(dx * dx + dy * dy);
     if (len > 1) { dx /= len; dy /= len; }
     p.vx = dx; p.vy = dy;
-    p.x += dx * p.speed * dt;
-    p.y += dy * p.speed * dt;
+    p.x += dx * p.speed * (1 + 0.25 * (p.speedBoost || 0)) * dt;
+    p.y += dy * p.speed * (1 + 0.25 * (p.speedBoost || 0)) * dt;
     wrapRelax();
 
     // поворот модели: в сторону движения, иначе — на ближайшего врага
@@ -1281,6 +1320,7 @@ var text = t('top10');
     p.ang -= Math.atan2(Math.sin(angDiff), Math.cos(angDiff)) * Math.min(1, dt * 10);
 
     if (p.iframes > 0) p.iframes -= dt;
+    if (comboTimer > 0) { comboTimer -= dt; if (comboTimer <= 0) { combo = 0; } }
     if (p.freezeCd !== undefined && p.freezeCd > 0) p.freezeCd -= dt;
     if (freezeTimer > 0) { freezeTimer -= dt; hasFreezeFreeze = true; } else { hasFreezeFreeze = false; }
     if (shake > 0) shake = Math.max(shake - dt * 30, 0);
@@ -1418,7 +1458,9 @@ var text = t('top10');
         var gd2 = dist(gem, { x: player.x, y: player.y });
         if (gd2 < p.r + 8) {
           gems.splice(g, 1);
-          if (gem.d) {
+          if (gem.bonus) {
+            doBonusPickup();
+          } else if (gem.d) {
             progress.diamonds += gem.val;
             saveProgress();
             blip(900 + Math.random() * 300, 0.05, 'sine', 0.03);
