@@ -553,17 +553,21 @@ var text = t('top10');
     tank: { r: 26, hp: 60, speed: 30, dmg: 16, xp: 10, color: '#a83', score: 30 },
     splitter: { r: 14, hp: 10, speed: 60, dmg: 7, xp: 3, color: '#fa4', score: 20, splits: 2 },
     shooter: { r: 15, hp: 14, speed: 40, dmg: 5, xp: 6, color: '#c4f', score: 25, shoot: true },
-    boss: { r: 55, hp: 600, speed: 24, dmg: 22, xp: 80, color: '#e02', score: 300, boss: true }
+    boss: { r: 55, hp: 600, speed: 24, dmg: 22, xp: 80, color: '#e02', score: 300, boss: true },
+    boss_gunner: { r: 62, hp: 1000, speed: 30, dmg: 16, xp: 120, color: '#b0f', score: 450, boss: true, shoot: true },
+    boss_titan: { r: 85, hp: 2400, speed: 16, dmg: 38, xp: 200, color: '#f90', score: 700, boss: true, minSpeed: true }
   };
 
   function spawnEnemy(type) {
     var t = ENEMY_TYPES[type];
     var ang = Math.random() * Math.PI * 2;
     var dist = Math.max(W, H) / 1.4 + 120;
+    var hpScale = t.boss ? (1 + (waveNum - 1) * 0.3) : (1 + (waveNum - 1) * 0.09);
     var e = {
-      type: type, r: t.r, hp: t.hp, maxHp: t.hp, speed: t.speed * (1 + waveNum * 0.02),
-      dmg: t.dmg, xp: t.xp, color: t.color, score: t.score, x: 0, y: 0,
-      hitFlash: 0, shootTimer: Math.random() * 2, splits: t.splits, boss: t.boss
+      type: type, r: t.r, hp: t.hp * hpScale, maxHp: t.hp * hpScale,
+      speed: (t.minSpeed ? Math.max(6, t.speed - waveNum) : t.speed) * (1 + waveNum * 0.02),
+      dmg: Math.round(t.dmg * (1 + waveNum * 0.04)), xp: t.xp, color: t.color, score: t.score, x: 0, y: 0,
+      hitFlash: 0, shootTimer: Math.random() * 2, splits: t.splits, boss: t.boss, shoot: t.shoot
     };
     e.x = player.x + Math.cos(ang) * dist;
     e.y = player.y + Math.sin(ang) * dist;
@@ -577,16 +581,27 @@ var text = t('top10');
   }
 
   /* ============ WAVES ============ */
+  var BOSS_TYPES = ['boss', 'boss', 'boss_gunner', 'boss_titan'];
+  function pickBossPool() {
+    if (waveNum % 10 === 0) { return ['boss_titan', 'boss_titan']; }
+    if (waveNum % 7 === 0) { return ['boss', 'boss_gunner']; }
+    return ['boss', 'boss']; 
+  }
   function spawnWave() {
     waveNum++;
     announceWave();
-    if (waveNum === 5 || waveNum % 7 === 0) {
-      spawnEnemy('boss');
+    var hasBoss = waveNum === 5 || waveNum % 5 === 0 || waveNum % 7 === 0;
+    if (hasBoss) {
+      var bossPool = pickBossPool();
+      var bossCount = 1;
+      if (waveNum >= 14) bossCount = 2;
+      if (waveNum >= 21) bossCount = 3;
+      for (var bi = 0; bi < bossCount; bi++) {
+        spawnEnemy(bossPool[Math.min(bi, bossPool.length - 1)]);
+      }
       hud(t('bossAlert'), '#f44');
       if (SDK.showInterstitial) {
-        if (waveNum === 5 || waveNum % 7 === 0) {
-          if (SDK.inited) { SDK.showInterstitial(function () {}); }
-        }
+        if (SDK.inited) { SDK.showInterstitial(function () {}); }
       }
     }
     spawnTimer = 0.5;
@@ -611,7 +626,7 @@ var text = t('top10');
     return pool;
   }
 
-  function nextWaveTime() { return Math.max(14 - waveNum * 0.4, 6); }
+  function nextWaveTime() { return Math.max(11 - waveNum * 0.35, 4.5); }
 
   /* ============ LIBRARY ============ */
   function dist(a, b) { var dx = a.x - b.x, dy = a.y - b.y; return Math.sqrt(dx * dx + dy * dy); }
@@ -1028,6 +1043,12 @@ var text = t('top10');
       '<div class="subtitle" style="font-size:13px;color:#666;margin-top:20px">' + t('controls') + '</div>';
     document.body.appendChild(scr);
     window.__play = function () { startGame(); };
+    window.__test = function () {
+      var bc = 0;
+      for (var ti = 0; ti < enemies.length; ti++) { if (enemies[ti].boss) bc++; }
+      return { enemies: enemies.length, waveNum: waveNum, bosses: bc, types: enemies.map(function (e) { return e.type; }).slice(0, 10) };
+    };
+    window.__test.forceWave = function () { spawnWave(); return window.__test(); };
     window.__shop = function () { showShop(); };
     window.__lb2 = function () { SDK.showLeaderboard(function () {}); };
   }
@@ -1111,9 +1132,9 @@ var text = t('top10');
 
     // waves
     spawnTimer -= dt;
-    if (spawnTimer <= 0 && enemies.length < 140) {
+    if (spawnTimer <= 0 && enemies.length < 260) {
       var pool = waveEnemyPool();
-      var n = Math.min(6 + Math.floor(waveNum * 1.2), 22);
+      var n = Math.min(14 + Math.floor(waveNum * 1.7), 46);
       for (var i = 0; i < n; i++) {
         var t = pool[Math.floor(Math.random() * pool.length)];
         spawnEnemy(t);
@@ -1121,9 +1142,9 @@ var text = t('top10');
       spawnTimer = nextWaveTime();
     }
     // дополнительные мини-волны между основными (если на поле мало врагов)
-    if (enemies.length < waveNum * 3 + 6 && spawnTimer > 1.2) {
-      spawnTimer = Math.max(spawnTimer - 0.4, 0);
-      var miniN = Math.min(2 + Math.floor(waveNum / 2), 8);
+    if (enemies.length < waveNum * 5 + 8 && spawnTimer > 1.2) {
+      spawnTimer = Math.max(spawnTimer - 0.45, 0);
+      var miniN = Math.min(4 + Math.floor(waveNum / 2), 14);
       for (var mi6 = 0; mi6 < miniN; mi6++) {
         spawnEnemy(waveEnemyPool()[Math.floor(Math.random() * waveEnemyPool().length)]);
       }
