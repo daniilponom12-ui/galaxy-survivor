@@ -386,12 +386,12 @@ var text = t('top10');
 
   var SKINS = {
     s1: { name: 'Классик', color: '#4af', price: 0, desc: 'Стандартный истребитель', icon: '▲' },
-    s2: { name: 'Неон-Фантом', color: '#f4f', price: 1, gcost: 25, desc: 'Фиолетовый с неоном', icon: '◆' },
-    s3: { name: 'Золотой Герой', color: '#fd0', price: 2, gcost: 45, desc: 'Сверхзвуковой золотой', icon: '⭐' },
-    s4: { name: 'Изумруд', color: '#0f6', price: 2, gcost: 45, desc: 'Смертоносный изумруд', icon: '❖' },
-    s5: { name: 'Ледяной Страж', color: '#7ef', price: 3, gcost: 60, desc: 'Холодная сталь', icon: '✚' },
-    s6: { name: 'Кобальт', color: '#38f', price: 4, gcost: 90, desc: 'Атомная мощь кобальта', icon: '♠' },
-    s7: { name: 'Некрон', color: '#f26', price: 5, gcost: 120, desc: 'Повелитель самоцветов', icon: 'ꙮ' }
+    s2: { name: 'Неон-Фантом', color: '#f4f', price: 1, gcost: 100, desc: 'Фиолетовый с неоном', icon: '◆' },
+    s3: { name: 'Золотой Герой', color: '#fd0', price: 2, gcost: 180, desc: 'Сверхзвуковой золотой', icon: '⭐' },
+    s4: { name: 'Изумруд', color: '#0f6', price: 2, gcost: 180, desc: 'Смертоносный изумруд', icon: '❖' },
+    s5: { name: 'Ледяной Страж', color: '#7ef', price: 3, gcost: 240, desc: 'Холодная сталь', icon: '✚' },
+    s6: { name: 'Кобальт', color: '#38f', price: 4, gcost: 360, desc: 'Атомная мощь кобальта', icon: '♠' },
+    s7: { name: 'Некрон', color: '#f26', price: 5, gcost: 480, desc: 'Повелитель самоцветов', icon: 'ꙮ' }
   };
   var MUSIC = {
     m1: { name: 'Космический драйв', price: 0 },
@@ -402,10 +402,10 @@ var text = t('top10');
 
   var AMMO_TYPES = {
     a1: { name: 'Бластер', desc: 'Уверенный средний урон', price: 0, dmgMult: 1, rate: 0.55, speed: 520, color: '#4af', count: 1, spread: 8, r: 5 },
-    a2: { name: 'Лазер', desc: 'Пронзает врагов насквозь', price: 1, gcost: 30, dmgMult: 1.3, rate: 0.85, speed: 680, color: '#f0f', count: 1, spread: 6, r: 4, pierce: true },
-    a3: { name: 'Дробовик', desc: 'Веер из осколков', price: 2, gcost: 50, dmgMult: 0.55, rate: 0.9, speed: 470, color: '#fa0', count: 5, spread: 30, r: 5 },
-    a4: { name: 'Ракеты', desc: 'Взрываются при попадании', price: 3, gcost: 70, dmgMult: 2.6, rate: 1.35, speed: 380, color: '#f80', count: 1, spread: 10, r: 7, rocket: true },
-    a5: { name: 'Плазма', desc: 'Быстрая и мощная', price: 4, gcost: 90, dmgMult: 1.9, rate: 0.45, speed: 720, color: '#0ff', count: 1, spread: 8, r: 6 }
+    a2: { name: 'Лазер', desc: 'Пронзает врагов насквозь', price: 1, gcost: 120, dmgMult: 1.3, rate: 0.85, speed: 680, color: '#f0f', count: 1, spread: 6, r: 4, pierce: true },
+    a3: { name: 'Дробовик', desc: 'Веер из осколков', price: 2, gcost: 200, dmgMult: 0.55, rate: 0.9, speed: 470, color: '#fa0', count: 5, spread: 30, r: 5 },
+    a4: { name: 'Ракеты', desc: 'Взрываются при попадании', price: 3, gcost: 280, dmgMult: 2.6, rate: 1.35, speed: 380, color: '#f80', count: 1, spread: 10, r: 7, rocket: true },
+    a5: { name: 'Плазма', desc: 'Быстрая и мощная', price: 4, gcost: 360, dmgMult: 1.9, rate: 0.45, speed: 720, color: '#0ff', count: 1, spread: 8, r: 6 }
   };
 
   var MAX_AMMO_COUNT = 3;
@@ -463,7 +463,7 @@ var text = t('top10');
     }
   }
 
-  var UPG_COSTS = { dmg: [40, 100, 200, 350, 550], hp: [50, 120, 250, 450, 800], magnet: [30, 80, 180], rate: [30, 70, 140, 240, 400], speed: [40, 90, 180], shield: [60, 150], crit: [50, 120, 220, 360, 550], xp: [40, 100, 200] };
+  var UPG_COSTS = { dmg: [160, 400, 800, 1400, 2200], hp: [200, 480, 1000, 1800, 3200], magnet: [120, 320, 720], rate: [120, 280, 560, 960, 1600], speed: [160, 360, 720], shield: [240, 600], crit: [200, 480, 880, 1440, 2200], xp: [160, 400, 800] };
   var UPG_ICONS = { dmg: '🔥', hp: '❤', magnet: '🧲', rate: '🔁', speed: '💨', shield: '🛡', crit: '🎯', xp: '⭐' };
 
   function buyWithGems(type, id) {
@@ -935,6 +935,7 @@ var text = t('top10');
       player.lvl++;
       player.xpNeed = Math.round(player.xpNeed * 1.28 + 10);
       showLevelUp();
+      if (player.lvl % 5 === 0) spawnWave();
     }
   }
 
@@ -1164,6 +1165,7 @@ var text = t('top10');
     };
     window.__test.forceWave = function () { spawnWave(); return window.__test(); };
     window.__test.giveDiam = function (n) { progress.diamonds += n; saveProgress(); return progress.diamonds; };
+    window.__test.giveXp = function (v) { gainXp(v); return window.__test(); };
     window.__shop = function () { showShop(); };
     window.__lb2 = function () { SDK.showLeaderboard(function () {}); };
   }
@@ -1296,7 +1298,7 @@ var text = t('top10');
       }
     }
     // hoard harder over time
-    if (enemies.length === 0 && waveNum >= 2 && spawnTimer < 0.4) { spawnWave(); }
+    if (waveNum < 1 && spawnTimer < 0.4) { spawnWave(); }
 
     // weapons
     fireAuto(p.weapons);
