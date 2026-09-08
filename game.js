@@ -53,7 +53,7 @@
       lbEmpty: 'Лидерборд пока пуст!', lbFail: 'Не удалось загрузить лидерборд :(',
       lbUnavailable: 'Лидерборд недоступен', lbInGames: 'Лидерборд будет доступен при запуске в Яндекс Играх',
       bossAlert: 'Осторожно — БОСС!', bossKilledLbl: 'БОСС ПОБЕЖДЁН! +', frozenLbl: 'ЗАМОРОЗКА!',
-      reviveHp: 'ВОЗВРАЩЕНИЕ! +60% HP', ammoUnlocked: 'Снаряд разблокирован!', skinUnlocked: 'Скин разблокирован!',
+      reviveHp: 'ВОЗВРАЩЕНИЕ! +60% HP', reviveLives: 'ВОЗВРАЩЕНИЕ! +1 жизнь', ammoUnlocked: 'Снаряд разблокирован!', skinUnlocked: 'Скин разблокирован!',
       adNotDone: 'Реклама не досмотрена', adNotDoneEnd: 'Реклама не досмотрена до конца',
       maxAmmo: 'Максимум снарядов!', ammoPlus: 'Количество снарядов +1', boosterGot: 'Усиление получено!',
       ammoPlusTest: 'Количество снарядов +1', boosterGotTest: 'Усиление получено',
@@ -68,13 +68,24 @@
       u_magnet: 'Магнит опыта', u_magnet_d: 'XP-кристаллы сами летят к тебе',
       u_freeze: 'Замедление', u_freeze_d: 'Враги замедляются на 5 сек (абилка)',
       u_mines: 'Минное поле', u_mines_d: 'Разбрасывает мины вокруг',
+      u_multishot: 'Доп. снаряд', u_multishot_d: 'Стреляет на один снаряд больше',
+      u_crit: 'Крит 20% (урон x2)', u_crit_d: 'Каждый 5-й выстрел наносит двойной урон',
+      u_pierce: 'Пронзание', u_pierce_d: 'Все выстрелы пробивают врагов насквозь',
+      u_life: '+1 жизнь', u_life_d: 'Одно воскрешение за бой',
+      u_leech: 'Вампиризм', u_leech_d: 'Убийство восстанавливает 3 HP',
+      pu_rate: 'Скорострельность +8%', pu_rate_d: 'Постоянно увеличивает темп стрельбы',
+      pu_speed: 'Скорость +6%', pu_speed_d: 'Постоянно увеличивает скорость героя',
+      pu_shield: '🛡 Щит', pu_shield_d: 'Бесплатно поглощает 1 удар за бой на уровень',
+      pu_crit: 'Крит +8% (x2)', pu_crit_d: 'Постоянно повышает шанс крита',
+      pu_xp: 'Бонус XP +10%', pu_xp_d: 'Постоянно увеличивает получаемый опыт',
+      buyDiam: 'Купить за 💎', orLbl: ' или ',
       w_auto: 'Автоматический бластер', w_auto_d: 'Автоматически стреляет по ближайшему врагу',
       w_orbit: 'Орбитальный диск', w_orbit_d: 'Вращающиеся лезвия вокруг героя',
       w_nova: 'Энергетическая волна', w_nova_d: 'Периодически испускает волну урона',
       w_mine: 'Разбрасыватель мин', w_mine_d: 'Ставит мины, взрывающиеся при касании',
       sk_s1: 'Классик', sk_s1_d: 'Стандартный истребитель', sk_s2: 'Неон-Фантом', sk_s2_d: 'Фиолетовый с неоном',
       sk_s3: 'Золотой Герой', sk_s3_d: 'Сверхзвуковой золотой', sk_s4: 'Изумруд', sk_s4_d: 'Смертоносный изумруд',
-      sk_s5: 'Ледяной Страж', sk_s5_d: 'Холодная сталь',
+      sk_s5: 'Ледяной Страж', sk_s5_d: 'Холодная сталь', sk_s6: 'Кобальт', sk_s6_d: 'Атомная мощь кобальта', sk_s7: 'Некрон', sk_s7_d: 'Повелитель самоцветов',
       am_a1: 'Бластер', am_a1_d: 'Уверенный средний урон', am_a2: 'Лазер', am_a2_d: 'Пронзает врагов насквозь',
       am_a3: 'Дробовик', am_a3_d: 'Веер из осколков', am_a4: 'Ракеты', am_a4_d: 'Взрываются при попадании',
       am_a5: 'Плазма', am_a5_d: 'Быстрая и мощная',
@@ -107,7 +118,7 @@
       lbEmpty: 'Leaderboard is empty!', lbFail: 'Failed to load leaderboard :(',
       lbUnavailable: 'Leaderboard unavailable', lbInGames: 'Leaderboard will be available on Yandex Games',
       bossAlert: 'Warning — BOSS!', bossKilledLbl: 'BOSS DOWN! +', frozenLbl: 'FROZEN!',
-      reviveHp: 'BACK! +60% HP', ammoUnlocked: 'Ammo unlocked!', skinUnlocked: 'Skin unlocked!',
+      reviveHp: 'BACK! +60% HP', reviveLives: 'BACK! +1 life', ammoUnlocked: 'Ammo unlocked!', skinUnlocked: 'Skin unlocked!',
       adNotDone: 'Ad not finished', adNotDoneEnd: 'Ad was not watched till the end',
       maxAmmo: 'Max ammo count!', ammoPlus: 'Ammo count +1', boosterGot: 'Boost received!',
       ammoPlusTest: 'Ammo count +1', boosterGotTest: 'Boost received',
@@ -122,13 +133,24 @@
       u_magnet: 'XP magnet', u_magnet_d: 'XP crystals fly to you',
       u_freeze: 'Slowdown', u_freeze_d: 'Enemies slow for 5 sec (ability)',
       u_mines: 'Mine field', u_mines_d: 'Throws mines around',
+      u_multishot: 'Extra shot', u_multishot_d: 'Fires one more projectile',
+      u_crit: 'Crit 20% (x2 dmg)', u_crit_d: 'Every 5th shot deals double damage',
+      u_pierce: 'Piercing', u_pierce_d: 'All shots pierce through enemies',
+      u_life: '+1 life', u_life_d: 'One revive per run',
+      u_leech: 'Life steal', u_leech_d: 'Killing an enemy restores 3 HP',
+      pu_rate: 'Fire rate +8%', pu_rate_d: 'Permanently increases fire rate',
+      pu_speed: 'Speed +6%', pu_speed_d: 'Permanently increases hero speed',
+      pu_shield: '🛡 Shield', pu_shield_d: 'Free absorbs 1 hit per run per level',
+      pu_crit: 'Crit +8% (x2)', pu_crit_d: 'Permanently raises crit chance',
+      pu_xp: 'XP bonus +10%', pu_xp_d: 'Permanently increases gained XP',
+      buyDiam: 'Buy for 💎', orLbl: ' or ',
       w_auto: 'Auto blaster', w_auto_d: 'Automatically shoots nearest enemy',
       w_orbit: 'Orbital disc', w_orbit_d: 'Rotating blades around hero',
       w_nova: 'Energy wave', w_nova_d: 'Periodically emits a damage wave',
       w_mine: 'Mine thrower', w_mine_d: 'Plants mines that explode on contact',
       sk_s1: 'Classic', sk_s1_d: 'Standard fighter', sk_s2: 'Neon Phantom', sk_s2_d: 'Purple with neon',
       sk_s3: 'Golden Hero', sk_s3_d: 'Supersonic gold', sk_s4: 'Emerald', sk_s4_d: 'Deadly emerald',
-      sk_s5: 'Ice Guardian', sk_s5_d: 'Cold steel',
+      sk_s5: 'Ice Guardian', sk_s5_d: 'Cold steel', sk_s6: 'Cobalt', sk_s6_d: 'Atomic cobalt power', sk_s7: 'Necron', sk_s7_d: 'Gem master',
       am_a1: 'Blaster', am_a1_d: 'Steady medium damage', am_a2: 'Laser', am_a2_d: 'Pierces through enemies',
       am_a3: 'Shotgun', am_a3_d: 'Fan of shards', am_a4: 'Rockets', am_a4_d: 'Explode on hit',
       am_a5: 'Plasma', am_a5_d: 'Fast and powerful',
@@ -277,10 +299,11 @@ var text = t('top10');
     var skin = SKINS[progress.selectedSkin] || SKINS.s1;
     var upg = progress.upg || {};
     return {
-      x: WORLD_W / 2, y: WORLD_H / 2, r: 18, speed: 190, hp: 100 + 15 * (upg.hp || 0), maxHp: 100 + 15 * (upg.hp || 0),
+      x: WORLD_W / 2, y: WORLD_H / 2, r: 18, speed: 190 * (1 + 0.06 * (upg.speed || 0)), hp: 100 + 15 * (upg.hp || 0), maxHp: 100 + 15 * (upg.hp || 0),
       xp: 0, xpNeed: 30, lvl: 1, iframes: 0,
       skinColor: skin.color, ang: 0, aimAng: 0,
       upDmg: 1 + 0.1 * (upg.dmg || 0), pickupR: 60 * (1 + 0.2 * (upg.magnet || 0)),
+      upRateMul: Math.pow(0.92, upg.rate || 0), shield: upg.shield || 0, critChance: 0.08 * (upg.crit || 0), xpMul: 1 + 0.1 * (upg.xp || 0),
       weapons: [{ id: 'auto', lvl: 1 }],
       orbitWeps: [], aoeWeps: [], specials: []
     };
@@ -305,7 +328,12 @@ var text = t('top10');
     { id: 'splash', name: 'Взрывной выстрел', desc: 'Выстрелы бластера взрываются', icon: '☄' },
     { id: 'magnet', name: 'Магнит опыта', desc: 'XP-кристаллы сами летят к тебе', icon: '🧲' },
     { id: 'freeze', name: 'Замедление', desc: 'Враги замедляются на 5 сек (абилка)', icon: '❄' },
-    { id: 'mines', name: 'Минное поле', desc: 'Разбрасывает мины вокруг', icon: '💣' }
+    { id: 'mines', name: 'Минное поле', desc: 'Разбрасывает мины вокруг', icon: '💣' },
+    { id: 'multishot', name: 'Доп. снаряд', desc: 'Стреляет на один снаряд больше', icon: '🎇' },
+    { id: 'crit', name: 'Крит 20% (урон x2)', desc: 'Каждый 5-й выстрел наносит двойной урон', icon: '🎯' },
+    { id: 'pierce', name: 'Пронзание', desc: 'Все выстрелы пробивают врагов насквозь', icon: '🏹' },
+    { id: 'life', name: '+1 жизнь', desc: 'Одно воскрешение за бой', icon: '❤' },
+    { id: 'leech', name: 'Вампиризм', desc: 'Убийство врага восстанавливает 3 HP', icon: '🩸' }
   ];
 
   function applyUpgrade(id) {
@@ -324,6 +352,11 @@ var text = t('top10');
     else if (id === 'magnet') { p.magnet = true; }
     else if (id === 'freeze') { p.freezeUnlocked = true; }
     else if (id === 'mines') { addMines(); }
+    else if (id === 'multishot') { p.extraShots = (p.extraShots || 0) + 1; }
+    else if (id === 'crit') { p.critChance = (p.critChance || 0) + 0.2; }
+    else if (id === 'pierce') { p.pierceAll = true; }
+    else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
+    else if (id === 'leech') { p.leech = true; }
   }
 
   function getWeapon(id) {
@@ -339,7 +372,7 @@ var text = t('top10');
 
   /* ============ SHOP / SKINS / MUSIC / BOOSTERS (за рекламу) ============ */
   var SAVE_KEY = 'gs_progress_v2';
-  var progress = { skinsUnlocked: ['s1'], musicUnlocked: ['m1'], ammoUnlocked: ['a1'], selectedSkin: 's1', selectedMusic: 'm1', selectedAmmo: 'a1', ammoCount: 0, boosters: {}, diamonds: 0, upg: { dmg: 0, hp: 0, magnet: 0 } };
+  var progress = { skinsUnlocked: ['s1'], musicUnlocked: ['m1'], ammoUnlocked: ['a1'], selectedSkin: 's1', selectedMusic: 'm1', selectedAmmo: 'a1', ammoCount: 0, boosters: {}, diamonds: 0, upg: { dmg: 0, hp: 0, magnet: 0, rate: 0, speed: 0, shield: 0, crit: 0, xp: 0 } };
   try {
     var saved = localStorage.getItem(SAVE_KEY);
     if (saved) { var sp = JSON.parse(saved); if (sp && typeof sp === 'object') { for (var k in sp) progress[k] = sp[k]; } }
@@ -353,10 +386,12 @@ var text = t('top10');
 
   var SKINS = {
     s1: { name: 'Классик', color: '#4af', price: 0, desc: 'Стандартный истребитель', icon: '▲' },
-    s2: { name: 'Неон-Фантом', color: '#f4f', price: 1, desc: 'Фиолетовый с неоном', icon: '◆' },
-    s3: { name: 'Золотой Герой', color: '#fd0', price: 2, desc: 'Сверхзвуковой золотой', icon: '⭐' },
-    s4: { name: 'Изумруд', color: '#0f6', price: 2, desc: 'Смертоносный изумруд', icon: '❖' },
-    s5: { name: 'Ледяной Страж', color: '#7ef', price: 3, desc: 'Холодная сталь', icon: '✚' }
+    s2: { name: 'Неон-Фантом', color: '#f4f', price: 1, gcost: 25, desc: 'Фиолетовый с неоном', icon: '◆' },
+    s3: { name: 'Золотой Герой', color: '#fd0', price: 2, gcost: 45, desc: 'Сверхзвуковой золотой', icon: '⭐' },
+    s4: { name: 'Изумруд', color: '#0f6', price: 2, gcost: 45, desc: 'Смертоносный изумруд', icon: '❖' },
+    s5: { name: 'Ледяной Страж', color: '#7ef', price: 3, gcost: 60, desc: 'Холодная сталь', icon: '✚' },
+    s6: { name: 'Кобальт', color: '#38f', price: 4, gcost: 90, desc: 'Атомная мощь кобальта', icon: '♠' },
+    s7: { name: 'Некрон', color: '#f26', price: 5, gcost: 120, desc: 'Повелитель самоцветов', icon: 'ꙮ' }
   };
   var MUSIC = {
     m1: { name: 'Космический драйв', price: 0 },
@@ -367,10 +402,10 @@ var text = t('top10');
 
   var AMMO_TYPES = {
     a1: { name: 'Бластер', desc: 'Уверенный средний урон', price: 0, dmgMult: 1, rate: 0.55, speed: 520, color: '#4af', count: 1, spread: 8, r: 5 },
-    a2: { name: 'Лазер', desc: 'Пронзает врагов насквозь', price: 1, dmgMult: 1.3, rate: 0.85, speed: 680, color: '#f0f', count: 1, spread: 6, r: 4, pierce: true },
-    a3: { name: 'Дробовик', desc: 'Веер из осколков', price: 2, dmgMult: 0.55, rate: 0.9, speed: 470, color: '#fa0', count: 5, spread: 30, r: 5 },
-    a4: { name: 'Ракеты', desc: 'Взрываются при попадании', price: 3, dmgMult: 2.6, rate: 1.35, speed: 380, color: '#f80', count: 1, spread: 10, r: 7, rocket: true },
-    a5: { name: 'Плазма', desc: 'Быстрая и мощная', price: 4, dmgMult: 1.9, rate: 0.45, speed: 720, color: '#0ff', count: 1, spread: 8, r: 6 }
+    a2: { name: 'Лазер', desc: 'Пронзает врагов насквозь', price: 1, gcost: 30, dmgMult: 1.3, rate: 0.85, speed: 680, color: '#f0f', count: 1, spread: 6, r: 4, pierce: true },
+    a3: { name: 'Дробовик', desc: 'Веер из осколков', price: 2, gcost: 50, dmgMult: 0.55, rate: 0.9, speed: 470, color: '#fa0', count: 5, spread: 30, r: 5 },
+    a4: { name: 'Ракеты', desc: 'Взрываются при попадании', price: 3, gcost: 70, dmgMult: 2.6, rate: 1.35, speed: 380, color: '#f80', count: 1, spread: 10, r: 7, rocket: true },
+    a5: { name: 'Плазма', desc: 'Быстрая и мощная', price: 4, gcost: 90, dmgMult: 1.9, rate: 0.45, speed: 720, color: '#0ff', count: 1, spread: 8, r: 6 }
   };
 
   var MAX_AMMO_COUNT = 3;
@@ -428,8 +463,20 @@ var text = t('top10');
     }
   }
 
-  var UPG_COSTS = { dmg: [40, 100, 200, 350, 550], hp: [50, 120, 250, 450, 800], magnet: [30, 80, 180] };
-  var UPG_ICONS = { dmg: '🔥', hp: '❤', magnet: '🧲' };
+  var UPG_COSTS = { dmg: [40, 100, 200, 350, 550], hp: [50, 120, 250, 450, 800], magnet: [30, 80, 180], rate: [30, 70, 140, 240, 400], speed: [40, 90, 180], shield: [60, 150], crit: [50, 120, 220, 360, 550], xp: [40, 100, 200] };
+  var UPG_ICONS = { dmg: '🔥', hp: '❤', magnet: '🧲', rate: '🔁', speed: '💨', shield: '🛡', crit: '🎯', xp: '⭐' };
+
+  function buyWithGems(type, id) {
+    var spec = type === 'skin' ? SKINS[id] : AMMO_TYPES[id];
+    var cost = spec && spec.gcost;
+    if (!cost) return;
+    if ((progress.diamonds || 0) < cost) { hud(t('diamNo'), '#f44'); return; }
+    progress.diamonds -= cost;
+    if (type === 'skin') unlockSkin(id); else unlockAmmo(id);
+    saveProgress();
+    hud(t('diamBuy'), '#0f0');
+    showShop();
+  }
 
   function buyUpgrade(id) {
     var upg = progress.upg || {};
@@ -480,13 +527,18 @@ var text = t('top10');
       var body = '<div class="g-preview" style="color:' + s.color + ';font-size:40px">' + s.icon + '</div>' +
         '<div class="g-name">' + t('sk_' + id) + '</div><div class="g-desc">' + t('sk_' + id + '_d') + '</div>';
       if (owned) { body += selected ? '<div class="g-selected">' + t('skSel') + '</div>' : '<div class="g-hint" style="color:#4af">' + t('choose') + '</div>'; }
-      else { body += '<div class="g-hint">' + t('watch') + s.price + ')</div>'; }
+      else {
+        body += '<div class="g-hint">' + t('watch') + s.price + ')</div>';
+        if (s.gcost) body += '<div class="g-hint" style="color:#4ff" data-buy="skin:' + id + '">' + t('buyDiam') + ' ' + s.gcost + '</div>';
+      }
       d.innerHTML = body;
       d.onclick = function () {
         if (!owned) { watchForReward({ type: 'skin', id: id }); }
         else if (!selected) { progress.selectedSkin = id; saveProgress(); showShop(); }
       };
       gs.appendChild(d);
+      var buySkinEl = d.querySelector('[data-buy]');
+      if (buySkinEl) buySkinEl.addEventListener('click', function (ev) { ev.stopPropagation(); buyWithGems('skin', id); });
     });
 
     // ammo types
@@ -500,13 +552,18 @@ var text = t('top10');
       var body = '<div class="g-preview" style="font-size:36px">🔫</div><div class="g-name">' + t('am_' + id) + '</div>' +
         '<div class="g-desc">' + t('am_' + id + '_d') + '</div>';
       if (owned) { body += selected ? '<div class="g-selected">' + t('ammoSel') + '</div>' : '<div class="g-hint" style="color:#4af">' + t('choose') + '</div>'; }
-      else { body += '<div class="g-hint">' + t('watch') + am.price + ')</div>'; }
+      else {
+        body += '<div class="g-hint">' + t('watch') + am.price + ')</div>';
+        if (am.gcost) body += '<div class="g-hint" style="color:#4ff" data-buy="ammo:' + id + '">' + t('buyDiam') + ' ' + am.gcost + '</div>';
+      }
       d.innerHTML = body;
       d.onclick = function () {
         if (!owned) { watchForReward({ type: 'ammo', id: id }); }
         else if (!selected) { progress.selectedAmmo = id; saveProgress(); showShop(); }
       };
       ga.appendChild(d);
+      var buyAmmoEl = d.querySelector('[data-buy]');
+      if (buyAmmoEl) buyAmmoEl.addEventListener('click', function (ev) { ev.stopPropagation(); buyWithGems('ammo', id); });
     });
 
     // ammo count
@@ -534,7 +591,7 @@ var text = t('top10');
     // gem upgrades
     var gd2 = document.getElementById('bb-diam');
     var upg = progress.upg || {};
-    ['dmg', 'hp', 'magnet'].forEach(function (uid) {
+    ['dmg', 'hp', 'magnet', 'rate', 'speed', 'shield', 'crit', 'xp'].forEach(function (uid) {
       var b = document.createElement('div');
       var lvl = upg[uid] || 0;
       var costs = UPG_COSTS[uid] || [];
@@ -726,18 +783,19 @@ var text = t('top10');
       var key = 'a' + i;
       autoTimers[key] = (autoTimers[key] || 0) - dt;
       if (autoTimers[key] > 0) continue;
-      autoTimers[key] = ammo.rate;
+      autoTimers[key] = ammo.rate * (player.upRateMul || 1);
       var t = findNearest(ammo.speed * 1.6);
       if (!t) continue;
       var tx = t.x, ty = t.y;
       var a = Math.atan2(ty - player.y, tx - player.x);
       var sp = ammo.speed;
-      var total = (ammo.count || 1) + (progress.ammoCount || 0);
+      var total = (ammo.count || 1) + (progress.ammoCount || 0) + (player.extraShots || 0);
       var spreadStep = total <= 1 ? 0 : (ammo.spread * Math.PI / 180) / Math.max(total - 1, 1);
+      var critType = (player.critChance || 0) > 0 && Math.random() < (player.critChance || 0);
       for (var s = 0; s < total; s++) {
         var off = total <= 1 ? 0 : (s - (total - 1) / 2) * spreadStep;
         var ang = a + off;
-        var p = { x: player.x, y: player.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, dmg: WEAPONS.auto.dmg * (ammo.dmgMult || 1) * (player.upDmg || 1), r: ammo.r || 5, c: ammo.color, life: 1.6, splash: hasSplash, pierce: !!ammo.pierce, pierceHits: ammo.pierce ? 6 : 0, rocket: !!ammo.rocket };
+        var p = { x: player.x, y: player.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, dmg: WEAPONS.auto.dmg * (ammo.dmgMult || 1) * (player.upDmg || 1) * (critType ? 2 : 1), r: ammo.r || 5, c: critType ? '#fff' : ammo.color, life: 1.6, splash: hasSplash, pierce: !!ammo.pierce || !!player.pierceAll, pierceHits: (ammo.pierce || player.pierceAll) ? 6 : 0, rocket: !!ammo.rocket };
         projectiles.push(p);
       }
     }
@@ -837,6 +895,7 @@ var text = t('top10');
     enemies.splice(idx, 1);
     kills++;
     score += e.score || 10;
+    if (player && player.leech && player.hp < player.maxHp) { player.hp = Math.min(player.maxHp, player.hp + 3); }
     gems.push({ x: e.x, y: e.y, vx: (Math.random() - 0.5) * 60, vy: (Math.random() - 0.5) * 60, val: e.xp, r: e.boss ? 12 : 5, c: e.boss ? '#ff0' : '#0f6' });
     if (e.boss) {
       var dn = 4 + Math.floor(Math.random() * 4);
@@ -870,7 +929,7 @@ var text = t('top10');
 
   /* ============ XP ============ */
   function gainXp(v) {
-    player.xp += v;
+    player.xp += v * (player.xpMul || 1);
     if (player.xp >= player.xpNeed) {
       player.xp -= player.xpNeed;
       player.lvl++;
@@ -1148,6 +1207,33 @@ var text = t('top10');
     animFrame = requestAnimationFrame(loop);
   }
 
+  function hitPlayer(dmgv) {
+    var p = player;
+    if (p.shield > 0) {
+      p.shield--;
+      shake = Math.min(shake + 4, 12);
+      boom(p.x, p.y, '#4ff', 6);
+      hud('🛡', '#4ff');
+      return false;
+    }
+    p.hp -= dmgv;
+    p.iframes = 0.8;
+    shake = Math.min(shake + 6, 15);
+    fx.push({ type: 'boom', x: p.x, y: p.y, r: 40, life: 0.3, maxLife: 0.3, c: '#f55' });
+    boom(p.x, p.y, '#f44', 10);
+    if (p.hp <= 0) {
+      if ((p.lives || 0) > 0) {
+        p.lives--;
+        p.hp = p.maxHp;
+        p.iframes = 1.5;
+        hud(t('reviveLives'), '#0f0');
+        return false;
+      }
+      endGame();
+      return true;
+    }
+    return false;
+  }
   function update() {
     gameTime += dt;
     var p = player;
@@ -1289,13 +1375,7 @@ var text = t('top10');
       }
       if (dist(en, p) < en.r + p.r) {
         if (p.iframes <= 0) {
-          var dmg = en.dmg;
-          p.hp -= dmg;
-          p.iframes = 0.8;
-          shake = Math.min(shake + 6, 15);
-          fx.push({ type: 'boom', x: p.x, y: p.y, r: 40, life: 0.3, maxLife: 0.3, c: '#f55' });
-          boom(p.x, p.y, '#f44', 10);
-          if (p.hp <= 0) { endGame(); return; }
+          if (hitPlayer(en.dmg)) return;
         }
       }
     }
@@ -1305,11 +1385,9 @@ var text = t('top10');
       var ep = projectiles[ei];
       if (!ep.enemy) continue;
       if (dist(ep, p) < ep.r + p.r && p.iframes <= 0) {
-        p.hp -= ep.dmg;
-        p.iframes = 0.6;
         soundPop(false);
         projectiles.splice(ei, 1);
-        if (p.hp <= 0) { endGame(); return; }
+        if (hitPlayer(ep.dmg)) return;
       }
     }
 
