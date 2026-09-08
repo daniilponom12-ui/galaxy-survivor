@@ -1430,12 +1430,20 @@ var text = t('top10');
       var a2 = Math.atan2(p.y - en.y, p.x - en.x);
       en.x += Math.cos(a2) * spd * dt;
       en.y += Math.sin(a2) * spd * dt;
-      if (en.shoot) {
+      if (en.shoot || en.boss) {
         en.shootTimer -= dt;
         if (en.shootTimer <= 0) {
-          en.shootTimer = 2.2;
+          en.shootTimer = en.boss ? 1.8 : 2.2;
           var aa = Math.atan2(p.y - en.y, p.x - en.x);
-          projectiles.push({ x: en.x, y: en.y, vx: Math.cos(aa) * 300, vy: Math.sin(aa) * 300, dmg: en.dmg, r: 6, c: '#f4f', life: 2, enemy: true });
+          if (en.boss) {
+            // лазерный луч босса: быстрый, пробивает, бьёт больно
+            for (var la = 0; la < 3; la++) {
+              var lAng = aa + (la - 1) * 0.14;
+              projectiles.push({ x: en.x + Math.cos(lAng) * en.r, y: en.y + Math.sin(lAng) * en.r, vx: Math.cos(lAng) * 620, vy: Math.sin(lAng) * 620, dmg: Math.round(en.dmg * 0.8), r: 5, c: '#f0f', life: 2.6, enemy: true, laser: true, pierce: true });
+            }
+          } else {
+            projectiles.push({ x: en.x, y: en.y, vx: Math.cos(aa) * 300, vy: Math.sin(aa) * 300, dmg: en.dmg, r: 6, c: '#f4f', life: 2, enemy: true });
+          }
         }
       }
       if (dist(en, p) < en.r + p.r) {
@@ -1451,7 +1459,7 @@ var text = t('top10');
       if (!ep.enemy) continue;
       if (dist(ep, p) < ep.r + p.r && p.iframes <= 0) {
         soundPop(false);
-        projectiles.splice(ei, 1);
+        if (!ep.pierce) projectiles.splice(ei, 1);
         if (hitPlayer(ep.dmg)) return;
       }
     }
@@ -1595,19 +1603,19 @@ var text = t('top10');
       if (pt2.laser) {
         var lv = Math.sqrt(pt2.vx * pt2.vx + pt2.vy * pt2.vy) || 1;
         var lx = pt2.vx / lv, ly = pt2.vy / lv;
-        ctx.strokeStyle = pt2.c;
+        ctx.strokeStyle = pt2.c || '#af0';
         ctx.globalAlpha = 0.35;
-        ctx.lineWidth = pt2.r * 3;
+        ctx.lineWidth = pt2.r * 3.4;
         ctx.beginPath();
         ctx.moveTo(pt2.x - lx * 14, pt2.y - ly * 14);
-        ctx.lineTo(pt2.x + lx * 16, pt2.y + ly * 16);
+        ctx.lineTo(pt2.x + lx * 18, pt2.y + ly * 18);
         ctx.stroke();
         ctx.globalAlpha = 1;
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = pt2.r;
         ctx.beginPath();
         ctx.moveTo(pt2.x - lx * 8, pt2.y - ly * 8);
-        ctx.lineTo(pt2.x + lx * 18, pt2.y + ly * 18);
+        ctx.lineTo(pt2.x + lx * 20, pt2.y + ly * 20);
         ctx.stroke();
       } else {
         ctx.fillStyle = pt2.c;
