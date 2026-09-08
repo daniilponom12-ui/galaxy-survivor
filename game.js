@@ -662,10 +662,9 @@ var text = t('top10');
 
   /* ============ WAVES ============ */
   function pickBossPool(w) {
-    if (w >= 30 && w % 10 === 0) return ['boss_colossus', 'boss_dread', 'boss_titan'];
-    if (w >= 20 && w % 10 === 0) return ['boss_dread', 'boss_dread'];
-    if (w >= 15 && w % 5 === 0) return ['boss_dread', 'boss_titan', 'boss_gunner'];
-    if (w >= 10 && w % 5 === 0) return ['boss_titan', 'boss_gunner', 'boss'];
+    if (w >= 15) return ['boss_colossus', 'boss_dread', 'boss_titan'];
+    if (w >= 8) return ['boss_dread', 'boss_titan', 'boss_gunner'];
+    if (w >= 4) return ['boss_titan', 'boss_gunner'];
     return ['boss', 'boss_gunner'];
   }
   function spawnWave() {
@@ -675,11 +674,12 @@ var text = t('top10');
     var liveBoss = 0;
     for (var lb = 0; lb < enemies.length; lb++) { if (enemies[lb].boss) liveBoss++; }
     var bossCount = 1;
-    if (waveNum >= 8) bossCount = 2;
-    if (waveNum >= 15) bossCount = 3;
-    if (waveNum >= 24) bossCount = 4;
-    if (bossCount > 4) bossCount = 4;
-    var maxLive = 3 + Math.floor(waveNum / 8);
+    if (waveNum >= 6) bossCount = 2;
+    if (waveNum >= 10) bossCount = 3;
+    if (waveNum >= 16) bossCount = 4;
+    if (waveNum >= 22) bossCount = 5;
+    if (bossCount > 5) bossCount = 5;
+    var maxLive = 4 + Math.floor(waveNum / 6);
     if (bossCount > maxLive - liveBoss) bossCount = Math.max(0, maxLive - liveBoss);
     for (var bi = 0; bi < bossCount; bi++) {
       var pool = pickBossPool(waveNum);
