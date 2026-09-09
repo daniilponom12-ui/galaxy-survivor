@@ -312,6 +312,7 @@ var text = t('top10');
   var planets = [];
   (function () {
     var planCols = ['#5b8bd4', '#c47aa8', '#7a5fc4', '#d98a4a', '#4fbf9a', '#e0666e'];
+    var planTypes = ['gas', 'rocky', 'gas', 'rocky', 'ice', 'gas'];
     var spots = [
       { x: WORLD_W * 0.18, y: WORLD_H * 0.14 },
       { x: WORLD_W * 0.84, y: WORLD_H * 0.2 },
@@ -321,7 +322,7 @@ var text = t('top10');
       { x: WORLD_W * 0.5, y: WORLD_H * 0.94 }
     ];
     for (var p = 0; p < spots.length; p++) {
-      planets.push({ x: spots[p].x, y: spots[p].y, r: 130 + Math.random() * 170, c: planCols[p], ring: p % 3 === 0, bands: 0.25 + Math.random() * 0.32, moon: Math.random() < 0.6, moonR: 14 + Math.random() * 24, moonAng: Math.random() * Math.PI * 2, spin: (Math.random() - 0.5) * 1.5 });
+      planets.push({ x: spots[p].x, y: spots[p].y, r: 150 + Math.random() * 180, c: planCols[p], type: planTypes[p], ring: p === 1 || p === 4, bands: 0.25 + Math.random() * 0.32, moon: p === 2 || p === 3 || p === 5, moonR: 14 + Math.random() * 26, moonAng: Math.random() * Math.PI * 2, spin: 0.4 + Math.random() * 0.8, seed: Math.floor(Math.random() * 1000) });
     }
   })();
 
@@ -1694,63 +1695,185 @@ var text = t('top10');
       ctx.restore();
     }
 
-    // планеты — объекты мира (можно облетать)
+    // планеты — объёмные объекты мира (можно облетать)
     for (var pb = 0; pb < planets.length; pb++) {
       var pl = planets[pb];
       var pdx = Math.abs(pl.x - camX), pdy = Math.abs(pl.y - camY);
-      if (pdx > W / 2 + pl.r + 260 || pdy > H / 2 + pl.r + 260) continue;
+      if (pdx > W / 2 + pl.r + 300 || pdy > H / 2 + pl.r + 300) continue;
       var px = pl.x, py = pl.y;
       ctx.save();
-      var pgrad = ctx.createRadialGradient(px - pl.r * 0.35, py - pl.r * 0.35, pl.r * 0.15, px, py, pl.r);
+
+      // сияющая атмосфера (гало вокруг планеты)
+      var atmo = ctx.createRadialGradient(px, py, pl.r * 0.7, px, py, pl.r * 1.6);
+      atmo.addColorStop(0, pl.c);
+      atmo.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = atmo;
+      ctx.beginPath();
+      ctx.arc(px, py, pl.r * 1.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // тело планеты: объёмный шар (свет слева сверху — от условной звезды)
+      var rot = pl.spin * gameTime * 2 + pl.seed;
+      var pgrad = ctx.createRadialGradient(px - pl.r * 0.4, py - pl.r * 0.4, pl.r * 0.1, px, py, pl.r);
       pgrad.addColorStop(0, '#ffffff');
-      pgrad.addColorStop(0.4, pl.c);
-      pgrad.addColorStop(1, '#1a0b2e');
+      pgrad.addColorStop(0.25, pl.c);
+      pgrad.addColorStop(0.8, '#223');
+      pgrad.addColorStop(1, '#050510');
       ctx.fillStyle = pgrad;
       ctx.beginPath();
       ctx.arc(px, py, pl.r, 0, Math.PI * 2);
       ctx.fill();
-      // полосы на планете
+
+      // поверхность внутри шара
       ctx.save();
       ctx.beginPath();
       ctx.arc(px, py, pl.r, 0, Math.PI * 2);
       ctx.clip();
-      ctx.globalAlpha = 0.35;
-      ctx.fillStyle = '#000';
-      var bandY = py - pl.r;
-      while (bandY < py + pl.r) {
-        ctx.fillRect(px - pl.r, bandY, pl.r * 2, pl.r * pl.bands);
-        bandY += pl.r * pl.bands + pl.r * 0.25;
+      if (pl.type === 'gas') {
+        // вращающиеся полосы облаков газового гиганта
+        var stripeSpd = rot;
+        ctx.globalAlpha = 0.5;
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+        ctx.lineWidth = pl.r * 0.16;
+        var bandRow = 0;
+        while (bandRow < 8) {
+          var shrink = Math.sin(bandRow * Math.PI / 8 + stripeSpd * 0.2) * pl.r * 0.12;
+          ctx.beginPath();
+          ctx.ellipse(px, py - pl.r + bandRow * pl.r * 0.28 + shrink, pl.r * 1.1, pl.r * 0.16, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          bandRow++;
+        }
+        // большое пятно-ураган
+        ctx.globalAlpha = 0.4;
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.ellipse(px + Math.cos(rot * 0.5) * pl.r * 0.3, py + Math.sin(rot * 0.5) * pl.r * 0.4 + pl.r * 0.2, pl.r * 0.28, pl.r * 0.18, rot * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 0.25;
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.ellipse(px + Math.cos(rot * 0.5) * pl.r * 0.45, py + Math.sin(rot * 0.5) * pl.r * 0.5 + pl.r * 0.45, pl.r * 0.2, pl.r * 0.12, rot * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        // кратеры и материки каменистой/ледяной планеты
+        var seedV = pl.seed;
+        ctx.globalAlpha = 0.4;
+        for (var cr = 0; cr < 12; cr++) {
+          seedV = (seedV * 9301 + 49297) % 233280;
+          var crX = (seedV / 233280 - 0.5) * 2 + Math.sin(rot * 0.5 + cr) * 0.15;
+          seedV = (seedV * 9301 + 49297) % 233280;
+          var crY = ((seedV / 233280 - 0.5) * 2) * 0.8;
+          seedV = (seedV * 9301 + 49297) % 233280;
+          var crR = (seedV / 233280) * pl.r * 0.18 + pl.r * 0.04;
+          // только если кратер на видимой части
+          var cDist = Math.sqrt(crX * crX + crY * crY);
+          var cx = px + crX * pl.r * 1.2, cy = py + crY * pl.r * 1.1;
+          if (cDist > 0.8) continue;
+          ctx.fillStyle = (pl.type === 'ice') ? 'rgba(200,230,255,0.3)' : 'rgba(0,0,0,0.3)';
+          ctx.beginPath();
+          ctx.arc(cx, cy, crR, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = 'rgba(255,255,255,0.25)';
+          ctx.beginPath();
+          ctx.arc(cx - crR * 0.35, cy - crR * 0.35, crR * 0.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // тёмные материки
+        ctx.globalAlpha = 0.35;
+        ctx.fillStyle = '#223';
+        for (var cont = 0; cont < 4; cont++) {
+          seedV = (seedV * 9301 + 49297) % 233280;
+          var cx2 = (seedV / 233280) * 2 - 1 + Math.sin(rot * 0.4 + cont) * 0.2;
+          seedV = (seedV * 9301 + 49297) % 233280;
+          var cy2 = (seedV / 233280) * 2 - 1;
+          if (Math.sqrt(cx2 * cx2 + cy2 * cy2) > 1.3) continue;
+          ctx.beginPath();
+          ctx.arc(px + cx2 * pl.r, py + cy2 * pl.r, pl.r * (0.2 + Math.random() * 0.3), 0, Math.PI * 2);
+          ctx.ellipse(px + cx2 * pl.r, py + cy2 * pl.r + pl.r * 0.2, pl.r * 0.3, pl.r * 0.18, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
       ctx.restore();
-      // кольцо
+
+      // ночная сторона (терминатор): затеняем правую нижнюю часть
+      var term = ctx.createRadialGradient(px + pl.r * 0.9, py + pl.r * 0.7, pl.r * 0.2, px, py, pl.r * 1.5);
+      term.addColorStop(0, 'rgba(0,0,0,0)');
+      term.addColorStop(0.75, 'rgba(0,0,10,0.55)');
+      term.addColorStop(1, 'rgba(0,0,5,0.9)');
+      ctx.fillStyle = term;
+      ctx.beginPath();
+      ctx.arc(px, py, pl.r, 0, Math.PI * 2);
+      ctx.fill();
+
+      // кольца (3D: рисуем перед планетой нижнюю половину)
       if (pl.ring) {
-        ctx.strokeStyle = 'rgba(220,220,255,0.7)';
-        ctx.lineWidth = pl.r * 0.22;
+        ctx.globalAlpha = 0.85;
+        var ringGrad = ctx.createLinearGradient(px - pl.r, py, px + pl.r, py);
+        ringGrad.addColorStop(0, 'rgba(200,210,235,0.4)');
+        ringGrad.addColorStop(0.5, 'rgba(235,240,255,0.95)');
+        ringGrad.addColorStop(1, 'rgba(200,210,235,0.4)');
+        ctx.strokeStyle = ringGrad;
+        // задняя часть колец
+        ctx.lineWidth = pl.r * 0.2;
         ctx.beginPath();
-        ctx.ellipse(px, py, pl.r * 1.7, pl.r * 0.55, -0.35, 0, Math.PI * 2);
+        ctx.ellipse(px, py, pl.r * 1.8, pl.r * 0.6, -0.35, Math.PI, Math.PI * 2);
+        ctx.stroke();
+        // передняя нижняя часть колец
+        ctx.lineWidth = pl.r * 0.2;
+        ctx.beginPath();
+        ctx.ellipse(px, py, pl.r * 1.8, pl.r * 0.6, -0.35, 0, Math.PI);
+        ctx.stroke();
+        // тонкая линия-прорезь в кольцах
+        ctx.globalAlpha = 0.5;
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = pl.r * 0.05;
+        ctx.beginPath();
+        ctx.ellipse(px, py, pl.r * 1.8, pl.r * 0.6, -0.35, 0.5, Math.PI - 0.5);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.ellipse(px, py, pl.r * 1.8, pl.r * 0.6, -0.35, Math.PI * 1.5, Math.PI * 2 - 0.5);
         ctx.stroke();
       }
+
       // луна на орбите
       if (pl.moon) {
-        var ma = pl.moonAng + gameTime * pl.spin;
-        var mx = px + Math.cos(ma) * (pl.r * 1.3 + pl.moonR);
-        var my = py + Math.sin(ma) * (pl.r * 1.1 + pl.moonR);
-        var mgr = ctx.createRadialGradient(mx - pl.moonR * 0.3, my - pl.moonR * 0.3, pl.moonR * 0.1, mx, my, pl.moonR);
+        var ma = pl.moonAng + gameTime * 0.6;
+        var mx = px + Math.cos(ma) * (pl.r * 1.4 + pl.moonR);
+        var my = py + Math.sin(ma) * (pl.r * 1.2 + pl.moonR);
+        var mgr = ctx.createRadialGradient(mx - pl.moonR * 0.35, my - pl.moonR * 0.35, pl.moonR * 0.1, mx, my, pl.moonR);
         mgr.addColorStop(0, '#fff');
         mgr.addColorStop(0.5, '#c8d4e8');
-        mgr.addColorStop(1, '#5a6a80');
+        mgr.addColorStop(0.85, '#4a5870');
+        mgr.addColorStop(1, '#1a1a2a');
         ctx.fillStyle = mgr;
         ctx.beginPath();
         ctx.arc(mx, my, pl.moonR, 0, Math.PI * 2);
         ctx.fill();
+        // кратеры луны
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(mx - pl.moonR * 0.3, my - pl.moonR * 0.1, pl.moonR * 0.25, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.globalAlpha = 0.4;
+        ctx.beginPath();
+        ctx.arc(mx - pl.moonR * 0.35, my - pl.moonR * 0.15, pl.moonR * 0.12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
       }
-      // блеск атмосферы
-      ctx.globalAlpha = 0.18;
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 3;
+
+      // светлый блик атмосферы по светлой стороне
+      var hilite = ctx.createRadialGradient(px - pl.r * 0.4, py - pl.r * 0.4, 0, px - pl.r * 0.4, py - pl.r * 0.4, pl.r * 0.9);
+      hilite.addColorStop(0, 'rgba(255,255,255,0.25)');
+      hilite.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = hilite;
       ctx.beginPath();
-      ctx.arc(px, py, pl.r, 0, Math.PI * 2);
-      ctx.stroke();
+      ctx.arc(px - pl.r * 0.4, py - pl.r * 0.4, pl.r * 0.9, 0, Math.PI * 2);
+      ctx.fill();
+
       ctx.restore();
     }
 
