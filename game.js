@@ -296,9 +296,8 @@ var text = t('top10');
     asteroids.push({ x: Math.random() * WORLD_W, y: Math.random() * WORLD_H, r: 12 + Math.random() * 40, h: Math.random() * Math.PI * 2 });
   }
 
-  // космический фон: звёзды (3 слоя параллакса), планеты и луны
+  // космический фон: звёзды (3 слоя параллакса) — только звёзды и туманности
   var starLayers = [];
-  var planetsBg = [];
   (function () {
     for (var l = 0; l < 3; l++) {
       starLayers[l] = [];
@@ -307,9 +306,22 @@ var text = t('top10');
         starLayers[l].push({ x: Math.random() * WORLD_W, y: Math.random() * WORLD_H, r: l === 0 ? (0.4 + Math.random() * 0.6) : (l === 1 ? (1.1 + Math.random() * 0.9) : (1.8 + Math.random() * 1.4)), tw: Math.random() * Math.PI * 2 });
       }
     }
-    var planCols = ['#5b8bd4', '#c47aa8', '#7a5fc4', '#d98a4a', '#4fbf9a', '#e0666e', '#8fa8ff'];
-    for (var p = 0; p < 7; p++) {
-      planetsBg.push({ x: Math.random() * WORLD_W, y: Math.random() * WORLD_H, r: 60 + Math.random() * 130, c: planCols[p], ring: p % 3 === 0, bands: 0.25 + Math.random() * 0.32, moon: Math.random() < 0.6, moonR: 8 + Math.random() * 16, moonAng: Math.random() * Math.PI * 2, spin: (Math.random() - 0.5) * 1.5 });
+  })();
+
+  // планеты — объекты мира (их можно облетать)
+  var planets = [];
+  (function () {
+    var planCols = ['#5b8bd4', '#c47aa8', '#7a5fc4', '#d98a4a', '#4fbf9a', '#e0666e'];
+    var spots = [
+      { x: WORLD_W * 0.18, y: WORLD_H * 0.14 },
+      { x: WORLD_W * 0.84, y: WORLD_H * 0.2 },
+      { x: WORLD_W * 0.78, y: WORLD_H * 0.82 },
+      { x: WORLD_W * 0.16, y: WORLD_H * 0.8 },
+      { x: WORLD_W * 0.5, y: WORLD_H * 0.05 },
+      { x: WORLD_W * 0.5, y: WORLD_H * 0.94 }
+    ];
+    for (var p = 0; p < spots.length; p++) {
+      planets.push({ x: spots[p].x, y: spots[p].y, r: 130 + Math.random() * 170, c: planCols[p], ring: p % 3 === 0, bands: 0.25 + Math.random() * 0.32, moon: Math.random() < 0.6, moonR: 14 + Math.random() * 24, moonAng: Math.random() * Math.PI * 2, spin: (Math.random() - 0.5) * 1.5 });
     }
   })();
 
@@ -1349,6 +1361,21 @@ var text = t('top10');
     p.y += dy * p.speed * (1 + 0.25 * (p.speedBoost || 0)) * dt;
     wrapRelax();
 
+    // столкновение с планетами: нельзя пролететь сквозь
+    if (planets.length > 0) {
+      for (var pc = 0; pc < planets.length; pc++) {
+        var pln = planets[pc];
+        var pd2 = dist(p, pln);
+        var minD = pln.r + p.r - 6;
+        if (pd2 < minD) {
+          var pa2 = Math.atan2(p.y - pln.y, p.x - pln.x);
+          p.x = pln.x + Math.cos(pa2) * minD;
+          p.y = pln.y + Math.sin(pa2) * minD;
+          p.vx = p.vy = 0;
+        }
+      }
+    }
+
     // поворот модели: в сторону движения, иначе — на ближайшего врага
     if (len > 0.2) {
       p.aimAng = Math.atan2(dy, dx);
@@ -1605,65 +1632,6 @@ var text = t('top10');
     }
     ctx.restore();
 
-    // планеты: параллакс-слои с кольцами и полосами
-    for (var pb = 0; pb < planetsBg.length; pb++) {
-      var pl = planetsBg[pb];
-      var px = (((pl.x - camX * 0.04) % (WORLD_W + W)) + WORLD_W + W) % (WORLD_W + W);
-      var py = (((pl.y - camY * 0.04) % (WORLD_H + H)) + WORLD_H + H) % (WORLD_H + H);
-      ctx.save();
-      var pgrad = ctx.createRadialGradient(px - pl.r * 0.35, py - pl.r * 0.35, pl.r * 0.15, px, py, pl.r);
-      pgrad.addColorStop(0, '#ffffff');
-      pgrad.addColorStop(0.4, pl.c);
-      pgrad.addColorStop(1, '#1a0b2e');
-      ctx.fillStyle = pgrad;
-      ctx.beginPath();
-      ctx.arc(px, py, pl.r, 0, Math.PI * 2);
-      ctx.fill();
-      // полосы на планете
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(px, py, pl.r, 0, Math.PI * 2);
-      ctx.clip();
-      ctx.globalAlpha = 0.35;
-      ctx.fillStyle = '#000';
-      var bandY = py - pl.r;
-      while (bandY < py + pl.r) {
-        ctx.fillRect(px - pl.r, bandY, pl.r * 2, pl.r * pl.bands);
-        bandY += pl.r * pl.bands + pl.r * 0.25;
-      }
-      ctx.restore();
-      // кольцо
-      if (pl.ring) {
-        ctx.strokeStyle = 'rgba(220,220,255,0.7)';
-        ctx.lineWidth = pl.r * 0.22;
-        ctx.beginPath();
-        ctx.ellipse(px, py, pl.r * 1.7, pl.r * 0.55, -0.35, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-      // луна на орбите
-      if (pl.moon) {
-        var ma = pl.moonAng + gameTime * pl.spin;
-        var mx = px + Math.cos(ma) * (pl.r * 1.3 + pl.moonR);
-        var my = py + Math.sin(ma) * (pl.r * 1.1 + pl.moonR);
-        var mgr = ctx.createRadialGradient(mx - pl.moonR * 0.3, my - pl.moonR * 0.3, pl.moonR * 0.1, mx, my, pl.moonR);
-        mgr.addColorStop(0, '#fff');
-        mgr.addColorStop(0.5, '#c8d4e8');
-        mgr.addColorStop(1, '#5a6a80');
-        ctx.fillStyle = mgr;
-        ctx.beginPath();
-        ctx.arc(mx, my, pl.moonR, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      // блеск атмосферы
-      ctx.globalAlpha = 0.18;
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(px, py, pl.r, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-    }
-
     if (state === 'menu' || (state !== 'playing' && state !== 'paused' && state !== 'gameover' && state !== 'reviving')) {
       ctx.save();
       ctx.translate(W/2, H/2);
@@ -1723,6 +1691,66 @@ var text = t('top10');
       ctx.beginPath();
       ctx.arc(0, 0, as.r, 0, Math.PI * 2);
       ctx.fill();
+      ctx.restore();
+    }
+
+    // планеты — объекты мира (можно облетать)
+    for (var pb = 0; pb < planets.length; pb++) {
+      var pl = planets[pb];
+      var pdx = Math.abs(pl.x - camX), pdy = Math.abs(pl.y - camY);
+      if (pdx > W / 2 + pl.r + 260 || pdy > H / 2 + pl.r + 260) continue;
+      var px = pl.x, py = pl.y;
+      ctx.save();
+      var pgrad = ctx.createRadialGradient(px - pl.r * 0.35, py - pl.r * 0.35, pl.r * 0.15, px, py, pl.r);
+      pgrad.addColorStop(0, '#ffffff');
+      pgrad.addColorStop(0.4, pl.c);
+      pgrad.addColorStop(1, '#1a0b2e');
+      ctx.fillStyle = pgrad;
+      ctx.beginPath();
+      ctx.arc(px, py, pl.r, 0, Math.PI * 2);
+      ctx.fill();
+      // полосы на планете
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(px, py, pl.r, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = '#000';
+      var bandY = py - pl.r;
+      while (bandY < py + pl.r) {
+        ctx.fillRect(px - pl.r, bandY, pl.r * 2, pl.r * pl.bands);
+        bandY += pl.r * pl.bands + pl.r * 0.25;
+      }
+      ctx.restore();
+      // кольцо
+      if (pl.ring) {
+        ctx.strokeStyle = 'rgba(220,220,255,0.7)';
+        ctx.lineWidth = pl.r * 0.22;
+        ctx.beginPath();
+        ctx.ellipse(px, py, pl.r * 1.7, pl.r * 0.55, -0.35, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      // луна на орбите
+      if (pl.moon) {
+        var ma = pl.moonAng + gameTime * pl.spin;
+        var mx = px + Math.cos(ma) * (pl.r * 1.3 + pl.moonR);
+        var my = py + Math.sin(ma) * (pl.r * 1.1 + pl.moonR);
+        var mgr = ctx.createRadialGradient(mx - pl.moonR * 0.3, my - pl.moonR * 0.3, pl.moonR * 0.1, mx, my, pl.moonR);
+        mgr.addColorStop(0, '#fff');
+        mgr.addColorStop(0.5, '#c8d4e8');
+        mgr.addColorStop(1, '#5a6a80');
+        ctx.fillStyle = mgr;
+        ctx.beginPath();
+        ctx.arc(mx, my, pl.moonR, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // блеск атмосферы
+      ctx.globalAlpha = 0.18;
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(px, py, pl.r, 0, Math.PI * 2);
+      ctx.stroke();
       ctx.restore();
     }
 
