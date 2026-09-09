@@ -296,6 +296,23 @@ var text = t('top10');
     asteroids.push({ x: Math.random() * WORLD_W, y: Math.random() * WORLD_H, r: 12 + Math.random() * 40, h: Math.random() * Math.PI * 2 });
   }
 
+  // космический фон: звёзды (2 слоя параллакса) и планеты
+  var starLayers = [];
+  var planetsBg = [];
+  (function () {
+    for (var l = 0; l < 2; l++) {
+      starLayers[l] = [];
+      var count = l === 0 ? 150 : 70;
+      for (var s = 0; s < count; s++) {
+        starLayers[l].push({ x: Math.random() * WORLD_W, y: Math.random() * WORLD_H, r: l === 0 ? (0.6 + Math.random() * 0.8) : (1.4 + Math.random() * 1.4), tw: Math.random() * Math.PI * 2 });
+      }
+    }
+    var planCols = ['#5b8bd4', '#c47aa8', '#7a5fc4', '#d98a4a', '#4fbf9a'];
+    for (var p = 0; p < 5; p++) {
+      planetsBg.push({ x: Math.random() * WORLD_W, y: Math.random() * WORLD_H, r: 80 + Math.random() * 150, c: planCols[p], ring: Math.random() < 0.5, bands: 0.25 + Math.random() * 0.3 });
+    }
+  })();
+
   function makePlayer() {
     var skin = SKINS[progress.selectedSkin] || SKINS.s1;
     var upg = progress.upg || {};
@@ -662,9 +679,9 @@ var text = t('top10');
 
   /* ============ WAVES ============ */
   function pickBossPool(w) {
-    if (w >= 15) return ['boss_colossus', 'boss_dread', 'boss_titan'];
-    if (w >= 8) return ['boss_dread', 'boss_titan', 'boss_gunner'];
-    if (w >= 4) return ['boss_titan', 'boss_gunner'];
+    if (w >= 9) return ['boss_colossus', 'boss_colossus', 'boss_dread', 'boss_titan'];
+    if (w >= 5) return ['boss_colossus', 'boss_dread', 'boss_titan'];
+    if (w >= 3) return ['boss_colossus', 'boss_titan', 'boss_gunner'];
     return ['boss', 'boss_gunner'];
   }
   function spawnWave() {
@@ -984,7 +1001,7 @@ var text = t('top10');
       player.lvl++;
       player.xpNeed = Math.round(player.xpNeed * 1.28 + 10);
       showLevelUp();
-      if (player.lvl % 5 === 0) spawnWave();
+      spawnWave();
     }
   }
 
@@ -1522,8 +1539,114 @@ var text = t('top10');
 
   /* ============ RENDER ============ */
   function render() {
-    ctx.fillStyle = '#05070f';
+    // глубокий космос: градиент + туманности + звёзды (параллакс)
+    var bgGrad = ctx.createLinearGradient(0, 0, W, H);
+    bgGrad.addColorStop(0, '#0b1026');
+    bgGrad.addColorStop(0.45, '#0f0a2a');
+    bgGrad.addColorStop(1, '#1a0b2e');
+    ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, W, H);
+
+    // туманности (мягкие цветные пятна)
+    ctx.save();
+    ctx.globalAlpha = 0.16;
+    for (var nb = 0; nb < 4; nb++) {
+      var nbx = (Math.sin(gameTime * 0.03 + nb * 1.7) + 1) * 0.5 * W;
+      var nby = (Math.cos(gameTime * 0.02 + nb * 2.3) + 1) * 0.5 * H;
+      var nbl = 0.5 + Math.sin(gameTime * 0.05 + nb) * 0.1;
+      var ng = ctx.createRadialGradient(nbx, nby, 0, nbx, nby, 380);
+      ng.addColorStop(0, ['#2b4dff', '#ff2bd4', '#2bffd4', '#ff8b2b'][nb] || '#2b4dff');
+      ng.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.globalAlpha = 0.16 * nbl;
+      ctx.fillStyle = ng;
+      ctx.beginPath();
+      ctx.arc(nbx, nby, 380, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // звёзды: два слоя параллакса, мерцание
+    for (var sl = 0; sl < starLayers.length; sl++) {
+      ctx.save();
+      var par = sl === 0 ? 0.06 : 0.12;
+      for (var sti = 0; sti < starLayers[sl].length; sti++) {
+        var st = starLayers[sl][sti];
+        var sx = (((st.x - camX * par) % WORLD_W) + WORLD_W) % WORLD_W;
+        var sy = (((st.y - camY * par) % WORLD_H) + WORLD_H) % WORLD_H;
+        var adx = Math.abs(sx - camX), ady = Math.abs(sy - camY);
+        if (adx > W / 2 + 60 || ady > H / 2 + 60) continue;
+        ctx.globalAlpha = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(gameTime * 2 + st.tw));
+        ctx.fillStyle = sl === 0 ? '#fff' : (Math.random() < 0.3 ? '#bdf' : '#fff');
+        ctx.beginPath();
+        ctx.arc(sx, sy, st.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+    // яркие звёзды с крестами
+    ctx.save();
+    ctx.globalAlpha = 0.9;
+    var sparkR = 3.5 + Math.sin(gameTime * 1.5) * 1.2;
+    for (var st2 = 0; st2 < starLayers[1].length; st2++) {
+      if (st2 % 7 !== 0) continue;
+      var sp2 = starLayers[1][st2];
+      var sx2 = (((sp2.x - camX * 0.12) % WORLD_W) + WORLD_W) % WORLD_W;
+      var sy2 = (((sp2.y - camY * 0.12) % WORLD_H) + WORLD_H) % WORLD_H;
+      var adx2 = Math.abs(sx2 - camX), ady2 = Math.abs(sy2 - camY);
+      if (adx2 > W / 2 + 60 || ady2 > H / 2 + 60) continue;
+      ctx.strokeStyle = '#cfe6ff';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(sx2 - sparkR, sy2); ctx.lineTo(sx2 + sparkR, sy2);
+      ctx.moveTo(sx2, sy2 - sparkR); ctx.lineTo(sx2, sy2 + sparkR);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // планеты: параллакс-слои с кольцами и полосами
+    for (var pb = 0; pb < planetsBg.length; pb++) {
+      var pl = planetsBg[pb];
+      var px = (((pl.x - camX * 0.04) % (WORLD_W + W)) + WORLD_W + W) % (WORLD_W + W);
+      var py = (((pl.y - camY * 0.04) % (WORLD_H + H)) + WORLD_H + H) % (WORLD_H + H);
+      ctx.save();
+      var pgrad = ctx.createRadialGradient(px - pl.r * 0.35, py - pl.r * 0.35, pl.r * 0.15, px, py, pl.r);
+      pgrad.addColorStop(0, '#ffffff');
+      pgrad.addColorStop(0.4, pl.c);
+      pgrad.addColorStop(1, '#1a0b2e');
+      ctx.fillStyle = pgrad;
+      ctx.beginPath();
+      ctx.arc(px, py, pl.r, 0, Math.PI * 2);
+      ctx.fill();
+      // полосы на планете
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(px, py, pl.r, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = '#000';
+      var bandY = py - pl.r;
+      while (bandY < py + pl.r) {
+        ctx.fillRect(px - pl.r, bandY, pl.r * 2, pl.r * pl.bands);
+        bandY += pl.r * pl.bands + pl.r * 0.25;
+      }
+      ctx.restore();
+      // кольцо
+      if (pl.ring) {
+        ctx.strokeStyle = 'rgba(220,220,255,0.7)';
+        ctx.lineWidth = pl.r * 0.22;
+        ctx.beginPath();
+        ctx.ellipse(px, py, pl.r * 1.7, pl.r * 0.55, -0.35, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      // блеск атмосферы
+      ctx.globalAlpha = 0.18;
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(px, py, pl.r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
 
     if (state === 'menu' || (state !== 'playing' && state !== 'paused' && state !== 'gameover' && state !== 'reviving')) {
       ctx.save();
