@@ -296,20 +296,20 @@ var text = t('top10');
     asteroids.push({ x: Math.random() * WORLD_W, y: Math.random() * WORLD_H, r: 12 + Math.random() * 40, h: Math.random() * Math.PI * 2 });
   }
 
-  // космический фон: звёзды (2 слоя параллакса) и планеты
+  // космический фон: звёзды (3 слоя параллакса), планеты и луны
   var starLayers = [];
   var planetsBg = [];
   (function () {
-    for (var l = 0; l < 2; l++) {
+    for (var l = 0; l < 3; l++) {
       starLayers[l] = [];
-      var count = l === 0 ? 150 : 70;
+      var count = l === 0 ? 220 : (l === 1 ? 90 : 30);
       for (var s = 0; s < count; s++) {
-        starLayers[l].push({ x: Math.random() * WORLD_W, y: Math.random() * WORLD_H, r: l === 0 ? (0.6 + Math.random() * 0.8) : (1.4 + Math.random() * 1.4), tw: Math.random() * Math.PI * 2 });
+        starLayers[l].push({ x: Math.random() * WORLD_W, y: Math.random() * WORLD_H, r: l === 0 ? (0.4 + Math.random() * 0.6) : (l === 1 ? (1.1 + Math.random() * 0.9) : (1.8 + Math.random() * 1.4)), tw: Math.random() * Math.PI * 2 });
       }
     }
-    var planCols = ['#5b8bd4', '#c47aa8', '#7a5fc4', '#d98a4a', '#4fbf9a'];
-    for (var p = 0; p < 5; p++) {
-      planetsBg.push({ x: Math.random() * WORLD_W, y: Math.random() * WORLD_H, r: 80 + Math.random() * 150, c: planCols[p], ring: Math.random() < 0.5, bands: 0.25 + Math.random() * 0.3 });
+    var planCols = ['#5b8bd4', '#c47aa8', '#7a5fc4', '#d98a4a', '#4fbf9a', '#e0666e', '#8fa8ff'];
+    for (var p = 0; p < 7; p++) {
+      planetsBg.push({ x: Math.random() * WORLD_W, y: Math.random() * WORLD_H, r: 60 + Math.random() * 130, c: planCols[p], ring: p % 3 === 0, bands: 0.25 + Math.random() * 0.32, moon: Math.random() < 0.6, moonR: 8 + Math.random() * 16, moonAng: Math.random() * Math.PI * 2, spin: (Math.random() - 0.5) * 1.5 });
     }
   })();
 
@@ -1001,7 +1001,7 @@ var text = t('top10');
       player.lvl++;
       player.xpNeed = Math.round(player.xpNeed * 1.28 + 10);
       showLevelUp();
-      spawnWave();
+      if (player.lvl % 2 === 0) spawnWave();
     }
   }
 
@@ -1565,36 +1565,38 @@ var text = t('top10');
     }
     ctx.restore();
 
-    // звёзды: два слоя параллакса, мерцание
+    // звёзды: три слоя параллакса, мерцание, разные оттенки
     for (var sl = 0; sl < starLayers.length; sl++) {
       ctx.save();
-      var par = sl === 0 ? 0.06 : 0.12;
+      var par = sl === 0 ? 0.05 : (sl === 1 ? 0.1 : 0.15);
       for (var sti = 0; sti < starLayers[sl].length; sti++) {
         var st = starLayers[sl][sti];
         var sx = (((st.x - camX * par) % WORLD_W) + WORLD_W) % WORLD_W;
         var sy = (((st.y - camY * par) % WORLD_H) + WORLD_H) % WORLD_H;
         var adx = Math.abs(sx - camX), ady = Math.abs(sy - camY);
         if (adx > W / 2 + 60 || ady > H / 2 + 60) continue;
-        ctx.globalAlpha = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(gameTime * 2 + st.tw));
-        ctx.fillStyle = sl === 0 ? '#fff' : (Math.random() < 0.3 ? '#bdf' : '#fff');
+        ctx.globalAlpha = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(gameTime * (sl === 2 ? 1.2 : 2) + st.tw));
+        if (sl === 0) ctx.fillStyle = (st.x % 11 < 2) ? 'rgba(255,240,200,0.8)' : '#fff';
+        else if (sl === 1) ctx.fillStyle = (st.x % 7 < 2) ? '#bfe0ff' : '#fff';
+        else ctx.fillStyle = (st.x % 5 < 2) ? '#ffe9a8' : '#e8f4ff';
         ctx.beginPath();
         ctx.arc(sx, sy, st.r, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.restore();
     }
-    // яркие звёзды с крестами
+    // яркие звёзды с крестами (самый ближний слой)
     ctx.save();
     ctx.globalAlpha = 0.9;
     var sparkR = 3.5 + Math.sin(gameTime * 1.5) * 1.2;
-    for (var st2 = 0; st2 < starLayers[1].length; st2++) {
-      if (st2 % 7 !== 0) continue;
-      var sp2 = starLayers[1][st2];
-      var sx2 = (((sp2.x - camX * 0.12) % WORLD_W) + WORLD_W) % WORLD_W;
-      var sy2 = (((sp2.y - camY * 0.12) % WORLD_H) + WORLD_H) % WORLD_H;
+    for (var st2 = 0; st2 < starLayers[2].length; st2++) {
+      if (st2 % 6 !== 0) continue;
+      var sp2 = starLayers[2][st2];
+      var sx2 = (((sp2.x - camX * 0.15) % WORLD_W) + WORLD_W) % WORLD_W;
+      var sy2 = (((sp2.y - camY * 0.15) % WORLD_H) + WORLD_H) % WORLD_H;
       var adx2 = Math.abs(sx2 - camX), ady2 = Math.abs(sy2 - camY);
       if (adx2 > W / 2 + 60 || ady2 > H / 2 + 60) continue;
-      ctx.strokeStyle = '#cfe6ff';
+      ctx.strokeStyle = '#e8f4ff';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(sx2 - sparkR, sy2); ctx.lineTo(sx2 + sparkR, sy2);
@@ -1638,6 +1640,20 @@ var text = t('top10');
         ctx.ellipse(px, py, pl.r * 1.7, pl.r * 0.55, -0.35, 0, Math.PI * 2);
         ctx.stroke();
       }
+      // луна на орбите
+      if (pl.moon) {
+        var ma = pl.moonAng + gameTime * pl.spin;
+        var mx = px + Math.cos(ma) * (pl.r * 1.3 + pl.moonR);
+        var my = py + Math.sin(ma) * (pl.r * 1.1 + pl.moonR);
+        var mgr = ctx.createRadialGradient(mx - pl.moonR * 0.3, my - pl.moonR * 0.3, pl.moonR * 0.1, mx, my, pl.moonR);
+        mgr.addColorStop(0, '#fff');
+        mgr.addColorStop(0.5, '#c8d4e8');
+        mgr.addColorStop(1, '#5a6a80');
+        ctx.fillStyle = mgr;
+        ctx.beginPath();
+        ctx.arc(mx, my, pl.moonR, 0, Math.PI * 2);
+        ctx.fill();
+      }
       // блеск атмосферы
       ctx.globalAlpha = 0.18;
       ctx.strokeStyle = '#fff';
@@ -1667,21 +1683,34 @@ var text = t('top10');
     ctx.save();
     ctx.translate(-camX + W / 2 + shX, -camY + H / 2 + shY);
 
-    // grid
-    ctx.strokeStyle = 'rgba(50,70,120,0.15)';
+    // мили-маленькие дальние звёзды между миром (без квадратов)
+    ctx.strokeStyle = 'rgba(200,220,255,0.10)';
     ctx.lineWidth = 1;
-    var gs = 100;
-    var x0 = Math.floor((camX - W / 2) / gs) * gs;
-    var y0 = Math.floor((camY - H / 2) / gs) * gs;
-    ctx.beginPath();
-    for (var x = x0; x < camX + W / 2 + gs; x += gs) { ctx.moveTo(x, y0); ctx.lineTo(x, camY + H / 2); }
-    for (var y = y0; y < camY + H / 2 + gs; y += gs) { ctx.moveTo(x0, y); ctx.lineTo(camX + W / 2, y); }
-    ctx.stroke();
+    var sgs = 140;
+    var sx0 = Math.floor((camX - W / 2) / sgs) * sgs;
+    var sy0 = Math.floor((camY - H / 2) / sgs) * sgs;
+    for (var stgX = sx0; stgX < camX + W / 2 + sgs; stgX += sgs) {
+      for (var stgY = sy0; stgY < camY + H / 2 + sgs; stgY += sgs) {
+        ctx.beginPath();
+        ctx.arc(stgX + ((stgX * 7 + stgY * 13) % 5) - 2, stgY + ((stgX * 11 + stgY * 17) % 5) - 2, 0.7, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.25)';
+        ctx.fill();
+      }
+    }
 
-    // world border
-    ctx.strokeStyle = 'rgba(100,80,255,0.3)';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(0, 0, WORLD_W, WORLD_H);
+    // лёгкий космический бордер-туман (не квадрат из линий)
+    ctx.save();
+    ctx.globalAlpha = 0.06;
+    var bgrad = ctx.createLinearGradient(0, -50, 0, 50);
+    bgrad.addColorStop(0, 'rgba(80,60,255,0)');
+    bgrad.addColorStop(0.5, 'rgba(80,60,255,0.4)');
+    bgrad.addColorStop(1, 'rgba(80,60,255,0)');
+    ctx.strokeStyle = bgrad;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(WORLD_W / 2, WORLD_H / 2, Math.min(WORLD_W, WORLD_H) / 2 - 40, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
 
     // asteroids (decor)
     ctx.fillStyle = 'rgba(90,90,110,0.12)';
