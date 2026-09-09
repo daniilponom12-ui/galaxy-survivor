@@ -72,7 +72,6 @@
       u_crit: 'Крит 20% (урон x2)', u_crit_d: 'Каждый 5-й выстрел наносит двойной урон',
       u_pierce: 'Пронзание', u_pierce_d: 'Все выстрелы пробивают врагов насквозь',
       u_life: '+1 жизнь', u_life_d: 'Одно воскрешение за бой',
-      u_leech: 'Вампиризм', u_leech_d: 'Убийство восстанавливает 3 HP',
       pu_rate: 'Скорострельность +8%', pu_rate_d: 'Постоянно увеличивает темп стрельбы',
       pu_speed: 'Скорость +6%', pu_speed_d: 'Постоянно увеличивает скорость героя',
       pu_shield: '🛡 Щит', pu_shield_d: 'Бесплатно поглощает 1 удар за бой на уровень',
@@ -137,7 +136,6 @@
       u_crit: 'Crit 20% (x2 dmg)', u_crit_d: 'Every 5th shot deals double damage',
       u_pierce: 'Piercing', u_pierce_d: 'All shots pierce through enemies',
       u_life: '+1 life', u_life_d: 'One revive per run',
-      u_leech: 'Life steal', u_leech_d: 'Killing an enemy restores 3 HP',
       pu_rate: 'Fire rate +8%', pu_rate_d: 'Permanently increases fire rate',
       pu_speed: 'Speed +6%', pu_speed_d: 'Permanently increases hero speed',
       pu_shield: '🛡 Shield', pu_shield_d: 'Free absorbs 1 hit per run per level',
@@ -373,8 +371,7 @@ var text = t('top10');
     { id: 'multishot', name: 'Доп. снаряд', desc: 'Стреляет на один снаряд больше', icon: '🎇' },
     { id: 'crit', name: 'Крит 20% (урон x2)', desc: 'Каждый 5-й выстрел наносит двойной урон', icon: '🎯' },
     { id: 'pierce', name: 'Пронзание', desc: 'Все выстрелы пробивают врагов насквозь', icon: '🏹' },
-    { id: 'life', name: '+1 жизнь', desc: 'Одно воскрешение за бой', icon: '❤' },
-    { id: 'leech', name: 'Вампиризм', desc: 'Убийство врага восстанавливает 3 HP', icon: '🩸' }
+    { id: 'life', name: '+1 жизнь', desc: 'Одно воскрешение за бой', icon: '❤' }
   ];
 
   function applyUpgrade(id) {
@@ -396,9 +393,8 @@ var text = t('top10');
     else if (id === 'multishot') { p.extraShots = (p.extraShots || 0) + 1; }
     else if (id === 'crit') { p.critChance = (p.critChance || 0) + 0.2; }
     else if (id === 'pierce') { p.pierceAll = true; }
-    else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
-    else if (id === 'leech') { p.leech = true; }
-  }
+else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
+    }
 
   function getWeapon(id) {
     for (var i = 0; i < player.weapons.length; i++) if (player.weapons[i].id === id) return player.weapons[i];
@@ -1086,7 +1082,6 @@ var text = t('top10');
     if (combo > 0 && combo % 8 === 0) {
       hud('COMBO x' + combMult, '#ff8');
     }
-    if (player && player.leech && player.hp < player.maxHp) { player.hp = Math.min(player.maxHp, player.hp + 3); }
     gems.push({ x: e.x, y: e.y, vx: (Math.random() - 0.5) * 60, vy: (Math.random() - 0.5) * 60, val: e.xp, r: e.boss ? 12 : 5, c: e.boss ? '#ff0' : '#0f6' });
     if (e.boss) {
       var dn = 4 + Math.floor(Math.random() * 4);
