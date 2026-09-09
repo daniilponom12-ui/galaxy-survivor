@@ -673,7 +673,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     boss_dread: { r: 95, hp: 4200, speed: 32, dmg: 55, xp: 350, color: '#f2f', score: 1200, boss: true, shoot: true },
     boss_colossus: { r: 120, hp: 7500, speed: 26, dmg: 85, xp: 600, color: '#d80', score: 2000, boss: true, minSpeed: true, shoot: true },
     boss_overlord: { r: 230, hp: 150000, speed: 12, dmg: 160, xp: 5000, color: '#f0f', score: 12000, boss: true, minSpeed: true, shoot: true, overlord: true, armor: 0.75 },
-    boss_thanos: { r: 300, hp: 800000, speed: 22, dmg: 250, xp: 20000, color: '#e33', score: 40000, boss: true, minSpeed: true, shoot: true, overlord: true, final: true, armor: 0.85 }
+    boss_thanos: { r: 300, hp: 6000, speed: 22, dmg: 250, xp: 20000, color: '#e33', score: 40000, boss: true, minSpeed: true, shoot: true, overlord: true, final: true, armor: 0.2 }
   };
 
   function spawnEnemy(type, zx, zy) {
@@ -693,7 +693,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     e.y = player.y + Math.sin(ang) * dist;
     if (e.overlord) {
       // способности повелителя
-      e.abilityTimer = 0; e.phase = 0; e.spawnTimer = 8; e.beamTimer = 5; e.shieldUp = false; e.shield = e.final ? 100000 : 20000; e.ringTimer = 7;
+      e.abilityTimer = 0; e.phase = 0; e.spawnTimer = 8; e.beamTimer = 5; e.shieldUp = false; e.shield = e.final ? 2000 : 20000; e.ringTimer = 7;
       var czx = (typeof zx === 'number') ? zx : player.x;
       var czy = (typeof zy === 'number') ? zy : player.y;
       e.minX = clamp(czx - 700, 150, WORLD_W - 150); e.maxX = clamp(czx + 700, 150, WORLD_W - 150);
@@ -725,6 +725,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   }
   function spawnWave() {
     waveNum++;
+    if (waveNum > 12) { waveNum = 12; return; }
     announceWave();
     if (waveNum === 10) {
       helper = makeHelper();
@@ -748,7 +749,13 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       shake = Math.min(shake + 12, 22);
     }
     if (waveNum === 12) {
-      spawnEnemy('boss_thanos', player.x, player.y - 600);
+      // убираем всех врагов перед финальным боссом
+      for (var ci = enemies.length - 1; ci >= 0; ci--) {
+        boom(enemies[ci].x, enemies[ci].y, '#fff', 5);
+        enemies.splice(ci, 1);
+      }
+      projectiles = [];
+      spawnEnemy('boss_thanos', player.x, player.y - 400);
       hud('★ THANOS AWAKENS ★', '#e33');
       soundBigBoom();
       shake = Math.min(shake + 15, 24);
@@ -1603,7 +1610,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
 
     // waves
     spawnTimer -= dt;
-    if (spawnTimer <= 0 && enemies.length < 240) {
+    if (spawnTimer <= 0 && enemies.length < 240 && waveNum !== 12) {
       var pool = waveEnemyPool();
       var n = Math.min(22 + Math.floor(waveNum * 2.5), 55);
       for (var i = 0; i < n; i++) {
@@ -1613,7 +1620,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       spawnTimer = nextWaveTime();
     }
     // дополнительные мини-волны между основными (если на поле мало врагов)
-    if (enemies.length < waveNum * 4 + 10 && enemies.length < 150 && spawnTimer > 1.2) {
+    if (enemies.length < waveNum * 4 + 10 && enemies.length < 150 && spawnTimer > 1.2 && waveNum !== 12) {
       spawnTimer = Math.max(spawnTimer - 0.5, 0);
       var miniN = Math.min(5 + Math.floor(waveNum / 2), 15);
       for (var mi6 = 0; mi6 < miniN; mi6++) {
