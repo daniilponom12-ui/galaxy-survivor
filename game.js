@@ -343,8 +343,8 @@ var text = t('top10');
 
   function makeHelper() {
     return {
-      x: player.x + 120, y: player.y + 40, r: 70, hp: 600, maxHp: 600,
-      ang: 0, fireTimer: 0, kamTimer: 0, laserTimer: 0
+      x: player.x + 120, y: player.y + 40, r: 60, hp: 800, maxHp: 800,
+      ang: 0, fireTimer: 0, kamTimer: 0, laserTimer: 0, hurtCd: 0
     };
   }
 
@@ -674,10 +674,10 @@ var text = t('top10');
     boss_titan: { r: 85, hp: 2400, speed: 38, dmg: 38, xp: 200, color: '#f90', score: 700, boss: true, minSpeed: true },
     boss_dread: { r: 95, hp: 4200, speed: 32, dmg: 55, xp: 350, color: '#f2f', score: 1200, boss: true, shoot: true },
     boss_colossus: { r: 120, hp: 7500, speed: 26, dmg: 85, xp: 600, color: '#d80', score: 2000, boss: true, minSpeed: true, shoot: true },
-    boss_overlord: { r: 200, hp: 60000, speed: 14, dmg: 140, xp: 4000, color: '#f0f', score: 8000, boss: true, minSpeed: true, shoot: true, overlord: true }
+    boss_overlord: { r: 210, hp: 90000, speed: 13, dmg: 150, xp: 4000, color: '#f0f', score: 8000, boss: true, minSpeed: true, shoot: true, overlord: true }
   };
 
-  function spawnEnemy(type) {
+  function spawnEnemy(type, zx, zy) {
     var t = ENEMY_TYPES[type];
     var ang = Math.random() * Math.PI * 2;
     var dist = Math.max(W, H) / 1.4 + 120;
@@ -694,11 +694,13 @@ var text = t('top10');
     if (e.overlord) {
       // способности повелителя
       e.abilityTimer = 0; e.phase = 0; e.spawnTimer = 8; e.beamTimer = 5; e.shieldUp = false; e.shield = 20000; e.ringTimer = 7;
-      e.minX = clamp(player.x - 700, 150, WORLD_W - 150); e.maxX = clamp(player.x + 700, 150, WORLD_W - 150);
-      e.minY = clamp(player.y - 700, 150, WORLD_H - 150); e.maxY = clamp(player.y + 700, 150, WORLD_H - 150);
-      shake = Math.min(shake + 8, 16);
+      var czx = (typeof zx === 'number') ? zx : player.x;
+      var czy = (typeof zy === 'number') ? zy : player.y;
+      e.minX = clamp(czx - 700, 150, WORLD_W - 150); e.maxX = clamp(czx + 700, 150, WORLD_W - 150);
+      e.minY = clamp(czy - 700, 150, WORLD_H - 150); e.maxY = clamp(czy + 700, 150, WORLD_H - 150);
+      e.x = czx + Math.cos(ang) * 400;
+      e.y = czy + Math.sin(ang) * 400;
       fx.push({ type: 'boom', x: e.x, y: e.y, r: 320, life: 1, maxLife: 1, c: '#f0f' });
-      hud('OVERLORD HAS AWAKENED!', '#f0f');
       soundBigBoom();
     }
     enemies.push(e);
@@ -731,17 +733,23 @@ var text = t('top10');
     var liveBoss = 0;
     for (var lb = 0; lb < enemies.length; lb++) { if (enemies[lb].boss) liveBoss++; }
     if (waveNum === 10) {
-      spawnEnemy('boss_overlord');
-      hud('OVERLORD!', '#f0f');
+      // три повелителя: сложно убить, огромное хп
+      for (var ovc = 0; ovc < 3; ovc++) {
+        var ovAng = ovc / 3 * Math.PI * 2 + Math.PI / 6;
+        var ovR = 550;
+        spawnEnemy('boss_overlord', player.x + Math.cos(ovAng) * ovR, player.y + Math.sin(ovAng) * ovR);
+      }
+      hud('THREE OVERLORDS!', '#f0f');
       soundBigBoom();
-      shake = Math.min(shake + 10, 20);
+      shake = Math.min(shake + 12, 22);
     }
     var bossCount = 1;
     if (waveNum >= 6) bossCount = 2;
-    if (waveNum >= 10) bossCount = 3;
+    if (waveNum >= 10 && waveNum !== 10) bossCount = 3;
     if (waveNum >= 16) bossCount = 4;
     if (waveNum >= 22) bossCount = 5;
     if (bossCount > 5) bossCount = 5;
+    if (waveNum === 10) bossCount = 0;
     var maxLive = 4 + Math.floor(waveNum / 6);
     if (bossCount > maxLive - liveBoss) bossCount = Math.max(0, maxLive - liveBoss);
     for (var bi = 0; bi < bossCount; bi++) {
@@ -923,63 +931,87 @@ var text = t('top10');
     var wantD = 190;
     var d = dist(h, player);
     if (d > wantD + 20) {
-      h.x += Math.cos(oa) * 150 * dt;
-      h.y += Math.sin(oa) * 150 * dt;
+      h.x += Math.cos(oa) * 120 * dt;
+      h.y += Math.sin(oa) * 120 * dt;
     } else if (d < wantD - 40) {
-      h.x -= Math.cos(oa) * 90 * dt;
-      h.y -= Math.sin(oa) * 90 * dt;
+      h.x -= Math.cos(oa) * 70 * dt;
+      h.y -= Math.sin(oa) * 70 * dt;
     } else {
-      // мягкий дрейф по окружности вокруг игрока
       var swing = Math.PI * 2 * 0.15;
       var ta = oa + Math.PI * 0.5 + Math.sin(gameTime * 0.7) * swing;
-      h.x += Math.cos(ta) * 20 * dt;
-      h.y += Math.sin(ta) * 20 * dt;
+      h.x += Math.cos(ta) * 16 * dt;
+      h.y += Math.sin(ta) * 16 * dt;
     }
     h.x = Math.max(80, Math.min(WORLD_W - 80, h.x));
     h.y = Math.max(80, Math.min(WORLD_H - 80, h.y));
-    h.ang += dt * 0.8;
+    // получение урона от врагов рядом
+    h.hurtCd -= dt;
+    if (h.hurtCd <= 0) {
+      var hurt = false;
+      for (var hz = 0; hz < enemies.length; hz++) {
+        var he = enemies[hz];
+        if (dist(h, he) < he.r + h.r * 0.8) { hurt = true; break; }
+      }
+      if (hurt) {
+        h.hp -= 60;
+        h.hurtCd = 0.4;
+        boom(h.x, h.y, '#f44', 5);
+        hud('HELPER HIT!', '#f44');
+        soundPop(false);
+      }
+      if (h.hp <= 0) {
+        boom(h.x, h.y, '#0ff', 40);
+        fx.push({ type: 'boom', x: h.x, y: h.y, r: 320, life: 1, maxLife: 1, c: '#0ff' });
+        hud('HELPER DESTROYED!', '#f44');
+        soundBigBoom();
+        shake = Math.min(shake + 10, 18);
+        helper = null;
+        return;
+      }
+    }
+    h.ang += dt * 0.6;
 
     // стрельба лазерами по ближайшим врагам
     h.fireTimer -= dt;
     if (h.fireTimer <= 0 && enemies.length > 0) {
-      h.fireTimer = 0.24;
-      var t = findNearest(700);
+      h.fireTimer = 0.6;
+      var t = findNearest(600);
       if (t) {
         var ha = Math.atan2(t.y - h.y, t.x - h.x);
-        for (var li = 0; li < 4; li++) {
-          var la = ha + (li - 1.5) * 0.08;
-          projectiles.push({ x: h.x + Math.cos(la) * h.r, y: h.y + Math.sin(la) * h.r, vx: Math.cos(la) * 700, vy: Math.sin(la) * 700, dmg: 45, r: 5, c: '#0ff', life: 2.4, laser: true, pierce: true, pierceHits: 9 });
+        for (var li = 0; li < 2; li++) {
+          var la = ha + (li - 0.5) * 0.12;
+          projectiles.push({ x: h.x + Math.cos(la) * h.r, y: h.y + Math.sin(la) * h.r, vx: Math.cos(la) * 520, vy: Math.sin(la) * 520, dmg: 14, r: 4, c: '#0ff', life: 1.8, laser: true, pierce: true, pierceHits: 4 });
         }
-        fx.push({ type: 'ring', x: h.x + Math.cos(ha) * h.r, y: h.y + Math.sin(ha) * h.r, r: 6, maxR: 26, life: 0.2, c: '#0ff' });
+        fx.push({ type: 'ring', x: h.x + Math.cos(ha) * h.r, y: h.y + Math.sin(ha) * h.r, r: 6, maxR: 20, life: 0.2, c: '#0ff' });
       }
     }
 
     // периодическая ракета-залп по случайным врагам
     h.kamTimer -= dt;
     if (h.kamTimer <= 0) {
-      h.kamTimer = 4.5;
-      for (var ki = 0; ki < 5; ki++) {
+      h.kamTimer = 9;
+      for (var ki = 0; ki < 3; ki++) {
         var target = enemies[Math.floor(Math.random() * enemies.length)];
         if (!target) break;
         var ka = Math.atan2(target.y - h.y, target.x - h.x);
-        projectiles.push({ x: h.x + Math.cos(ka) * h.r, y: h.y + Math.sin(ka) * h.r, vx: Math.cos(ka) * 380, vy: Math.sin(ka) * 380, dmg: 120, r: 8, c: '#ff6', life: 3, rocket: true, splash: true, laser: false });
+        projectiles.push({ x: h.x + Math.cos(ka) * h.r, y: h.y + Math.sin(ka) * h.r, vx: Math.cos(ka) * 320, vy: Math.sin(ka) * 320, dmg: 40, r: 7, c: '#ff6', life: 2.5, rocket: true, splash: true, laser: false });
       }
-      soundBigBoom();
+      soundBoom();
     }
 
     // лазерная пушка-луч время от времени
     h.laserTimer -= dt;
     if (h.laserTimer <= 0) {
-      h.laserTimer = 7;
+      h.laserTimer = 12;
       var beamT = enemies[Math.floor(Math.random() * enemies.length)];
       if (beamT) {
         for (var ej = enemies.length - 1; ej >= 0; ej--) {
-          if (dist(enemies[ej], beamT) < 140) {
-            damageEnemy(ej, 200);
+          if (dist(enemies[ej], beamT) < 110) {
+            damageEnemy(ej, 90);
           }
         }
-        fx.push({ type: 'boom', x: beamT.x, y: beamT.y, r: 140, life: 0.5, maxLife: 0.5, c: '#0ff' });
-        boom(beamT.x, beamT.y, '#0ff', 12);
+        fx.push({ type: 'boom', x: beamT.x, y: beamT.y, r: 110, life: 0.5, maxLife: 0.5, c: '#0ff' });
+        boom(beamT.x, beamT.y, '#0ff', 10);
         hud('MEGA LASER!', '#0ff');
       }
     }
