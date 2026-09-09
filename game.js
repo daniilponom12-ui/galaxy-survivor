@@ -5,7 +5,7 @@
   var ctx = canvas.getContext('2d');
   var overlay = document.getElementById('ui-overlay');
 
-  var WORLD_W = 2400, WORLD_H = 2400;
+  var WORLD_W = 4200, WORLD_H = 4200;
   var dpr = Math.min(window.devicePixelRatio || 1, 2);
 
   var W, H;
@@ -673,7 +673,8 @@ var text = t('top10');
     boss_gunner: { r: 62, hp: 1000, speed: 65, dmg: 16, xp: 120, color: '#b0f', score: 450, boss: true, shoot: true },
     boss_titan: { r: 85, hp: 2400, speed: 38, dmg: 38, xp: 200, color: '#f90', score: 700, boss: true, minSpeed: true },
     boss_dread: { r: 95, hp: 4200, speed: 32, dmg: 55, xp: 350, color: '#f2f', score: 1200, boss: true, shoot: true },
-    boss_colossus: { r: 120, hp: 7500, speed: 26, dmg: 85, xp: 600, color: '#d80', score: 2000, boss: true, minSpeed: true, shoot: true }
+    boss_colossus: { r: 120, hp: 7500, speed: 26, dmg: 85, xp: 600, color: '#d80', score: 2000, boss: true, minSpeed: true, shoot: true },
+    boss_overlord: { r: 200, hp: 60000, speed: 14, dmg: 140, xp: 4000, color: '#f0f', score: 8000, boss: true, minSpeed: true, shoot: true, overlord: true }
   };
 
   function spawnEnemy(type) {
@@ -681,14 +682,25 @@ var text = t('top10');
     var ang = Math.random() * Math.PI * 2;
     var dist = Math.max(W, H) / 1.4 + 120;
     var hpScale = t.boss ? (1 + (waveNum - 1) * 0.35) : (1 + (waveNum - 1) * 0.09);
+    if (t.overlord) hpScale = 1 + (waveNum - 10) * 0.4;
     var e = {
       type: type, r: t.r, hp: t.hp * hpScale, maxHp: t.hp * hpScale,
       speed: (t.minSpeed ? Math.max(6, t.speed - waveNum) : t.speed) * (1 + waveNum * 0.02),
       dmg: Math.round(t.dmg * (1 + waveNum * 0.04)), xp: t.xp, color: t.color, score: t.score, x: 0, y: 0,
-      hitFlash: 0, shootTimer: Math.random() * 2, splits: t.splits, boss: t.boss, shoot: t.shoot
+      hitFlash: 0, shootTimer: Math.random() * 2, splits: t.splits, boss: t.boss, shoot: t.shoot, overlord: !!t.overlord
     };
     e.x = player.x + Math.cos(ang) * dist;
     e.y = player.y + Math.sin(ang) * dist;
+    if (e.overlord) {
+      // способности повелителя
+      e.abilityTimer = 0; e.phase = 0; e.spawnTimer = 8; e.beamTimer = 5; e.shieldUp = false; e.shield = 20000; e.ringTimer = 7;
+      e.minX = clamp(player.x - 700, 150, WORLD_W - 150); e.maxX = clamp(player.x + 700, 150, WORLD_W - 150);
+      e.minY = clamp(player.y - 700, 150, WORLD_H - 150); e.maxY = clamp(player.y + 700, 150, WORLD_H - 150);
+      shake = Math.min(shake + 8, 16);
+      fx.push({ type: 'boom', x: e.x, y: e.y, r: 320, life: 1, maxLife: 1, c: '#f0f' });
+      hud('OVERLORD HAS AWAKENED!', '#f0f');
+      soundBigBoom();
+    }
     enemies.push(e);
   }
 
@@ -718,6 +730,12 @@ var text = t('top10');
     var bossPool = pickBossPool(waveNum);
     var liveBoss = 0;
     for (var lb = 0; lb < enemies.length; lb++) { if (enemies[lb].boss) liveBoss++; }
+    if (waveNum === 10) {
+      spawnEnemy('boss_overlord');
+      hud('OVERLORD!', '#f0f');
+      soundBigBoom();
+      shake = Math.min(shake + 10, 20);
+    }
     var bossCount = 1;
     if (waveNum >= 6) bossCount = 2;
     if (waveNum >= 10) bossCount = 3;
@@ -989,6 +1007,18 @@ var text = t('top10');
   function damageEnemy(idx, dmg) {
     var e = enemies[idx];
     if (!e) return;
+    if (e.overlord && e.shieldUp) {
+      e.shield -= dmg;
+      textFx(e.x, e.y + e.r * 0.6, 'SHIELD ' + Math.max(0, Math.round(e.shield / 1000)) + 'k', '#9cf');
+      boom(e.x, e.y, '#9cf', 2);
+      if (e.shield <= 0) {
+        e.shieldUp = false;
+        e.shieldTimer = 6;
+        hud('OVERLORD SHIELD DOWN!', '#9cf');
+        fx.push({ type: 'boom', x: e.x, y: e.y, r: e.r * 2, life: 0.8, maxLife: 0.8, c: '#9cf' });
+      }
+      return;
+    }
     e.hp -= dmg;
     e.hitFlash = 0.1;
     boom(e.x, e.y, '#fff', 3);
@@ -1327,7 +1357,7 @@ var text = t('top10');
     window.__test = function () {
       var bc = 0;
       for (var ti = 0; ti < enemies.length; ti++) { if (enemies[ti].boss) bc++; }
-      return { enemies: enemies.length, waveNum: waveNum, bosses: bc, helper: helper ? 1 : 0, diamonds: progress.diamonds, upg: progress.upg, types: enemies.map(function (e) { return e.type; }).slice(0, 10) };
+      return { enemies: enemies.length, waveNum: waveNum, bosses: bc, helper: helper ? 1 : 0, diamonds: progress.diamonds, upg: progress.upg, types: enemies.map(function (e) { return e.type; }).slice(0, 10), bossTypes: enemies.filter(function (e) { return e.boss; }).map(function (e) { return e.type; }) };
     };
     window.__test.forceWave = function () { spawnWave(); return window.__test(); };
     window.__test.bp = function (w) { return pickBossPool(w); };
@@ -1577,6 +1607,62 @@ var text = t('top10');
       if (dist(en, p) < en.r + p.r) {
         if (p.iframes <= 0) {
           if (hitPlayer(en.dmg)) return;
+        }
+      }
+      // способности повелителя
+      if (en.overlord) {
+        en.abilityTimer += dt;
+        // телепортация вдоль своей зоны, не вылетает за её пределы
+        if (en.x < en.minX) en.x = en.minX;
+        if (en.x > en.maxX) en.x = en.maxX;
+        if (en.y < en.minY) en.y = en.minY;
+        if (en.y > en.maxY) en.y = en.maxY;
+        // фаза 2 при <50% hp: агрессивнее
+        var ovPhase = (en.hp / en.maxHp < 0.5) ? 1 : 0;
+        // щит
+        en.shieldTimer = (en.shieldTimer || 20) - dt;
+        if (ovPhase === 0 && en.hp / en.maxHp < 0.7 && !en.shieldUp && en.shieldTimer <= 0 && en.abilityTimer > 6) {
+          en.shieldUp = true; en.shield = 20000;
+          en.shieldTimer = 12;
+          hud('OVERLORD RAISES SHIELD!', '#9cf');
+          en.abilityTimer = 0;
+        }
+        // звёздный взрыв: кольцо снарядов
+        en.ringTimer -= dt;
+        if (en.ringTimer <= 0) {
+          en.ringTimer = ovPhase ? 4.5 : 7;
+          var ringN = ovPhase ? 48 : 28;
+          for (var ri = 0; ri < ringN; ri++) {
+            var rA = ri / ringN * Math.PI * 2 + en.x;
+            var rSp = 180 + Math.random() * 60;
+            projectiles.push({ x: en.x + Math.cos(rA) * en.r, y: en.y + Math.sin(rA) * en.r, vx: Math.cos(rA) * rSp, vy: Math.sin(rA) * rSp, dmg: en.dmg * 0.6, r: 7, c: '#f0f', life: 3, enemy: true });
+          }
+          fx.push({ type: 'boom', x: en.x, y: en.y, r: en.r * 1.6, life: 0.5, maxLife: 0.5, c: '#f0f' });
+          soundBigBoom();
+        }
+        // призыв миньонов
+        en.spawnTimer -= dt;
+        if (en.spawnTimer <= 0) {
+          en.spawnTimer = ovPhase ? 6 : 9;
+          var mini = 0;
+          var miniTypes = ovPhase ? ['tank', 'splitter', 'fast'] : ['chaser', 'fast'];
+          while (mini < (ovPhase ? 8 : 5)) {
+            spawnAround(en, miniTypes[Math.floor(Math.random() * miniTypes.length)]);
+            mini++;
+          }
+          boom(en.x, en.y, '#c33', 6);
+        }
+        // луч смерти: толстый лазер в игрока
+        en.beamTimer -= dt;
+        if (en.beamTimer <= 0) {
+          en.beamTimer = ovPhase ? 3.5 : 6;
+          var ba = Math.atan2(p.y - en.y, p.x - en.x);
+          for (var bl = 0; bl < 6; bl++) {
+            var blAng = ba + (bl - 2.5) * 0.06;
+            projectiles.push({ x: en.x + Math.cos(blAng) * en.r, y: en.y + Math.sin(blAng) * en.r, vx: Math.cos(blAng) * 900, vy: Math.sin(blAng) * 900, dmg: en.dmg, r: 10, c: '#fff', life: 1.8, enemy: true, laser: true, pierce: true });
+          }
+          fx.push({ type: 'ring', x: en.x, y: en.y, r: 6, maxR: 80, life: 0.4, c: '#fff' });
+          hud('DEATH BEAM!', '#fff');
         }
       }
     }
@@ -2040,6 +2126,62 @@ var text = t('top10');
           ctx.stroke();
         }
       }
+      // повелитель: аура, корона, большой HP-бар
+      if (en2.overlord) {
+        var ol = en2;
+        var aura = ctx.createRadialGradient(ol.x, ol.y, ol.r * 0.4, ol.x, ol.y, ol.r * 2.2);
+        aura.addColorStop(0, 'rgba(255,0,255,0.4)');
+        aura.addColorStop(0.6, 'rgba(255,0,255,0.1)');
+        aura.addColorStop(1, 'rgba(255,0,255,0)');
+        ctx.fillStyle = aura;
+        ctx.beginPath();
+        ctx.arc(ol.x, ol.y, ol.r * 2.2, 0, Math.PI * 2);
+        ctx.fill();
+        // пульсирующие кольца
+        ctx.strokeStyle = 'rgba(255,0,255,0.5)';
+        ctx.lineWidth = 3;
+        for (var oc = 0; oc < 3; oc++) {
+          var orr = ol.r * (1.3 + ((gameTime * 0.5 + oc * 0.33) % 1) * 0.9);
+          ctx.globalAlpha = 0.5 * (1 - ((gameTime * 0.5 + oc * 0.33) % 1));
+          ctx.beginPath();
+          ctx.arc(ol.x, ol.y, orr, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+        // шипы-кольца
+        ctx.strokeStyle = '#f0f'; ctx.lineWidth = 6;
+        for (var sp2 = 0; sp2 < 16; sp2++) {
+          var sa2 = sp2 * Math.PI / 8 + gameTime * 0.3;
+          ctx.beginPath();
+          ctx.moveTo(ol.x + Math.cos(sa2) * ol.r * 0.95, ol.y + Math.sin(sa2) * ol.r * 0.95);
+          ctx.lineTo(ol.x + Math.cos(sa2) * ol.r * 1.45, ol.y + Math.sin(sa2) * ol.r * 1.45);
+          ctx.stroke();
+        }
+        // корона
+        ctx.fillStyle = '#ff0';
+        ctx.beginPath();
+        ctx.moveTo(ol.x - ol.r * 0.4, ol.y - ol.r * 0.8);
+        ctx.lineTo(ol.x - ol.r * 0.3, ol.y - ol.r * 1.3);
+        ctx.lineTo(ol.x - ol.r * 0.1, ol.y - ol.r * 0.95);
+        ctx.lineTo(ol.x, ol.y - ol.r * 1.45);
+        ctx.lineTo(ol.x + ol.r * 0.1, ol.y - ol.r * 0.95);
+        ctx.lineTo(ol.x + ol.r * 0.3, ol.y - ol.r * 1.3);
+        ctx.lineTo(ol.x + ol.r * 0.4, ol.y - ol.r * 0.8);
+        ctx.closePath();
+        ctx.fill();
+        // щит
+        if (ol.shieldUp) {
+          ctx.strokeStyle = 'rgba(150,220,255,0.9)';
+          ctx.lineWidth = 6;
+          ctx.beginPath();
+          ctx.arc(ol.x, ol.y, ol.r * 1.35 + Math.sin(gameTime * 10) * 8, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(150,220,255,0.08)';
+          ctx.beginPath();
+          ctx.arc(ol.x, ol.y, ol.r * 1.35, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
       // eye
       var eang = Math.atan2(player.y - en2.y, player.x - en2.x);
       ctx.fillStyle = '#fff';
@@ -2353,6 +2495,32 @@ var text = t('top10');
     if (player && player.iframes > 0 && state === 'playing') {
       ctx.fillStyle = 'rgba(255,50,50,0.06)';
       ctx.fillRect(0, 0, W, H);
+    }
+
+    // экранный HP-бар повелителя
+    for (var ovi = 0; ovi < enemies.length; ovi++) {
+      if (!enemies[ovi].overlord) continue;
+      var ov = enemies[ovi];
+      var bx2 = W / 2, by2 = 46, bw2 = Math.min(W * 0.6, 520);
+      ctx.fillStyle = 'rgba(0,0,0,0.65)';
+      ctx.fillRect(bx2 - bw2 / 2 - 4, by2 - 26, bw2 + 8, 30);
+      ctx.strokeStyle = '#f0f';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(bx2 - bw2 / 2 - 4, by2 - 26, bw2 + 8, 30);
+      ctx.fillStyle = '#500';
+      ctx.fillRect(bx2 - bw2 / 2, by2 - 22, bw2, 22);
+      ctx.fillStyle = '#f0f';
+      ctx.fillRect(bx2 - bw2 / 2, by2 - 22, bw2 * clamp(ov.hp / ov.maxHp, 0, 1), 22);
+      if (ov.shieldUp) {
+        ctx.fillStyle = 'rgba(150,220,255,0.7)';
+        ctx.fillRect(bx2 - bw2 / 2, by2 - 6, bw2 * clamp(ov.shield / 20000, 0, 1), 6);
+      }
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('☠ OVERLORD ' + (ov.shieldUp ? '⚔ SHIELD' : '♥ ' + Math.max(0, Math.round(ov.hp))) , bx2, by2 - 32);
+      ctx.textAlign = 'left';
+      break;
     }
   }
 
