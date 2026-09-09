@@ -274,6 +274,8 @@ var text = t('top10');
 
   /* ============ GAME STATE ============ */
   var state = 'menu';
+  var victory = false;
+  var victoryTime = 0;
   var keys = {};
   var mouse = { x: W/2, y: H/2, down: false };
   var touchId = null;
@@ -333,7 +335,7 @@ var text = t('top10');
     return {
       x: WORLD_W / 2, y: WORLD_H / 2, r: 18, speed: 190 * (1 + 0.06 * (upg.speed || 0)), hp: 100 + 15 * (upg.hp || 0), maxHp: 100 + 15 * (upg.hp || 0),
       xp: 0, xpNeed: 30, lvl: 1, iframes: 0,
-      skinColor: skin.color, ang: 0, aimAng: 0, speedBoost: 0, dmgBoost: 0, skinModel: 'jet',
+      skinColor: skin.color, ang: 0, aimAng: 0, speedBoost: 0, dmgBoost: 0, skinModel: 'jet', victory: false,
       upDmg: 1 + 0.1 * (upg.dmg || 0), pickupR: 60 * (1 + 0.2 * (upg.magnet || 0)),
       upRateMul: Math.pow(0.92, upg.rate || 0), shield: upg.shield || 0, critChance: 0.08 * (upg.crit || 0), xpMul: 1 + 0.1 * (upg.xp || 0),
       weapons: [{ id: 'auto', lvl: 1 }],
@@ -674,7 +676,8 @@ var text = t('top10');
     boss_titan: { r: 85, hp: 2400, speed: 38, dmg: 38, xp: 200, color: '#f90', score: 700, boss: true, minSpeed: true },
     boss_dread: { r: 95, hp: 4200, speed: 32, dmg: 55, xp: 350, color: '#f2f', score: 1200, boss: true, shoot: true },
     boss_colossus: { r: 120, hp: 7500, speed: 26, dmg: 85, xp: 600, color: '#d80', score: 2000, boss: true, minSpeed: true, shoot: true },
-    boss_overlord: { r: 210, hp: 90000, speed: 13, dmg: 150, xp: 4000, color: '#f0f', score: 8000, boss: true, minSpeed: true, shoot: true, overlord: true }
+    boss_overlord: { r: 230, hp: 150000, speed: 12, dmg: 160, xp: 5000, color: '#f0f', score: 12000, boss: true, minSpeed: true, shoot: true, overlord: true, armor: 0.75 },
+    boss_thanos: { r: 300, hp: 800000, speed: 10, dmg: 250, xp: 20000, color: '#e33', score: 40000, boss: true, minSpeed: true, shoot: true, overlord: true, final: true, armor: 0.85 }
   };
 
   function spawnEnemy(type, zx, zy) {
@@ -682,25 +685,30 @@ var text = t('top10');
     var ang = Math.random() * Math.PI * 2;
     var dist = Math.max(W, H) / 1.4 + 120;
     var hpScale = t.boss ? (1 + (waveNum - 1) * 0.35) : (1 + (waveNum - 1) * 0.09);
-    if (t.overlord) hpScale = 1 + (waveNum - 10) * 0.4;
+    if (t.final) hpScale = 1;
+    else if (t.overlord) hpScale = 1 + (waveNum - 10) * 0.5;
     var e = {
       type: type, r: t.r, hp: t.hp * hpScale, maxHp: t.hp * hpScale,
       speed: (t.minSpeed ? Math.max(6, t.speed - waveNum) : t.speed) * (1 + waveNum * 0.02),
       dmg: Math.round(t.dmg * (1 + waveNum * 0.04)), xp: t.xp, color: t.color, score: t.score, x: 0, y: 0,
-      hitFlash: 0, shootTimer: Math.random() * 2, splits: t.splits, boss: t.boss, shoot: t.shoot, overlord: !!t.overlord
+      hitFlash: 0, shootTimer: Math.random() * 2, splits: t.splits, boss: t.boss, shoot: t.shoot, overlord: !!t.overlord, final: !!t.final, armor: t.armor
     };
     e.x = player.x + Math.cos(ang) * dist;
     e.y = player.y + Math.sin(ang) * dist;
     if (e.overlord) {
       // способности повелителя
-      e.abilityTimer = 0; e.phase = 0; e.spawnTimer = 8; e.beamTimer = 5; e.shieldUp = false; e.shield = 20000; e.ringTimer = 7;
+      e.abilityTimer = 0; e.phase = 0; e.spawnTimer = 8; e.beamTimer = 5; e.shieldUp = false; e.shield = e.final ? 100000 : 20000; e.ringTimer = 7;
       var czx = (typeof zx === 'number') ? zx : player.x;
       var czy = (typeof zy === 'number') ? zy : player.y;
       e.minX = clamp(czx - 700, 150, WORLD_W - 150); e.maxX = clamp(czx + 700, 150, WORLD_W - 150);
       e.minY = clamp(czy - 700, 150, WORLD_H - 150); e.maxY = clamp(czy + 700, 150, WORLD_H - 150);
+      if (e.final) {
+        e.minX = clamp(czx - 1200, 150, WORLD_W - 150); e.maxX = clamp(czx + 1200, 150, WORLD_W - 150);
+        e.minY = clamp(czy - 1200, 150, WORLD_H - 150); e.maxY = clamp(czy + 1200, 150, WORLD_H - 150);
+      }
       e.x = czx + Math.cos(ang) * 400;
       e.y = czy + Math.sin(ang) * 400;
-      fx.push({ type: 'boom', x: e.x, y: e.y, r: 320, life: 1, maxLife: 1, c: '#f0f' });
+      fx.push({ type: 'boom', x: e.x, y: e.y, r: 320, life: 1, maxLife: 1, c: e.final ? '#e33' : '#f0f' });
       soundBigBoom();
     }
     enemies.push(e);
@@ -743,6 +751,12 @@ var text = t('top10');
       soundBigBoom();
       shake = Math.min(shake + 12, 22);
     }
+    if (waveNum === 12) {
+      spawnEnemy('boss_thanos', player.x, player.y - 600);
+      hud('★ THANOS AWAKENS ★', '#e33');
+      soundBigBoom();
+      shake = Math.min(shake + 15, 24);
+    }
     var bossCount = 1;
     if (waveNum >= 6) bossCount = 2;
     if (waveNum >= 10 && waveNum !== 10) bossCount = 3;
@@ -750,6 +764,7 @@ var text = t('top10');
     if (waveNum >= 22) bossCount = 5;
     if (bossCount > 5) bossCount = 5;
     if (waveNum === 10) bossCount = 0;
+    if (waveNum === 12) bossCount = 0;
     var maxLive = 4 + Math.floor(waveNum / 6);
     if (bossCount > maxLive - liveBoss) bossCount = Math.max(0, maxLive - liveBoss);
     for (var bi = 0; bi < bossCount; bi++) {
@@ -1051,7 +1066,7 @@ var text = t('top10');
       }
       return;
     }
-    e.hp -= dmg;
+    e.hp -= dmg * (e.armor ? (1 - e.armor) : 1);
     e.hitFlash = 0.1;
     boom(e.x, e.y, '#fff', 3);
     if (e.hp <= 0) { killEnemy(idx); }
@@ -1094,6 +1109,29 @@ var text = t('top10');
       }
       fx.push({ type: 'boom', x: e.x, y: e.y, r: 220, life: 0.8, maxLife: 0.8 });
       if (player.lvl < 15 && Math.random() < 0.5) { player.xp += e.xp; }
+      // THANOS побеждён — победа!
+      if (e.final) {
+        victory = true;
+        victoryTime = gameTime;
+        for (var vbi = 0; vbi < 80; vbi++) {
+          var vba = Math.random() * Math.PI * 2;
+          parts.push({ x: e.x, y: e.y, vx: Math.cos(vba) * 400, vy: Math.sin(vba) * 400, life: 2, maxLife: 2.5, r: 6, c: '#ff0' });
+          parts.push({ x: e.x, y: e.y, vx: Math.cos(vba + 0.2) * 300, vy: Math.sin(vba + 0.2) * 300, life: 2, maxLife: 2.5, r: 4, c: '#f44' });
+        }
+        fx.push({ type: 'boom', x: e.x, y: e.y, r: 600, life: 2, maxLife: 2, c: '#fff' });
+        hud('★ THANOS HAS FALLEN ★', '#ff0');
+        // истребитель превращается
+        player.r = 50;
+        player.maxHp = 9999;
+        player.hp = 9999;
+        player.speed = 280;
+        player.victory = true;
+        shake = 30;
+        setTimeout(function () {
+          state = 'victory';
+          showVictory();
+        }, 4000);
+      }
     } else {
       boom(e.x, e.y, e.color, 8);
     }
@@ -1310,9 +1348,10 @@ var text = t('top10');
     player = makePlayer();
     enemies = []; projectiles = []; gems = []; parts = []; fx = []; orbHit = []; magnet = [];
     helper = null;
+    victory = false; victoryTime = 0;
     waves = []; gameTime = 0; waveNum = 0; spawnTimer = 0; kills = 0; score = 0; freezeTimer = 0; shake = 0;
     combo = 0; comboTimer = 0;
-    autoTimers = {}; hasSplash = false; hasFreezeFreeze = false;
+    autoTimers = {}; hasSplash = false; hasFreezeFreeze = false; victory = false; victoryTime = 0;
 
     // apply boosters (потратить 1 за матч)
     if (progress.boosters.dmg > 0) { progress.boosters.dmg--; player.skinColor = player.skinColor; WEAPONS.auto.dmg = 12; player.dmgBoost = true; }
@@ -1371,6 +1410,23 @@ var text = t('top10');
   function fmtTime(s) {
     var m = Math.floor(s / 60), sec = Math.floor(s % 60);
     return m + ':' + (sec < 10 ? '0' : '') + sec;
+  }
+
+  function showVictory() {
+    var scr = document.createElement('div');
+    scr.className = 'gameover-screen';
+    scr.innerHTML = '<h2 style="color:#ff0;font-size:48px">★ VICTORY ★</h2>' +
+      '<div class="stats" style="color:#ff0;font-size:20px">THANOS HAS BEEN DEFEATED!</div>' +
+      '<div class="stats">' + t('waveReached') + '<b>' + waveNum + '</b></div>' +
+      '<div class="stats">' + t('kills') + '<b>' + kills + '</b></div>' +
+      '<div class="stats">' + t('scoreFinal') + '<b>' + Math.round(score) + '</b></div>' +
+      '<div class="stats">' + t('timeSurv') + '<b>' + fmtTime(gameTime) + '</b></div>' +
+      '<div class="stats" style="color:#ff0">★你的战斗机已成为宇宙之王★</div>' +
+      '<button class="btn-play" onclick="window.__restart()">' + t('again') + '</button>' +
+      '<button class="btn-shop" onclick="window.__menu()">' + t('menuBtn') + '</button>';
+    document.body.appendChild(scr);
+    window.__restart = function () { startGame(); };
+    window.__menu = function () { quitToMenu(); };
   }
 
   function showMenu() {
@@ -1695,6 +1751,56 @@ var text = t('top10');
           }
           fx.push({ type: 'ring', x: en.x, y: en.y, r: 6, maxR: 80, life: 0.4, c: '#fff' });
           hud('DEATH BEAM!', '#fff');
+        }
+        // ===== THANOS: уникальные способности =====
+        if (en.final) {
+          var thPhase = (en.hp / en.maxHp < 0.5) ? 1 : 0;
+          // телепортация в случайную точку зоны
+          en.abilityTimer += dt;
+          if (en.abilityTimer > (thPhase ? 3 : 5)) {
+            en.abilityTimer = 0;
+            var tTx = en.minX + Math.random() * (en.maxX - en.minX);
+            var tTy = en.minY + Math.random() * (en.maxY - en.minY);
+            fx.push({ type: 'boom', x: en.x, y: en.y, r: 120, life: 0.4, maxLife: 0.4, c: '#e33' });
+            en.x = tTx;
+            en.y = tTy;
+            fx.push({ type: 'boom', x: en.x, y: en.y, r: 120, life: 0.4, maxLife: 0.4, c: '#ff0' });
+            hud('THANOS TELEPORTS!', '#e33');
+          }
+          // кольцо смерти (задолго, много снарядов)
+          en.ringTimer -= dt;
+          if (en.ringTimer <= 0) {
+            en.ringTimer = thPhase ? 3.5 : 6;
+            var ringN2 = thPhase ? 80 : 50;
+            for (var ri2 = 0; ri2 < ringN2; ri2++) {
+              var rA2 = ri2 / ringN2 * Math.PI * 2 + en.x;
+              var rSp2 = 220 + Math.random() * 100;
+              projectiles.push({ x: en.x + Math.cos(rA2) * en.r, y: en.y + Math.sin(rA2) * en.r, vx: Math.cos(rA2) * rSp2, vy: Math.sin(rA2) * rSp2, dmg: en.dmg * 0.7, r: 9, c: '#f44', life: 4, enemy: true });
+            }
+            fx.push({ type: 'boom', x: en.x, y: en.y, r: en.r * 2.5, life: 0.7, maxLife: 0.7, c: '#f44' });
+            soundBigBoom();
+          }
+          // призыв волны
+          en.spawnTimer -= dt;
+          if (en.spawnTimer <= 0) {
+            en.spawnTimer = thPhase ? 4 : 7;
+            var miniTypes2 = ['boss_colossus', 'boss_colossus', 'tank', 'shooter', 'fast'];
+            for (var mi2 = 0; mi2 < 6; mi2++) { spawnAround(en, miniTypes2[Math.floor(Math.random() * miniTypes2.length)]); }
+            boom(en.x, en.y, '#e33', 10);
+          }
+          // суперлуч ( Deathsweep 360° )
+          en.beamTimer -= dt;
+          if (en.beamTimer <= 0) {
+            en.beamTimer = thPhase ? 2.5 : 5;
+            for (var ba2 = 0; ba2 < 36; ba2++) {
+              var ba2Ang = ba2 / 36 * Math.PI * 2;
+              projectiles.push({ x: en.x + Math.cos(ba2Ang) * en.r, y: en.y + Math.sin(ba2Ang) * en.r, vx: Math.cos(ba2Ang) * 650, vy: Math.sin(ba2Ang) * 650, dmg: en.dmg * 1.5, r: 14, c: '#ff0', life: 2.5, enemy: true, laser: true, pierce: true });
+            }
+            fx.push({ type: 'boom', x: en.x, y: en.y, r: 400, life: 0.8, maxLife: 0.8, c: '#ff0' });
+            hud('THANOS SNAP!', '#ff0');
+            soundBigBoom();
+            shake = Math.min(shake + 8, 16);
+          }
         }
       }
     }
@@ -2214,6 +2320,46 @@ var text = t('top10');
           ctx.fill();
         }
       }
+      // THANOS: уникальный визуал поверх повелителя
+      if (en2.final) {
+        var th = en2;
+        // страшная аура
+        var thAura = ctx.createRadialGradient(th.x, th.y, th.r * 0.3, th.x, th.y, th.r * 3);
+        thAura.addColorStop(0, 'rgba(255,50,0,0.5)');
+        thAura.addColorStop(0.4, 'rgba(255,50,0,0.15)');
+        thAura.addColorStop(1, 'rgba(255,50,0,0)');
+        ctx.fillStyle = thAura;
+        ctx.beginPath();
+        ctx.arc(th.x, th.y, th.r * 3, 0, Math.PI * 2);
+        ctx.fill();
+        // 6 камней бесконечности вращаются
+        var stoneCols = ['#f44', '#4af', '#ff0', '#0f0', '#f4f', '#fff'];
+        for (var si = 0; si < 6; si++) {
+          var siAng = gameTime * 1.5 + si / 6 * Math.PI * 2;
+          var siR = th.r * 1.8 + Math.sin(gameTime * 3 + si) * 10;
+          var siX = th.x + Math.cos(siAng) * siR;
+          var siY = th.y + Math.sin(siAng) * siR;
+          ctx.shadowColor = stoneCols[si]; ctx.shadowBlur = 20;
+          ctx.fillStyle = stoneCols[si];
+          ctx.beginPath();
+          ctx.arc(siX, siY, 12 + Math.sin(gameTime * 5 + si) * 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+        // зловещий глаз
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(th.x, th.y, th.r * 0.35, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#e00';
+        ctx.beginPath();
+        ctx.arc(th.x, th.y, th.r * 0.18, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(th.x, th.y, th.r * 0.08, 0, Math.PI * 2);
+        ctx.fill();
+      }
       // eye
       var eang = Math.atan2(player.y - en2.y, player.x - en2.x);
       ctx.fillStyle = '#fff';
@@ -2266,6 +2412,7 @@ var text = t('top10');
       ctx.globalAlpha = blink2 ? 0.4 : 1;
       ctx.translate(player.x, player.y);
       ctx.rotate(pAng);
+      if (player.victory) ctx.scale(2.8, 2.8);
       ctx.shadowColor = '#4af'; ctx.shadowBlur = 20;
       // ship
       if (player.skinModel === 'jet') {
@@ -2376,6 +2523,43 @@ var text = t('top10');
         ctx.arc(0, 0, 26 + Math.sin(gameTime * 8) * 3, 0, Math.PI * 2);
         ctx.stroke();
       }
+      ctx.restore();
+    }
+    //胜利：гигантский истребитель с короной
+    if (player && player.victory) {
+      ctx.save();
+      ctx.translate(player.x, player.y);
+      ctx.shadowColor = '#ff0';
+      ctx.shadowBlur = 40;
+      // огромная аура-сияние
+      var vAura = ctx.createRadialGradient(0, 0, 30, 0, 0, 180);
+      vAura.addColorStop(0, 'rgba(255,215,0,0.4)');
+      vAura.addColorStop(0.5, 'rgba(255,215,0,0.1)');
+      vAura.addColorStop(1, 'rgba(255,215,0,0)');
+      ctx.fillStyle = vAura;
+      ctx.beginPath();
+      ctx.arc(0, 0, 180, 0, Math.PI * 2);
+      ctx.fill();
+      // корона
+      ctx.fillStyle = '#ff0';
+      ctx.beginPath();
+      ctx.moveTo(-40, -55);
+      ctx.lineTo(-30, -85);
+      ctx.lineTo(-15, -65);
+      ctx.lineTo(0, -95);
+      ctx.lineTo(15, -65);
+      ctx.lineTo(30, -85);
+      ctx.lineTo(40, -55);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      // драгоценности на короне
+      ctx.fillStyle = '#f44';
+      ctx.beginPath(); ctx.arc(0, -70, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#4af';
+      ctx.beginPath(); ctx.arc(-25, -60, 3, 0, Math.PI * 2); ctx.arc(25, -60, 3, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
     }
 
@@ -2550,7 +2734,8 @@ var text = t('top10');
       ctx.fillStyle = '#fff';
       ctx.font = 'bold 14px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('☠ OVERLORD ' + (ov.shieldUp ? '⚔ SHIELD' : '♥ ' + Math.max(0, Math.round(ov.hp))) , bx2, by2 - 32);
+      var ovLabel = ov.final ? '★ THANOS' : '☠ OVERLORD';
+      ctx.fillText(ovLabel + ' ' + (ov.shieldUp ? '⚔ SHIELD' : '♥ ' + Math.max(0, Math.round(ov.hp))) , bx2, by2 - 32);
       ctx.textAlign = 'left';
       break;
     }
