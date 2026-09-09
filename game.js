@@ -283,6 +283,7 @@ var text = t('top10');
   var player = null;
   var enemies = [], projectiles = [], gems = [], parts = [], fx = [], orbHit = [], magnet = [];
   var waves = [], spawnTimer = 0;
+  var helper = null;
   var gameTime = 0, waveNum = 0, score = 0, kills = 0;
   var combo = 0, comboTimer = 0, maxCombo = 0;
   var bestScore = 0;
@@ -337,6 +338,13 @@ var text = t('top10');
       upRateMul: Math.pow(0.92, upg.rate || 0), shield: upg.shield || 0, critChance: 0.08 * (upg.crit || 0), xpMul: 1 + 0.1 * (upg.xp || 0),
       weapons: [{ id: 'auto', lvl: 1 }],
       orbitWeps: [], aoeWeps: [], specials: []
+    };
+  }
+
+  function makeHelper() {
+    return {
+      x: player.x + 120, y: player.y + 40, r: 70, hp: 600, maxHp: 600,
+      ang: 0, fireTimer: 0, kamTimer: 0, laserTimer: 0
     };
   }
 
@@ -700,6 +708,13 @@ var text = t('top10');
   function spawnWave() {
     waveNum++;
     announceWave();
+    if (waveNum === 10) {
+      helper = makeHelper();
+      hud('GIANT HELPER ASSEMBLED!', '#0ff');
+      fx.push({ type: 'boom', x: helper.x, y: helper.y, r: 260, life: 0.8, maxLife: 0.8, c: '#0ff' });
+      soundBigBoom();
+      shake = Math.min(shake + 6, 14);
+    }
     var bossPool = pickBossPool(waveNum);
     var liveBoss = 0;
     for (var lb = 0; lb < enemies.length; lb++) { if (enemies[lb].boss) liveBoss++; }
@@ -879,6 +894,76 @@ var text = t('top10');
         }
       }
       if (hit) { o.hitTimer = 0.3; boom(o.hx, o.hy, '#f4f', 4); }
+    }
+  }
+
+  function updateHelper() {
+    if (!helper) return;
+    var h = helper;
+    // следование за игроком на орбите (большой радиус)
+    var oa = Math.atan2(player.y - h.y, player.x - h.x);
+    var wantD = 190;
+    var d = dist(h, player);
+    if (d > wantD + 20) {
+      h.x += Math.cos(oa) * 150 * dt;
+      h.y += Math.sin(oa) * 150 * dt;
+    } else if (d < wantD - 40) {
+      h.x -= Math.cos(oa) * 90 * dt;
+      h.y -= Math.sin(oa) * 90 * dt;
+    } else {
+      // мягкий дрейф по окружности вокруг игрока
+      var swing = Math.PI * 2 * 0.15;
+      var ta = oa + Math.PI * 0.5 + Math.sin(gameTime * 0.7) * swing;
+      h.x += Math.cos(ta) * 20 * dt;
+      h.y += Math.sin(ta) * 20 * dt;
+    }
+    h.x = Math.max(80, Math.min(WORLD_W - 80, h.x));
+    h.y = Math.max(80, Math.min(WORLD_H - 80, h.y));
+    h.ang += dt * 0.8;
+
+    // стрельба лазерами по ближайшим врагам
+    h.fireTimer -= dt;
+    if (h.fireTimer <= 0 && enemies.length > 0) {
+      h.fireTimer = 0.24;
+      var t = findNearest(700);
+      if (t) {
+        var ha = Math.atan2(t.y - h.y, t.x - h.x);
+        for (var li = 0; li < 4; li++) {
+          var la = ha + (li - 1.5) * 0.08;
+          projectiles.push({ x: h.x + Math.cos(la) * h.r, y: h.y + Math.sin(la) * h.r, vx: Math.cos(la) * 700, vy: Math.sin(la) * 700, dmg: 45, r: 5, c: '#0ff', life: 2.4, laser: true, pierce: true, pierceHits: 9 });
+        }
+        fx.push({ type: 'ring', x: h.x + Math.cos(ha) * h.r, y: h.y + Math.sin(ha) * h.r, r: 6, maxR: 26, life: 0.2, c: '#0ff' });
+      }
+    }
+
+    // периодическая ракета-залп по случайным врагам
+    h.kamTimer -= dt;
+    if (h.kamTimer <= 0) {
+      h.kamTimer = 4.5;
+      for (var ki = 0; ki < 5; ki++) {
+        var target = enemies[Math.floor(Math.random() * enemies.length)];
+        if (!target) break;
+        var ka = Math.atan2(target.y - h.y, target.x - h.x);
+        projectiles.push({ x: h.x + Math.cos(ka) * h.r, y: h.y + Math.sin(ka) * h.r, vx: Math.cos(ka) * 380, vy: Math.sin(ka) * 380, dmg: 120, r: 8, c: '#ff6', life: 3, rocket: true, splash: true, laser: false });
+      }
+      soundBigBoom();
+    }
+
+    // лазерная пушка-луч время от времени
+    h.laserTimer -= dt;
+    if (h.laserTimer <= 0) {
+      h.laserTimer = 7;
+      var beamT = enemies[Math.floor(Math.random() * enemies.length)];
+      if (beamT) {
+        for (var ej = enemies.length - 1; ej >= 0; ej--) {
+          if (dist(enemies[ej], beamT) < 140) {
+            damageEnemy(ej, 200);
+          }
+        }
+        fx.push({ type: 'boom', x: beamT.x, y: beamT.y, r: 140, life: 0.5, maxLife: 0.5, c: '#0ff' });
+        boom(beamT.x, beamT.y, '#0ff', 12);
+        hud('MEGA LASER!', '#0ff');
+      }
     }
   }
 
@@ -1162,6 +1247,7 @@ var text = t('top10');
     state = 'playing';
     player = makePlayer();
     enemies = []; projectiles = []; gems = []; parts = []; fx = []; orbHit = []; magnet = [];
+    helper = null;
     waves = []; gameTime = 0; waveNum = 0; spawnTimer = 0; kills = 0; score = 0; freezeTimer = 0; shake = 0;
     combo = 0; comboTimer = 0;
     autoTimers = {}; hasSplash = false; hasFreezeFreeze = false;
@@ -1241,7 +1327,7 @@ var text = t('top10');
     window.__test = function () {
       var bc = 0;
       for (var ti = 0; ti < enemies.length; ti++) { if (enemies[ti].boss) bc++; }
-      return { enemies: enemies.length, waveNum: waveNum, bosses: bc, diamonds: progress.diamonds, upg: progress.upg, types: enemies.map(function (e) { return e.type; }).slice(0, 10) };
+      return { enemies: enemies.length, waveNum: waveNum, bosses: bc, helper: helper ? 1 : 0, diamonds: progress.diamonds, upg: progress.upg, types: enemies.map(function (e) { return e.type; }).slice(0, 10) };
     };
     window.__test.forceWave = function () { spawnWave(); return window.__test(); };
     window.__test.bp = function (w) { return pickBossPool(w); };
@@ -1362,21 +1448,6 @@ var text = t('top10');
     p.y += dy * p.speed * (1 + 0.25 * (p.speedBoost || 0)) * dt;
     wrapRelax();
 
-    // столкновение с планетами: нельзя пролететь сквозь
-    if (planets.length > 0) {
-      for (var pc = 0; pc < planets.length; pc++) {
-        var pln = planets[pc];
-        var pd2 = dist(p, pln);
-        var minD = pln.r + p.r - 6;
-        if (pd2 < minD) {
-          var pa2 = Math.atan2(p.y - pln.y, p.x - pln.x);
-          p.x = pln.x + Math.cos(pa2) * minD;
-          p.y = pln.y + Math.sin(pa2) * minD;
-          p.vx = p.vy = 0;
-        }
-      }
-    }
-
     // поворот модели: в сторону движения, иначе — на ближайшего врага
     if (len > 0.2) {
       p.aimAng = Math.atan2(dy, dx);
@@ -1422,6 +1493,7 @@ var text = t('top10');
     fireAuto(p.weapons);
     fireMines(p.weapons);
     updateOrbits();
+    updateHelper();
     updateNovas();
 
     // projectiles
@@ -2131,6 +2203,92 @@ var text = t('top10');
         ctx.stroke();
       }
       ctx.restore();
+    }
+
+    // GIANT HELPER
+    if (helper) {
+      var h = helper;
+      var bobb = Math.sin(gameTime * 1.5) * 6;
+      ctx.save();
+      ctx.translate(h.x, h.y + bobb);
+      ctx.shadowColor = '#0ff'; ctx.shadowBlur = 30;
+      // щит-купол
+      ctx.strokeStyle = 'rgba(0,255,255,0.35)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(0, 0, h.r * 1.45 + Math.sin(gameTime * 4) * 4, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(0,255,255,0.15)';
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      ctx.arc(0, 0, h.r * 1.55, 0, Math.PI * 2);
+      ctx.stroke();
+      // корпус — огромный боевой робот
+      ctx.fillStyle = '#0b2430';
+      ctx.strokeStyle = '#0ff';
+      ctx.lineWidth = 3;
+      // ноги
+      ctx.beginPath();
+      ctx.moveTo(-h.r * 0.5, h.r * 0.75);
+      ctx.lineTo(-h.r * 0.9, h.r * 1.1);
+      ctx.lineTo(-h.r * 0.3, h.r * 1.1);
+      ctx.lineTo(0, h.r * 0.75);
+      ctx.moveTo(h.r * 0.5, h.r * 0.75);
+      ctx.lineTo(h.r * 0.9, h.r * 1.1);
+      ctx.lineTo(h.r * 0.3, h.r * 1.1);
+      ctx.lineTo(0, h.r * 0.75);
+      ctx.stroke();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.fillStyle = '#0e3140';
+      ctx.moveTo(0, -h.r);
+      ctx.lineTo(-h.r * 0.75, h.r * 0.35);
+      ctx.lineTo(-h.r * 0.4, h.r * 0.75);
+      ctx.lineTo(h.r * 0.4, h.r * 0.75);
+      ctx.lineTo(h.r * 0.75, h.r * 0.35);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      // голова-кабина
+      ctx.fillStyle = '#8ff';
+      ctx.beginPath();
+      ctx.arc(0, -h.r * 0.5, h.r * 0.26, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#0ff';
+      ctx.beginPath();
+      ctx.arc(0, -h.r * 0.5, h.r * 0.12, 0, Math.PI * 2);
+      ctx.fill();
+      // пульсар-реактор в груди
+      var hpPulse = 0.5 + Math.sin(gameTime * 6) * 0.5;
+      ctx.fillStyle = h.hp < h.maxHp * 0.5 ? '#f40' : '#0ff';
+      ctx.beginPath();
+      ctx.arc(0, h.r * 0.1, h.r * 0.16 * (0.6 + hpPulse * 0.4), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(0, h.r * 0.1, h.r * 0.07, 0, Math.PI * 2);
+      ctx.fill();
+      // плечевые пушки
+      ctx.fillStyle = '#0b2430';
+      ctx.strokeStyle = '#0ff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(-h.r * 0.72, h.r * 0.1, h.r * 0.22, 0, Math.PI * 2);
+      ctx.arc(h.r * 0.72, h.r * 0.1, h.r * 0.22, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#0ff';
+      ctx.beginPath();
+      ctx.arc(-h.r * 0.72 + Math.sin(gameTime * 8) * 2, h.r * 0.1, h.r * 0.09, 0, Math.PI * 2);
+      ctx.arc(h.r * 0.72 + Math.sin(gameTime * 8 + Math.PI) * 2, h.r * 0.1, h.r * 0.09, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      // HP-бар
+      var hw = 150;
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(h.x - hw / 2, h.y - h.r * 1.75, hw, 10);
+      ctx.fillStyle = '#0ff';
+      ctx.fillRect(h.x - hw / 2, h.y - h.r * 1.75, hw * clamp(h.hp / h.maxHp, 0, 1), 10);
     }
 
     // particles
