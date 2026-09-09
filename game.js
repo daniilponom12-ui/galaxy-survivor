@@ -677,7 +677,7 @@ var text = t('top10');
     boss_dread: { r: 95, hp: 4200, speed: 32, dmg: 55, xp: 350, color: '#f2f', score: 1200, boss: true, shoot: true },
     boss_colossus: { r: 120, hp: 7500, speed: 26, dmg: 85, xp: 600, color: '#d80', score: 2000, boss: true, minSpeed: true, shoot: true },
     boss_overlord: { r: 230, hp: 150000, speed: 12, dmg: 160, xp: 5000, color: '#f0f', score: 12000, boss: true, minSpeed: true, shoot: true, overlord: true, armor: 0.75 },
-    boss_thanos: { r: 300, hp: 800000, speed: 10, dmg: 250, xp: 20000, color: '#e33', score: 40000, boss: true, minSpeed: true, shoot: true, overlord: true, final: true, armor: 0.85 }
+    boss_thanos: { r: 300, hp: 800000, speed: 22, dmg: 250, xp: 20000, color: '#e33', score: 40000, boss: true, minSpeed: true, shoot: true, overlord: true, final: true, armor: 0.85 }
   };
 
   function spawnEnemy(type, zx, zy) {
@@ -1364,6 +1364,7 @@ var text = t('top10');
   }
 
   function endGame() {
+    if (victory) { state = 'victory'; showVictory(); return; }
     state = 'gameover';
     stopMusic();
     var isBest = score > bestScore;
@@ -1449,6 +1450,25 @@ var text = t('top10');
     };
     window.__test.forceWave = function () { spawnWave(); return window.__test(); };
     window.__test.bp = function (w) { return pickBossPool(w); };
+    window.__test.thanosDist = function () {
+      for (var i = 0; i < enemies.length; i++) {
+        var t = enemies[i];
+        if (t.final) {
+          var dx = t.x - player.x, dy = t.y - player.y;
+          return 'dist=' + Math.round(Math.sqrt(dx * dx + dy * dy)) + ' t=(' + Math.round(t.x) + ',' + Math.round(t.y) + ') p=(' + Math.round(player.x) + ',' + Math.round(player.y) + ') hp=' + Math.round(t.hp);
+        }
+      }
+      return 'DEAD/NOT FOUND';
+    };
+    window.__test.killFinal = function () {
+      for (var i = 0; i < enemies.length; i++) {
+        var t = enemies[i];
+        if (t.final) { damageEnemy(i, 99999999); break; }
+      }
+      for (var k2 = 0; k2 < enemies.length; k2++) { if (enemies[k2].final) return 'STILL ALIVE hp=' + Math.round(enemies[k2].hp); }
+      return 'victory=' + victory + ' state=' + state + ' playerR=' + player.r + ' playerVictory=' + player.victory;
+    };
+    window.__test.victoryState = function () { return 'victory=' + victory + ' state=' + state + ' playerR=' + player.r + ' playerVictory=' + player.victory; };
     window.__test.types = function () { var s = {}; for (var i = 0; i < enemies.length; i++) { s[enemies[i].type] = (s[enemies[i].type] || 0) + 1; } return s; };
     window.__test.giveDiam = function (n) { progress.diamonds += n; saveProgress(); return progress.diamonds; };
     window.__test.giveXp = function (v) { gainXp(v); return window.__test(); };
@@ -1510,6 +1530,7 @@ var text = t('top10');
 
   function hitPlayer(dmgv) {
     var p = player;
+    if (victory) { p.hp = 9999; return false; }
     if (p.shield > 0) {
       p.shield--;
       shake = Math.min(shake + 4, 12);
@@ -1700,6 +1721,10 @@ var text = t('top10');
       // способности повелителя
       if (en.overlord) {
         en.abilityTimer += dt;
+        // зона всегда вокруг игрока (у финального босса ближе, чтобы был виден)
+        var zR = en.final ? 480 : 700;
+        en.minX = clamp(p.x - zR, 120, WORLD_W - 120); en.maxX = clamp(p.x + zR, 120, WORLD_W - 120);
+        en.minY = clamp(p.y - zR, 120, WORLD_H - 120); en.maxY = clamp(p.y + zR, 120, WORLD_H - 120);
         // телепортация вдоль своей зоны, не вылетает за её пределы
         if (en.x < en.minX) en.x = en.minX;
         if (en.x > en.maxX) en.x = en.maxX;
