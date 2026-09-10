@@ -39,6 +39,7 @@
       scoreFinal: 'Очки: ', timeSurv: 'Время выживания: ', recordFinal: 'Рекорд: ',
       newRecord: 'НОВЫЙ РЕКОРД!', again: 'Играть снова',
       reviveBtn: '💎 Вернуться (+1 жизнь) — смотри рекламу',
+      reviveMax: 'МАКС. РЕВАЙВОВ (3/3)',
       lbBtn: '🏆 Лидерборд', menuBtn: 'Меню',
       waveLbl: 'Волна: ', waveTitle: 'Волна ', lvlLbl: 'Ур: ', ptsLbl: 'Очки: ', frozen: '  |  ❄',
       levelT: 'УРОВЕНЬ ',
@@ -103,6 +104,7 @@
       scoreFinal: 'Score: ', timeSurv: 'Survival time: ', recordFinal: 'Best: ',
       newRecord: 'NEW RECORD!', again: 'Play again',
       reviveBtn: '💎 Come back (+1 life) — watch ad',
+      reviveMax: 'MAX REVIVES (3/3)',
       lbBtn: '🏆 Leaderboard', menuBtn: 'Menu',
       waveLbl: 'Wave: ', waveTitle: 'Wave ', lvlLbl: 'Lvl: ', ptsLbl: 'Score: ', frozen: '  |  ❄',
       levelT: 'LEVEL ',
@@ -286,6 +288,7 @@ var text = t('top10');
   var helper = null;
   var gameTime = 0, waveNum = 0, score = 0, kills = 0;
   var combo = 0, comboTimer = 0, maxCombo = 0;
+  var revivesUsed = 0;
   var bestScore = 0;
   try { bestScore = +(localStorage.getItem('gs_best') || 0); } catch (e) {}
   var freezeTimer = 0;
@@ -1352,7 +1355,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     helper = null;
     victory = false; victoryTime = 0;
     waves = []; gameTime = 0; waveNum = 0; spawnTimer = 0; kills = 0; score = 0; freezeTimer = 0; shake = 0;
-    combo = 0; comboTimer = 0;
+    combo = 0; comboTimer = 0; revivesUsed = 0;
     autoTimers = {}; hasSplash = false; hasFreezeFreeze = false; victory = false; victoryTime = 0;
 
     // apply boosters (потратить 1 за матч)
@@ -1383,27 +1386,32 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       '<div class="stats">' + t('timeSurv') + '<b>' + fmtTime(gameTime) + '</b></div>' +
       '<div class="stats">' + t('recordFinal') + '<b>' + bestScore + '</b>' + (isBest ? ' <span style="color:#ff0">' + t('newRecord') + '</span>' : '') + '</div>' +
       '<button class="btn-play" onclick="window.__restart()">' + t('again') + '</button>' +
-      '<button class="btn-revive" onclick="window.__revive()" style="padding:14px 48px;font-size:20px;border:none;border-radius:12px;cursor:pointer;margin:8px;font-weight:700;background:linear-gradient(135deg,#fa2,#f80);color:#fff">' + t('reviveBtn') + '</button>' +
+      '<button class="btn-revive" onclick="window.__revive()" style="padding:14px 48px;font-size:20px;border:none;border-radius:12px;cursor:pointer;margin:8px;font-weight:700;background:linear-gradient(135deg,#fa2,#f80);color:#fff">' + (revivesUsed >= 3 ? t('reviveMax') : t('reviveBtn') + ' (' + (3 - revivesUsed) + '/' + 3 + ')') + '</button>' +
       '<button class="btn-leaderboard" onclick="window.__lb()">' + t('lbBtn') + '</button>' +
       '<button class="btn-shop" onclick="window.__menu()">' + t('menuBtn') + '</button>';
     document.body.appendChild(scr);
     window.__restart = function () { if (SDK.inited) SDK.showInterstitial(function(){}); startGame(); };
     window.__revive = function () {
+      if (revivesUsed >= 3) { hud('MAX REVIVES!', '#f44'); return; }
       scr.remove();
       state = 'reviving';
       if (SDK.inited) {
         SDK.showRewarded(function (ok) {
+          if (!ok) { state = 'gameover'; document.body.appendChild(scr); return; }
+          revivesUsed++;
           state = 'playing';
           player.hp = player.maxHp * 0.6;
           enemies.forEach(function (e) { e.hp = Math.max(e.hp / 3, 1); });
           player.iframes = 2.5;
           fx.push({ type: 'boom', x: player.x, y: player.y, r: 200, life: 1, maxLife: 1, c: '#0f0' });
-          hud(t('reviveHp'), '#0f0');
+          hud((t('reviveHp') || 'REVIVE!') + ' (' + revivesUsed + '/3)', '#0f0');
         });
       } else {
+        if (revivesUsed >= 3) { state = 'gameover'; document.body.appendChild(scr); return; }
+        revivesUsed++;
         state = 'playing';
         player.hp = player.maxHp * 0.6; player.iframes = 2.5;
-        hud(t('reviveHp'), '#0f0');
+        hud((t('reviveHp') || 'REVIVE!') + ' (' + revivesUsed + '/3)', '#0f0');
       }
     };
     window.__lb = function () { SDK.showLeaderboard(function () {}); };
