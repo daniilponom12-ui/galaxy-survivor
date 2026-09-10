@@ -676,7 +676,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     boss_dread: { r: 95, hp: 4200, speed: 32, dmg: 55, xp: 350, color: '#f2f', score: 1200, boss: true, shoot: true },
     boss_colossus: { r: 120, hp: 7500, speed: 26, dmg: 85, xp: 600, color: '#d80', score: 2000, boss: true, minSpeed: true, shoot: true },
     boss_overlord: { r: 230, hp: 150000, speed: 12, dmg: 160, xp: 5000, color: '#f0f', score: 12000, boss: true, minSpeed: true, shoot: true, overlord: true, armor: 0.75 },
-    boss_thanos: { r: 300, hp: 6000, speed: 22, dmg: 250, xp: 20000, color: '#e33', score: 40000, boss: true, minSpeed: true, shoot: true, overlord: true, final: true, armor: 0.2 }
+    boss_thanos: { r: 300, hp: 100000000000000, speed: 22, dmg: 250, xp: 20000, color: '#e33', score: 40000, boss: true, minSpeed: true, shoot: true, overlord: true, final: true, armor: 0.2 }
   };
 
   function spawnEnemy(type, zx, zy) {
@@ -696,7 +696,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     e.y = player.y + Math.sin(ang) * dist;
     if (e.overlord) {
       // способности повелителя
-      e.abilityTimer = 0; e.phase = 0; e.spawnTimer = 8; e.beamTimer = 5; e.shieldUp = false; e.shield = e.final ? 2000 : 20000; e.ringTimer = 7;
+      e.abilityTimer = 0; e.phase = 0; e.spawnTimer = 8; e.beamTimer = 5; e.shieldUp = false; e.shield = e.final ? 5000000000000 : 20000; e.ringTimer = 7;
       var czx = (typeof zx === 'number') ? zx : player.x;
       var czy = (typeof zy === 'number') ? zy : player.y;
       e.minX = clamp(czx - 700, 150, WORLD_W - 150); e.maxX = clamp(czx + 700, 150, WORLD_W - 150);
@@ -1473,7 +1473,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     window.__test.killFinal = function () {
       for (var i = 0; i < enemies.length; i++) {
         var t = enemies[i];
-        if (t.final) { damageEnemy(i, 99999999); break; }
+        if (t.final) { damageEnemy(i, 9e15); break; }
       }
       for (var k2 = 0; k2 < enemies.length; k2++) { if (enemies[k2].final) return 'STILL ALIVE hp=' + Math.round(enemies[k2].hp); }
       return 'victory=' + victory + ' state=' + state + ' playerR=' + player.r + ' playerVictory=' + player.victory;
@@ -1745,7 +1745,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         // щит
         en.shieldTimer = (en.shieldTimer || 20) - dt;
         if (ovPhase === 0 && en.hp / en.maxHp < 0.7 && !en.shieldUp && en.shieldTimer <= 0 && en.abilityTimer > 6) {
-          en.shieldUp = true; en.shield = 20000;
+          en.shieldUp = true; en.shield = en.final ? 2000000000000 : 20000;
           en.shieldTimer = 12;
           hud('OVERLORD RAISES SHIELD!', '#9cf');
           en.abilityTimer = 0;
@@ -2770,7 +2770,11 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       ctx.font = 'bold 14px Arial';
       ctx.textAlign = 'center';
       var ovLabel = ov.final ? '★ THANOS' : '☠ OVERLORD';
-      ctx.fillText(ovLabel + ' ' + (ov.shieldUp ? '⚔ SHIELD' : '♥ ' + Math.max(0, Math.round(ov.hp))) , bx2, by2 - 32);
+      var ovHpText = Math.max(0, Math.round(ov.hp));
+      if (ovHpText >= 1e12) ovHpText = (ovHpText / 1e12).toFixed(1).replace(/\.0$/, '') + 'T';
+      else if (ovHpText >= 1e9) ovHpText = (ovHpText / 1e9).toFixed(1).replace(/\.0$/, '') + 'B';
+      else if (ovHpText >= 1e6) ovHpText = (ovHpText / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+      ctx.fillText(ovLabel + ' ' + (ov.shieldUp ? '⚔ SHIELD' : '♥ ' + ovHpText), bx2, by2 - 32);
       ctx.textAlign = 'left';
       break;
     }
