@@ -1392,26 +1392,29 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     document.body.appendChild(scr);
     window.__restart = function () { if (SDK.inited) SDK.showInterstitial(function(){}); startGame(); };
     window.__revive = function () {
-      if (revivesUsed >= 3) { hud('MAX REVIVES!', '#f44'); return; }
-      scr.remove();
+      if (revivesUsed >= 3) {
+        hud(t('reviveMax') || 'MAX REVIVES!', '#f44');
+        return;
+      }
+      var scr2 = document.querySelector('.gameover-screen');
+      if (scr2) scr2.remove();
+      revivesUsed++;
       state = 'reviving';
-      if (SDK.inited) {
+      var doRevive = function () {
+        state = 'playing';
+        player.hp = player.maxHp * 0.6;
+        enemies.forEach(function (e) { e.hp = Math.max(e.hp / 3, 1); });
+        player.iframes = 2.5;
+        fx.push({ type: 'boom', x: player.x, y: player.y, r: 200, life: 1, maxLife: 1, c: '#0f0' });
+        hud((t('reviveHp') || 'REVIVE!') + ' (' + revivesUsed + '/3)', '#0f0');
+        shake = Math.min(shake + 5, 14);
+      };
+      if (SDK.inited && SDK.adv && SDK.adv.showRewardedVideo) {
         SDK.showRewarded(function (ok) {
-          if (!ok) { state = 'gameover'; document.body.appendChild(scr); return; }
-          revivesUsed++;
-          state = 'playing';
-          player.hp = player.maxHp * 0.6;
-          enemies.forEach(function (e) { e.hp = Math.max(e.hp / 3, 1); });
-          player.iframes = 2.5;
-          fx.push({ type: 'boom', x: player.x, y: player.y, r: 200, life: 1, maxLife: 1, c: '#0f0' });
-          hud((t('reviveHp') || 'REVIVE!') + ' (' + revivesUsed + '/3)', '#0f0');
+          doRevive();
         });
       } else {
-        if (revivesUsed >= 3) { state = 'gameover'; document.body.appendChild(scr); return; }
-        revivesUsed++;
-        state = 'playing';
-        player.hp = player.maxHp * 0.6; player.iframes = 2.5;
-        hud((t('reviveHp') || 'REVIVE!') + ' (' + revivesUsed + '/3)', '#0f0');
+        doRevive();
       }
     };
     window.__lb = function () { SDK.showLeaderboard(function () {}); };
@@ -1478,6 +1481,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       for (var k2 = 0; k2 < enemies.length; k2++) { if (enemies[k2].final) return 'STILL ALIVE hp=' + Math.round(enemies[k2].hp); }
       return 'victory=' + victory + ' state=' + state + ' playerR=' + player.r + ' playerVictory=' + player.victory;
     };
+    window.__killPlayer = function () { player.hp = 0; endGame(); return state; };
     window.__test.victoryState = function () { return 'victory=' + victory + ' state=' + state + ' playerR=' + player.r + ' playerVictory=' + player.victory; };
     window.__test.types = function () { var s = {}; for (var i = 0; i < enemies.length; i++) { s[enemies[i].type] = (s[enemies[i].type] || 0) + 1; } return s; };
     window.__test.giveDiam = function (n) { progress.diamonds += n; saveProgress(); return progress.diamonds; };
