@@ -317,7 +317,7 @@ var text = t('top10');
   var enemies = [], projectiles = [], gems = [], parts = [], fx = [], orbHit = [], magnet = [];
   var waves = [], spawnTimer = 0;
   var helper = null;
-  var gameTime = 0, waveNum = 0, score = 0, kills = 0;
+  var gameTime = 0, waveNum = 0, score = 0, kills = 0, xpEarned = 0;
   var combo = 0, comboTimer = 0, maxCombo = 0;
   var revivesUsed = 0;
   var bestScore = 0;
@@ -366,25 +366,27 @@ var text = t('top10');
       } catch (e2) {}
     }
   }
-  function addToLB(score, wave, timeS) {
-    var name = playerNick || 'Player';
-    lbLocal.push({ name: name, score: Math.round(score), wave: wave, t: Math.round(timeS || 0) });
-    lbLocal.sort(function (a, b) { return b.score - a.score || a.t - b.t; });
+  function addToLB(score, wave, timeS, exp) {
+    var name = playerNick;
+    if (!name) return -1;
+    lbLocal.push({ name: name, exp: Math.round(exp || 0), score: Math.round(score), wave: wave, t: Math.round(timeS || 0) });
+    lbLocal.sort(function (a, b) { return (b.exp || 0) - (a.exp || 0) || a.t - b.t; });
     lbLocal = lbLocal.slice(0, 10);
     try { localStorage.setItem('gs_lb', JSON.stringify(lbLocal)); } catch (e) {}
     for (var lbi = 0; lbi < lbLocal.length; lbi++) {
-      if (lbLocal[lbi].score === Math.round(score) && lbLocal[lbi].wave === wave && lbLocal[lbi].name === name) return lbi;
+      var le = lbLocal[lbi];
+      if (le.score === Math.round(score) && le.wave === wave && le.name === name) return lbi;
     }
     return -1;
   }
   // отправка результата на общий сервер (Firebase RTDB: POST создаёт запись с авто-id)
-  function lbPush(score, wave, timeS) {
-    if (!lbUrl()) return;
+  function lbPush(score, wave, timeS, exp) {
+    if (!lbUrl() || !playerNick) return;
     try {
       fetch(lbUrl() + '/scores.json', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: playerNick || 'Player', score: Math.round(score), wave: wave, t: Math.round(timeS || 0), ts: Date.now() })
+        body: JSON.stringify({ name: playerNick, score: Math.round(score), exp: Math.round(exp || 0), wave: wave, t: Math.round(timeS || 0), ts: Date.now() })
       }).catch(function () {});
     } catch (e) {}
   }
@@ -399,9 +401,11 @@ var text = t('top10');
         if (d) {
           for (var k in d) {
             var e = d[k];
-            if (e && e.name && typeof e.score === 'number') arr.push({ name: String(e.name).slice(0, 16), score: e.score, wave: e.wave || 1, t: e.t || 0 });
+            if (!e || !e.name) continue;
+            if (e.name === 'Player' || e.name === '') continue;
+            arr.push({ name: String(e.name).slice(0, 16), exp: e.exp || 0, score: e.score || 0, wave: e.wave || 1, t: e.t || 0 });
           }
-          arr.sort(function (a, b) { return b.score - a.score || (a.t || 0) - (b.t || 0); });
+          arr.sort(function (a, b) { return (b.exp || 0) - (a.exp || 0) || (a.t || 0) - (b.t || 0); });
           onOk(arr.slice(0, 10));
         } else { onErr(); }
       })
@@ -1351,7 +1355,9 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   }
 
   function gainXp(v) {
-    player.xp += v * (player.xpMul || 1);
+    var gv = Math.max(0, Math.round(v * (player.xpMul || 1)));
+    xpEarned += gv;
+    player.xp += gv;
     if (player.xp >= player.xpNeed) {
       player.xp -= player.xpNeed;
       player.lvl++;
@@ -1522,7 +1528,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     enemies = []; projectiles = []; gems = []; parts = []; fx = []; orbHit = []; magnet = [];
     helper = null;
     victory = false; victoryTime = 0;
-    waves = []; gameTime = 0; waveNum = 0; spawnTimer = 0; kills = 0; score = 0; freezeTimer = 0; shake = 0;
+    xpEarned = 0; waves = []; gameTime = 0; waveNum = 0; spawnTimer = 0; kills = 0; score = 0; freezeTimer = 0; shake = 0;
     combo = 0; comboTimer = 0; revivesUsed = 0;
     autoTimers = {}; hasSplash = false; hasFreezeFreeze = false; victory = false; victoryTime = 0;
 
@@ -1544,8 +1550,8 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     stopMusic();
     var isBest = score > bestScore;
     if (isBest) { bestScore = score; try { localStorage.setItem('gs_best', bestScore); } catch (e) {} }
-    addToLB(score, waveNum, gameTime);
-    lbPush(score, waveNum, gameTime);
+    addToLB(score, waveNum, gameTime, xpEarned);
+    lbPush(score, waveNum, gameTime, xpEarned);
     if (SDK.inited) {
       SDK.leaderboardSubmit(score, function () {});
     }
@@ -1626,7 +1632,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       row.className = 'lb-row' + (String(r.name) === playerNick ? ' lb-mine' : '');
       row.innerHTML = '<span class="lb-pos">' + (i + 1) + '.</span>' +
         '<span class="lb-name">' + escapeHtml(r.name) + '</span>' +
-        '<span class="lb-score">' + r.score + '</span>' +
+        '<span class="lb-score">⚡ ' + (r.exp || 0) + '</span>' +
         '<span class="lb-wave">' + t('lbWave') + ' ' + r.wave + '</span>';
       intoEl.appendChild(row);
     });
@@ -2237,28 +2243,6 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       ctx.beginPath();
       ctx.arc(nbx, nby, 380, 0, Math.PI * 2);
       ctx.fill();
-    }
-    ctx.restore();
-
-    // северное сияние: мягкие плавные волны (без острых углов)
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    var aurR2 = 0.12 + 0.04 * Math.sin(gameTime * 0.4);
-    for (var ari = 0; ari < 3; ari++) {
-      var aurOff2 = ari * 0.55 - gameTime * (6 + ari * 3) * 0.01;
-      for (var arx2 = -1; arx2 <= 1; arx2++) {
-        var aBx = (((W / 2) * (1 + arx2 * 0.8) * 0.4 + aurOff2 * 140) % (W * 0.55) + W * 0.55) % (W * 0.55);
-        var aCol2 = ['rgba(60,255,190,', 'rgba(90,140,255,', 'rgba(255,90,220,'][ari];
-        var aw = 150;
-        ctx.strokeStyle = aCol2 + aurR2 + ')';
-        ctx.lineWidth = 26;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(aBx - aw, H * 0.45 + Math.sin(gameTime * 0.3 + ari + arx2) * 22);
-        ctx.quadraticCurveTo(aBx - aw * 0.3, H * 0.12 + Math.sin(gameTime * 0.4 + ari) * 40, aBx + aw * 0.45, H * 0.3 + Math.sin(gameTime * 0.35 + ari) * 30);
-        ctx.quadraticCurveTo(aBx + aw * 1.1, H * 0.55 + Math.sin(gameTime * 0.25 + ari) * 26, aBx + aw * 1.8, H * 0.4 + Math.sin(gameTime * 0.45 + ari) * 24);
-        ctx.stroke();
-      }
     }
     ctx.restore();
 
@@ -3311,41 +3295,6 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         }
         ctx.restore();
       }
-    }
-
-    // mini-map (контур мира + позиция игрока) — видна всегда, после vignette
-    if (player && (state === 'playing' || state === 'paused' || state === 'reviving')) {
-      var mmS = 150, mmX = W - mmS - 14, mmY = 14;
-      ctx.save();
-      ctx.fillStyle = 'rgba(5,8,20,0.92)';
-      ctx.fillRect(mmX - 6, mmY - 6, mmS + 12, mmS + 12);
-      ctx.strokeStyle = 'rgba(120,210,255,1)';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(mmX, mmY, mmS, mmS);
-      ctx.strokeStyle = 'rgba(120,210,255,0.5)';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(mmX + 2, mmY + 2, mmS - 4, mmS - 4);
-      ctx.fillStyle = 'rgba(160,230,255,0.95)';
-      ctx.font = 'bold 10px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText(t('mapLbl') || 'MAP', mmX + mmS / 2, mmY + 12);
-      var mxx = mmX + (camX / WORLD_W) * mmS;
-      var myy = mmY + (camY / WORLD_H) * mmS;
-      ctx.strokeStyle = 'rgba(160,230,255,0.9)';
-      ctx.lineWidth = 2.5;
-      var mvh = (H / WORLD_H) * mmS, mvw = (W / WORLD_W) * mmS;
-      ctx.strokeRect(mxx - mvw / 2, myy - mvh / 2, mvw, mvh);
-      ctx.fillStyle = '#4af';
-      ctx.shadowColor = '#4af';
-      ctx.shadowBlur = 12;
-      ctx.beginPath();
-      ctx.arc(mxx, myy, 5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-      ctx.restore();
     }
 
     // freeze overlay
