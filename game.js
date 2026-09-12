@@ -55,6 +55,7 @@
       lbEmpty: 'Лидерборд пока пуст!', lbFail: 'Не удалось загрузить лидерборд :(',
       lbUnavailable: 'Лидерборд недоступен', lbInGames: 'Лидерборд будет доступен при запуске в Яндекс Играх',
       lbWave: 'волна', topH: '🏆 ТАБЛИЦА РЕКОРДОВ', nickPh: 'Введи свой ник…', nickSaved: 'Ник сохранён:',
+      lbLoading: 'Загрузка…',
       bossAlert: 'Осторожно — БОСС!', bossKilledLbl: 'БОСС ПОБЕЖДЁН! +', frozenLbl: 'ЗАМОРОЗКА!',
       reviveHp: 'ВОЗВРАЩЕНИЕ! +60% HP', reviveLives: 'ВОЗВРАЩЕНИЕ! +1 жизнь', ammoUnlocked: 'Снаряд разблокирован!', skinUnlocked: 'Скин разблокирован!',
       adNotDone: 'Реклама не досмотрена', adNotDoneEnd: 'Реклама не досмотрена до конца',
@@ -126,6 +127,7 @@
       lbEmpty: 'Leaderboard is empty!', lbFail: 'Failed to load leaderboard :(',
       lbUnavailable: 'Leaderboard unavailable', lbInGames: 'Leaderboard will be available on Yandex Games',
       lbWave: 'wave', topH: '🏆 HIGH SCORES', nickPh: 'Enter your nickname…', nickSaved: 'Nick saved:',
+      lbLoading: 'Loading…',
       bossAlert: 'Warning — BOSS!', bossKilledLbl: 'BOSS DOWN! +', frozenLbl: 'FROZEN!',
       reviveHp: 'BACK! +60% HP', reviveLives: 'BACK! +1 life', ammoUnlocked: 'Ammo unlocked!', skinUnlocked: 'Skin unlocked!',
       adNotDone: 'Ad not finished', adNotDoneEnd: 'Ad was not watched till the end',
@@ -305,6 +307,33 @@ var text = t('top10');
   try { bestScore = +(localStorage.getItem('gs_best') || 0); } catch (e) {}
   var playerNick = '';
   try { playerNick = (localStorage.getItem('gs_nick') || '').slice(0, 16); } catch (e) {}
+  // ─── ОБЩИЙ ЛИДЕРБОРД ────────────────────────────────────────────────────────────
+  // Игроки вводят ник в меню → очки попадают в общий топ-10 для всех.
+  //
+  // СЕРВЕР БЕСПЛАТНЫЙ — Firebase Realtime Database (Google).
+  // Весь интеграционный код внизу, настраивается 3 минутами:
+  //
+  // 1. Открой https://console.firebase.google.com/  (входи Google-аккаунтом)
+  // 2. «Create project» → любое имя (например "galaxy-scores") → создать
+  // 3. В левом меню: «Build» → «Realtime Database» → «Create Database»
+  //    → регион: Choose nearest → Start in TEST mode → Done
+  // 4. После создания БД, URL формата:
+  //      https://<id>.firebaseio.com
+  //    — скопируй его.
+  // 5. Правила безопасности (после 30 дней «test» автоматически удалятся!):
+  //    Перейди «Rules» → вставь:
+  //      { "rules": { "scores": { ".read": true, ".write": true } } }
+  //    → «Publish».
+  //    (Открытый write безопасен: пишут только очки, вреда нет.)
+  //
+  // 6. Вставь скопированный URL ниже в переменную LB_URL (или через window.gsLBUrl):
+  //      var LB_URL = 'https://my-project-id-default-rtdb.firebaseio.com';
+  //
+  // Готово! Теперь все игроки одного устройства видят общий лидерборд.
+  // Если URL пустой ('') — используется только локальный топ (на этом устройстве).
+  // ──────────────────────────────────────────────────────────────────────────────
+  var LB_URL = (typeof window !== 'undefined' && window.gsLBUrl) ? window.gsLBUrl : '';
+  function lbUrl() { return (typeof window !== 'undefined' && window.gsLBUrl) ? window.gsLBUrl : LB_URL; }
   // лидерборд: топ-10 локальных результатов {name, score, wave, t}
   var lbLocal = [];
   try { lbLocal = JSON.parse(localStorage.getItem('gs_lb') || '[]') || []; } catch (e) {}
@@ -322,6 +351,36 @@ var text = t('top10');
       if (lbLocal[lbi].score === Math.round(score) && lbLocal[lbi].wave === wave && lbLocal[lbi].name === name) return lbi;
     }
     return -1;
+  }
+  // отправка результата на общий сервер (Firebase RTDB: POST создаёт запись с авто-id)
+  function lbPush(score, wave, timeS) {
+    if (!lbUrl()) return;
+    try {
+      fetch(lbUrl() + '/scores.json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: playerNick || 'Player', score: Math.round(score), wave: wave, t: Math.round(timeS || 0), ts: Date.now() })
+      }).catch(function () {});
+    } catch (e) {}
+  }
+  // загрузка общего лидерборда; onError -> пустой список (покажем локальный)
+  function loadLB(onOk, onErr) {
+    if (!lbUrl()) { onErr(); return; }
+    var q = '?orderBy=' + encodeURIComponent('"score"') + '&limitToLast=15';
+    fetch(lbUrl() + '/scores.json' + q, { method: 'GET' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var arr = [];
+        if (d) {
+          for (var k in d) {
+            var e = d[k];
+            if (e && e.name && typeof e.score === 'number') arr.push({ name: String(e.name).slice(0, 16), score: e.score, wave: e.wave || 1, t: e.t || 0 });
+          }
+          arr.sort(function (a, b) { return b.score - a.score || (a.t || 0) - (b.t || 0); });
+          onOk(arr.slice(0, 10));
+        } else { onErr(); }
+      })
+      .catch(function () { onErr(); });
   }
   var freezeTimer = 0;
   var camX = 0, camY = 0;
@@ -1454,6 +1513,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     var isBest = score > bestScore;
     if (isBest) { bestScore = score; try { localStorage.setItem('gs_best', bestScore); } catch (e) {} }
     addToLB(score, waveNum, gameTime);
+    lbPush(score, waveNum, gameTime);
     if (SDK.inited) {
       SDK.leaderboardSubmit(score, function () {});
     }
@@ -1523,26 +1583,40 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     window.__menu = function () { quitToMenu(); };
   }
 
+  function renderLB(list, intoEl) {
+    if (!list || list.length === 0) {
+      intoEl.innerHTML = '<div class="lb-row" style="justify-content:center;color:#888">' + t('lbEmpty') + '</div>';
+      return;
+    }
+    intoEl.innerHTML = '';
+    list.forEach(function (r, i) {
+      var row = document.createElement('div');
+      row.className = 'lb-row' + (String(r.name) === playerNick ? ' lb-mine' : '');
+      row.innerHTML = '<span class="lb-pos">' + (i + 1) + '.</span>' +
+        '<span class="lb-name">' + escapeHtml(r.name) + '</span>' +
+        '<span class="lb-score">' + r.score + '</span>' +
+        '<span class="lb-wave">' + t('lbWave') + ' ' + r.wave + '</span>';
+      intoEl.appendChild(row);
+    });
+  }
+
   function showLB() {
     document.querySelectorAll('.menu-screen,.gameover-screen,.levelup-screen,.lb-screen').forEach(function (el) { el.remove(); });
     var scr = document.createElement('div');
     scr.className = 'menu-screen';
     scr.innerHTML = '<h1 style="font-size:26px">' + t('topH') + '</h1>' +
-      '<div class="lb-list"></div>' +
+      '<div class="lb-list" style="color:#888">' + t('lbLoading') + '</div>' +
       '<button class="btn-play" style="padding:12px 40px;margin-top:14px" onclick="window.__closeLB()">' + t('back') + '</button>';
     document.body.appendChild(scr);
     var list = scr.querySelector('.lb-list');
-    if (lbLocal.length === 0) {
-      list.innerHTML = '<div class="lb-row" style="justify-content:center;color:#888">' + t('lbEmpty') + '</div>';
+    if (!lbUrl()) {
+      renderLB(lbLocal, list);
     } else {
-      lbLocal.forEach(function (r, i) {
-        var row = document.createElement('div');
-        row.className = 'lb-row' + (r.name === playerNick ? ' lb-mine' : '');
-        row.innerHTML = '<span class="lb-pos">' + (i + 1) + '.</span>' +
-          '<span class="lb-name">' + escapeHtml(r.name) + '</span>' +
-          '<span class="lb-score">' + r.score + '</span>' +
-          '<span class="lb-wave">' + t('lbWave') + ' ' + r.wave + '</span>';
-        list.appendChild(row);
+      loadLB(function (serv) {
+        renderLB(serv, list);
+        window.__servScores = serv;
+      }, function () {
+        renderLB(lbLocal, list);
       });
     }
     window.__closeLB = function () { quitToMenu(); };
@@ -1613,6 +1687,11 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     window.__test.giveDiam = function (n) { progress.diamonds += n; saveProgress(); return progress.diamonds; };
     window.__test.giveBoost = function (id) { progress.boosters[id] = (progress.boosters[id] || 0) + 1; return progress.boosters[id]; };
     window.__test.giveXp = function (v) { gainXp(v); return window.__test(); };
+    window.__test.lbPush = function (s, w, t) { lbPush(s, w, t); return 'sent'; };
+    window.__test.lbUrl = function () { return lbUrl(); };
+    window.__test.loadServ = function (cb) {
+      loadLB(function (lst) { if (cb) cb(JSON.stringify({ ok: lst })); }, function () { if (cb) cb(JSON.stringify({ err: 1 })); });
+    };
     window.__shop = function () { showShop(); };
     window.__lb2 = function () { SDK.showLeaderboard(function () {}); };
   }
