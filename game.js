@@ -346,7 +346,7 @@ var text = t('top10');
 
   function makeHelper() {
     return {
-      x: player.x + 120, y: player.y + 40, r: 60, hp: 800, maxHp: 800,
+      x: player.x + 120, y: player.y + 40, r: 60, hp: 4000, maxHp: 4000,
       ang: 0, fireTimer: 0, kamTimer: 0, laserTimer: 0, hurtCd: 0
     };
   }
@@ -675,7 +675,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     boss_titan: { r: 85, hp: 2400, speed: 38, dmg: 38, xp: 200, color: '#f90', score: 700, boss: true, minSpeed: true },
     boss_dread: { r: 95, hp: 4200, speed: 32, dmg: 55, xp: 350, color: '#f2f', score: 1200, boss: true, shoot: true },
     boss_colossus: { r: 120, hp: 7500, speed: 26, dmg: 85, xp: 600, color: '#d80', score: 2000, boss: true, minSpeed: true, shoot: true },
-    boss_overlord: { r: 230, hp: 150000, speed: 12, dmg: 160, xp: 5000, color: '#f0f', score: 12000, boss: true, minSpeed: true, shoot: true, overlord: true, armor: 0.75 },
+    boss_overlord: { r: 230, hp: 50000, speed: 12, dmg: 90, xp: 5000, color: '#f0f', score: 12000, boss: true, minSpeed: true, shoot: true, overlord: true, armor: 0.5 },
     boss_thanos: { r: 300, hp: 100000000000000, speed: 22, dmg: 250, xp: 20000, color: '#e33', score: 40000, boss: true, minSpeed: true, shoot: true, overlord: true, final: true, armor: 0.2 }
   };
 
@@ -1001,7 +1001,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         var ha = Math.atan2(t.y - h.y, t.x - h.x);
         for (var li = 0; li < 2; li++) {
           var la = ha + (li - 0.5) * 0.12;
-          projectiles.push({ x: h.x + Math.cos(la) * h.r, y: h.y + Math.sin(la) * h.r, vx: Math.cos(la) * 520, vy: Math.sin(la) * 520, dmg: 14, r: 4, c: '#0ff', life: 1.8, laser: true, pierce: true, pierceHits: 4 });
+          projectiles.push({ x: h.x + Math.cos(la) * h.r, y: h.y + Math.sin(la) * h.r, vx: Math.cos(la) * 520, vy: Math.sin(la) * 520, dmg: 70, r: 4, c: '#0ff', life: 1.8, laser: true, pierce: true, pierceHits: 4 });
         }
         fx.push({ type: 'ring', x: h.x + Math.cos(ha) * h.r, y: h.y + Math.sin(ha) * h.r, r: 6, maxR: 20, life: 0.2, c: '#0ff' });
       }
@@ -1015,7 +1015,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         var target = enemies[Math.floor(Math.random() * enemies.length)];
         if (!target) break;
         var ka = Math.atan2(target.y - h.y, target.x - h.x);
-        projectiles.push({ x: h.x + Math.cos(ka) * h.r, y: h.y + Math.sin(ka) * h.r, vx: Math.cos(ka) * 320, vy: Math.sin(ka) * 320, dmg: 40, r: 7, c: '#ff6', life: 2.5, rocket: true, splash: true, laser: false });
+        projectiles.push({ x: h.x + Math.cos(ka) * h.r, y: h.y + Math.sin(ka) * h.r, vx: Math.cos(ka) * 320, vy: Math.sin(ka) * 320, dmg: 200, r: 7, c: '#ff6', life: 2.5, rocket: true, splash: true, laser: false });
       }
       soundBoom();
     }
@@ -1028,7 +1028,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       if (beamT) {
         for (var ej = enemies.length - 1; ej >= 0; ej--) {
           if (dist(enemies[ej], beamT) < 110) {
-            damageEnemy(ej, 90);
+            damageEnemy(ej, 450);
           }
         }
         fx.push({ type: 'boom', x: beamT.x, y: beamT.y, r: 110, life: 0.5, maxLife: 0.5, c: '#0ff' });
@@ -1482,6 +1482,15 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       return 'victory=' + victory + ' state=' + state + ' playerR=' + player.r + ' playerVictory=' + player.victory;
     };
     window.__killPlayer = function () { player.hp = 0; endGame(); return state; };
+    window.__test.balance = function () {
+      var out = { helper: null, overlords: [] };
+      if (helper) out.helper = { maxHp: helper.maxHp };
+      for (var i = 0; i < enemies.length; i++) {
+        var e = enemies[i];
+        if (e.overlord && !e.final) out.overlords.push({ hp: Math.round(e.maxHp), armor: e.armor });
+      }
+      return out;
+    };
     window.__test.victoryState = function () { return 'victory=' + victory + ' state=' + state + ' playerR=' + player.r + ' playerVictory=' + player.victory; };
     window.__test.types = function () { var s = {}; for (var i = 0; i < enemies.length; i++) { s[enemies[i].type] = (s[enemies[i].type] || 0) + 1; } return s; };
     window.__test.giveDiam = function (n) { progress.diamonds += n; saveProgress(); return progress.diamonds; };
