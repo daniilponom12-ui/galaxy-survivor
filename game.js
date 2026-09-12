@@ -2025,6 +2025,26 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     ctx.stroke();
     ctx.restore();
 
+    // видимые границы мира (светящийся пунктир по контуру мира + маркеры по периметру)
+    ctx.save();
+    ctx.strokeStyle = 'rgba(120,200,255,0.9)';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([14, 10]);
+    ctx.strokeRect(0, 0, WORLD_W, WORLD_H);
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = 'rgba(120,200,255,0.18)';
+    var mk = 400, bd = 40;
+    for (var mgx = bd; mgx < WORLD_W; mgx += mk) {
+      ctx.fillRect(mgx, 0, 16, bd);
+      ctx.fillRect(mgx, WORLD_H - bd, 16, bd);
+    }
+    for (var mgy = bd; mgy < WORLD_H; mgy += mk) {
+      ctx.fillRect(0, mgy, bd, 16);
+      ctx.fillRect(WORLD_W - bd, mgy, bd, 16);
+    }
+    ctx.restore();
+
     // asteroids (decor)
     ctx.fillStyle = 'rgba(90,90,110,0.12)';
     for (var ai = 0; ai < asteroids.length; ai++) {
