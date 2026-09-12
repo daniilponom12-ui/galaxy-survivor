@@ -54,6 +54,7 @@
       top10: 'Топ-10 игроков\n', playerName: 'Игрок', noRecords: 'Пока нет рекордов. Ты будешь первым!\n',
       lbEmpty: 'Лидерборд пока пуст!', lbFail: 'Не удалось загрузить лидерборд :(',
       lbUnavailable: 'Лидерборд недоступен', lbInGames: 'Лидерборд будет доступен при запуске в Яндекс Играх',
+      lbWave: 'волна', topH: '🏆 ТАБЛИЦА РЕКОРДОВ', nickPh: 'Введи свой ник…', nickSaved: 'Ник сохранён:',
       bossAlert: 'Осторожно — БОСС!', bossKilledLbl: 'БОСС ПОБЕЖДЁН! +', frozenLbl: 'ЗАМОРОЗКА!',
       reviveHp: 'ВОЗВРАЩЕНИЕ! +60% HP', reviveLives: 'ВОЗВРАЩЕНИЕ! +1 жизнь', ammoUnlocked: 'Снаряд разблокирован!', skinUnlocked: 'Скин разблокирован!',
       adNotDone: 'Реклама не досмотрена', adNotDoneEnd: 'Реклама не досмотрена до конца',
@@ -124,6 +125,7 @@
       top10: 'Top-10 players\n', playerName: 'Player', noRecords: 'No records yet. Be the first!\n',
       lbEmpty: 'Leaderboard is empty!', lbFail: 'Failed to load leaderboard :(',
       lbUnavailable: 'Leaderboard unavailable', lbInGames: 'Leaderboard will be available on Yandex Games',
+      lbWave: 'wave', topH: '🏆 HIGH SCORES', nickPh: 'Enter your nickname…', nickSaved: 'Nick saved:',
       bossAlert: 'Warning — BOSS!', bossKilledLbl: 'BOSS DOWN! +', frozenLbl: 'FROZEN!',
       reviveHp: 'BACK! +60% HP', reviveLives: 'BACK! +1 life', ammoUnlocked: 'Ammo unlocked!', skinUnlocked: 'Skin unlocked!',
       adNotDone: 'Ad not finished', adNotDoneEnd: 'Ad was not watched till the end',
@@ -301,6 +303,26 @@ var text = t('top10');
   var revivesUsed = 0;
   var bestScore = 0;
   try { bestScore = +(localStorage.getItem('gs_best') || 0); } catch (e) {}
+  var playerNick = '';
+  try { playerNick = (localStorage.getItem('gs_nick') || '').slice(0, 16); } catch (e) {}
+  // лидерборд: топ-10 локальных результатов {name, score, wave, t}
+  var lbLocal = [];
+  try { lbLocal = JSON.parse(localStorage.getItem('gs_lb') || '[]') || []; } catch (e) {}
+  function saveNick(n) {
+    playerNick = (n || '').replace(/[<>]/g, '').slice(0, 16);
+    try { localStorage.setItem('gs_nick', playerNick); } catch (e) {}
+  }
+  function addToLB(score, wave, timeS) {
+    var name = playerNick || 'Player';
+    lbLocal.push({ name: name, score: Math.round(score), wave: wave, t: Math.round(timeS || 0) });
+    lbLocal.sort(function (a, b) { return b.score - a.score || a.t - b.t; });
+    lbLocal = lbLocal.slice(0, 10);
+    try { localStorage.setItem('gs_lb', JSON.stringify(lbLocal)); } catch (e) {}
+    for (var lbi = 0; lbi < lbLocal.length; lbi++) {
+      if (lbLocal[lbi].score === Math.round(score) && lbLocal[lbi].wave === wave && lbLocal[lbi].name === name) return lbi;
+    }
+    return -1;
+  }
   var freezeTimer = 0;
   var camX = 0, camY = 0;
   var shake = 0;
@@ -322,6 +344,12 @@ var text = t('top10');
       }
     }
   })();
+
+  // космическая пыль (мелкие дрейфующие частицы в слое камеры)
+  var spaceDust = [];
+  for (var sdi = 0; sdi < 70; sdi++) {
+    spaceDust.push({ x: Math.random() * WORLD_W, y: Math.random() * WORLD_H, r: 0.6 + Math.random() * 1.6, ph: Math.random() * Math.PI * 2, spd: 4 + Math.random() * 10, c: ['#9fd0ff', '#ffd0a0', '#d0a0ff'][Math.floor(Math.random() * 3)] });
+  }
 
   // кометы (падающие звёзды на фоне)
   var comets = [];
@@ -1425,6 +1453,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     stopMusic();
     var isBest = score > bestScore;
     if (isBest) { bestScore = score; try { localStorage.setItem('gs_best', bestScore); } catch (e) {} }
+    addToLB(score, waveNum, gameTime);
     if (SDK.inited) {
       SDK.leaderboardSubmit(score, function () {});
     }
@@ -1468,7 +1497,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         doRevive();
       }
     };
-    window.__lb = function () { SDK.showLeaderboard(function () {}); };
+    window.__lb = function () { showLB(); };
     window.__menu = function () { quitToMenu(); };
   }
 
@@ -1494,6 +1523,35 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     window.__menu = function () { quitToMenu(); };
   }
 
+  function showLB() {
+    document.querySelectorAll('.menu-screen,.gameover-screen,.levelup-screen,.lb-screen').forEach(function (el) { el.remove(); });
+    var scr = document.createElement('div');
+    scr.className = 'menu-screen';
+    scr.innerHTML = '<h1 style="font-size:26px">' + t('topH') + '</h1>' +
+      '<div class="lb-list"></div>' +
+      '<button class="btn-play" style="padding:12px 40px;margin-top:14px" onclick="window.__closeLB()">' + t('back') + '</button>';
+    document.body.appendChild(scr);
+    var list = scr.querySelector('.lb-list');
+    if (lbLocal.length === 0) {
+      list.innerHTML = '<div class="lb-row" style="justify-content:center;color:#888">' + t('lbEmpty') + '</div>';
+    } else {
+      lbLocal.forEach(function (r, i) {
+        var row = document.createElement('div');
+        row.className = 'lb-row' + (r.name === playerNick ? ' lb-mine' : '');
+        row.innerHTML = '<span class="lb-pos">' + (i + 1) + '.</span>' +
+          '<span class="lb-name">' + escapeHtml(r.name) + '</span>' +
+          '<span class="lb-score">' + r.score + '</span>' +
+          '<span class="lb-wave">' + t('lbWave') + ' ' + r.wave + '</span>';
+        list.appendChild(row);
+      });
+    }
+    window.__closeLB = function () { quitToMenu(); };
+  }
+
+  function escapeHtml(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
   function showMenu() {
     document.querySelectorAll('.menu-screen,.gameover-screen,.levelup-screen').forEach(function (el) { el.remove(); });
     var scr = document.createElement('div');
@@ -1501,11 +1559,18 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     scr.innerHTML = '<h1>🛸 GALAXY SURVIVOR</h1>' +
       '<div class="subtitle">' + t('subtitle') + '</div>' +
       '<div class="subtitle" style="color:#4af">' + t('recordLbl') + bestScore + '</div>' +
+      '<div class="nick-box"><input id="nick-input" maxlength="16" placeholder="' + t('nickPh') + '" value="' + escapeHtml(playerNick) + '"><button onclick="window.__setNick()">✓</button></div>' +
       '<button class="btn-play" onclick="window.__play()">' + t('play') + '</button>' +
       '<button class="btn-shop" onclick="window.__shop()">' + t('shop') + '</button>' +
-      '<button class="btn-leaderboard" onclick="window.__lb2()">' + t('top') + '</button>' +
+      '<button class="btn-leaderboard" onclick="window.__showLB()">' + t('top') + '</button>' +
       '<div class="subtitle" style="font-size:13px;color:#666;margin-top:20px">' + t('controls') + '</div>';
     document.body.appendChild(scr);
+    window.__setNick = function () {
+      var el = document.getElementById('nick-input');
+      saveNick(el ? el.value : '');
+      hud((t('nickSaved') || 'Nick saved') + ': ' + playerNick, '#4ff');
+    };
+    window.__showLB = function () { showLB(); };
     window.__play = function () { startGame(); };
     window.__test = function () {
       var bc = 0;
@@ -1971,6 +2036,14 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         var gd2 = dist(gem, { x: player.x, y: player.y });
         if (gd2 < p.r + 8) {
           gems.splice(g, 1);
+          // искры при сборе кристалла
+          if (!gem.d && fx.length < 260) {
+            for (var gsp = 0; gsp < 4; gsp++) {
+              var gsa = Math.random() * Math.PI * 2;
+              var gss = 30 + Math.random() * 80;
+              parts.push({ x: p.x, y: p.y, vx: Math.cos(gsa) * gss, vy: Math.sin(gsa) * gss, life: 0.3 + Math.random() * 0.2, maxLife: 0.5, r: 1.5 + Math.random() * 1.5, c: gem.c || '#0f6' });
+            }
+          }
           if (gem.bonus) {
             doBonusPickup();
           } else if (gem.d) {
@@ -2009,6 +2082,11 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       cm.x += cm.vx * dt; cm.y += cm.vy * dt; cm.life -= dt;
       if (cm.life <= 0) comets.splice(ci2, 1);
     }
+    // космическая пыль: дрейфует со своей скоростью
+    for (var sdu = 0; sdu < spaceDust.length; sdu++) {
+      var sdp = spaceDust[sdu];
+      sdp.x -= sdp.spd * dt * 0.3; sdp.y += sdp.spd * dt * 0.12; sdp.ph += dt * 1.5;
+    }
   }
 
   /* ============ RENDER ============ */
@@ -2039,28 +2117,24 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     }
     ctx.restore();
 
-    // северное сияние: медленно плывущие ленты на фоне звёзд
+    // северное сияние: мягкие плавные волны (без острых углов)
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    var aurR = 0.22 + 0.08 * Math.sin(gameTime * 0.4);
+    var aurR2 = 0.12 + 0.04 * Math.sin(gameTime * 0.4);
     for (var ari = 0; ari < 3; ari++) {
-      var aurOff = ari * 0.55 - gameTime * (6 + ari * 3) * 0.01;
-      for (var arx = -1; arx <= 1; arx++) {
-        var aBaseX = (((W / 2) * (1 + arx * 0.8) * 0.4 + aurOff * 140) % (W * 0.55) + W * 0.55) % (W * 0.55);
-        var aG = ctx.createLinearGradient(aBaseX, 0, aBaseX + 320, H * 0.45);
-        var aCol = ['rgba(60,255,190,', 'rgba(90,140,255,', 'rgba(255,90,220,'][ari];
-        aG.addColorStop(0, aCol + (aurR * (0.5 + 0.5 * Math.sin(gameTime * 0.7 + ari * 2))) + ')');
-        aG.addColorStop(0.5, aCol + (aurR * 0.8) + ')');
-        aG.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = aG;
+      var aurOff2 = ari * 0.55 - gameTime * (6 + ari * 3) * 0.01;
+      for (var arx2 = -1; arx2 <= 1; arx2++) {
+        var aBx = (((W / 2) * (1 + arx2 * 0.8) * 0.4 + aurOff2 * 140) % (W * 0.55) + W * 0.55) % (W * 0.55);
+        var aCol2 = ['rgba(60,255,190,', 'rgba(90,140,255,', 'rgba(255,90,220,'][ari];
+        var aw = 150;
+        ctx.strokeStyle = aCol2 + aurR2 + ')';
+        ctx.lineWidth = 26;
+        ctx.lineCap = 'round';
         ctx.beginPath();
-        ctx.moveTo(aBaseX, H * 0.5 + Math.sin(gameTime * 0.3 + ari + arx) * 18);
-        ctx.lineTo(aBaseX + 320, H * 0.15 + Math.sin(gameTime * 0.25 + ari) * 30);
-        ctx.lineTo(aBaseX + 420, H * 0.5 + Math.sin(gameTime * 0.35 + ari) * 24);
-        ctx.lineTo(aBaseX + 520, H * 0.85 + Math.sin(gameTime * 0.3 + ari) * 20);
-        ctx.lineTo(aBaseX + 200, H * 0.95 + Math.sin(gameTime * 0.33 + ari) * 22);
-        ctx.closePath();
-        ctx.fill();
+        ctx.moveTo(aBx - aw, H * 0.45 + Math.sin(gameTime * 0.3 + ari + arx2) * 22);
+        ctx.quadraticCurveTo(aBx - aw * 0.3, H * 0.12 + Math.sin(gameTime * 0.4 + ari) * 40, aBx + aw * 0.45, H * 0.3 + Math.sin(gameTime * 0.35 + ari) * 30);
+        ctx.quadraticCurveTo(aBx + aw * 1.1, H * 0.55 + Math.sin(gameTime * 0.25 + ari) * 26, aBx + aw * 1.8, H * 0.4 + Math.sin(gameTime * 0.45 + ari) * 24);
+        ctx.stroke();
       }
     }
     ctx.restore();
@@ -2102,6 +2176,23 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       ctx.moveTo(sx2 - sparkR, sy2); ctx.lineTo(sx2 + sparkR, sy2);
       ctx.moveTo(sx2, sy2 - sparkR); ctx.lineTo(sx2, sy2 + sparkR);
       ctx.stroke();
+    }
+    ctx.restore();
+
+    // космическая пыль: мелкие светящиеся точки, парящие в слое игрока
+    ctx.save();
+    for (var sdr = 0; sdr < spaceDust.length; sdr++) {
+      var sdl = spaceDust[sdr];
+      var sdx3 = (((sdl.x - camX * 0.25) % WORLD_W) + WORLD_W) % WORLD_W;
+      var sdy3 = (((sdl.y - camY * 0.25) % WORLD_H) + WORLD_H) % WORLD_H;
+      var pdx3 = Math.abs(sdx3 - camX), pdy3 = Math.abs(sdy3 - camY);
+      if (pdx3 > W / 2 + 30 || pdy3 > H / 2 + 30) continue;
+      var da = 0.12 + 0.1 * (0.5 + 0.5 * Math.sin(sdl.ph));
+      ctx.globalAlpha = da;
+      ctx.fillStyle = sdl.c;
+      ctx.beginPath();
+      ctx.arc(sdx3, sdy3, sdl.r, 0, Math.PI * 2);
+      ctx.fill();
     }
     ctx.restore();
 
@@ -2408,6 +2499,8 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     for (var gi = 0; gi < gems.length; gi++) {
       var gm = gems[gi];
       ctx.save();
+      ctx.shadowColor = gm.c;
+      ctx.shadowBlur = gm.d ? 16 : 8;
       ctx.fillStyle = gm.c;
       ctx.beginPath();
       ctx.arc(gm.x, gm.y, gm.r, 0, Math.PI * 2);
@@ -2416,6 +2509,14 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       ctx.fillStyle = '#fff';
       ctx.beginPath();
       ctx.arc(gm.x - gm.r * 0.3, gm.y - gm.r * 0.3, gm.r * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      // пульсирующая аура вокруг кристалла
+      var gAur = 0.08 + 0.05 * Math.sin(gameTime * 5 + gm.x * 0.7);
+      ctx.globalAlpha = gAur;
+      ctx.fillStyle = gm.c;
+      ctx.beginPath();
+      ctx.arc(gm.x, gm.y, gm.r * (2.2 + Math.sin(gameTime * 3 + gm.y) * 0.4), 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
@@ -2485,9 +2586,11 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       if (fl) ctx.globalAlpha = 1;
       // body
       ctx.fillStyle = fl ? '#fff' : (froz ? '#9ff' : en2.color);
+      if (!fl) { ctx.shadowColor = froz ? '#8ef' : en2.color; ctx.shadowBlur = en2.boss ? 22 : 10; }
       ctx.beginPath();
       ctx.arc(en2.x, en2.y, en2.r, 0, Math.PI * 2);
       ctx.fill();
+      ctx.shadowBlur = 0;
       if (froz) {
         ctx.shadowColor = '#8ef'; ctx.shadowBlur = 14;
         ctx.strokeStyle = 'rgba(160,230,255,0.9)'; ctx.lineWidth = 2;
@@ -2677,6 +2780,23 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       ctx.globalAlpha = blink2 ? 0.4 : 1;
       ctx.translate(player.x, player.y);
       ctx.rotate(pAng);
+
+      // мягкое неоновое кольцо-аура вокруг корабля
+      var aur2 = ctx.createRadialGradient(0, 0, 8, 0, 0, 42);
+      aur2.addColorStop(0, 'rgba(255,255,255,0)');
+      aur2.addColorStop(0.75, 'rgba(120,200,255,0.12)');
+      aur2.addColorStop(1, 'rgba(120,200,255,0)');
+      ctx.fillStyle = aur2;
+      ctx.beginPath();
+      ctx.arc(0, 0, 42, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(150,210,255,' + (0.12 + 0.05 * Math.sin(gameTime * 3 + player.x)) + ')';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 10]);
+      ctx.beginPath();
+      ctx.arc(0, 0, 30 + Math.sin(gameTime * 4) * 2, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
 
       // неоновый ореол «Космического Рыцаря»
       if (player.selectedSkin === 's10') {
