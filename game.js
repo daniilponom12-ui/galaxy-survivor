@@ -215,6 +215,23 @@
               ysdk.features.LoadingAPI.ready();
             }
           } catch (e) {}
+          // загрузка ника игрока из облачного хранилища Яндекса (localStorage в игре может быть недоступен)
+          try {
+            if (ysdk.getPlayer) {
+              ysdk.getPlayer({ scopes: false }).then(function (pl) {
+                SDK.player = pl;
+                return pl.getData(['gs_nick']);
+              }).then(function (d) {
+                if (d && d.gs_nick && typeof d.gs_nick === 'string' && d.gs_nick) {
+                  try { localStorage.setItem('gs_nick', String(d.gs_nick).slice(0, 16)); } catch (e2) {}
+                  if (typeof playerNick !== 'undefined') playerNick = String(d.gs_nick).slice(0, 16);
+                }
+                if (typeof playerNick !== 'undefined' && playerNick && SDK.player) {
+                  SDK.player.setData({ gs_nick: playerNick }).catch(function () {});
+                }
+              }).catch(function () {});
+            }
+          } catch (e) {}
           finish();
         }).catch(function () { finish(); });
       } catch (e) { finish(); }
@@ -340,6 +357,14 @@ var text = t('top10');
   function saveNick(n) {
     playerNick = (n || '').replace(/[<>]/g, '').slice(0, 16);
     try { localStorage.setItem('gs_nick', playerNick); } catch (e) {}
+    if (SDK.inited && SDK.ysdk) {
+      try {
+        SDK.ysdk.getPlayer().then(function (pl) {
+          SDK.player = pl;
+          pl.setData({ gs_nick: playerNick }).catch(function () {});
+        }).catch(function () {});
+      } catch (e2) {}
+    }
   }
   function addToLB(score, wave, timeS) {
     var name = playerNick || 'Player';
@@ -1660,7 +1685,11 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       hud((t('nickSaved') || 'Nick saved') + ': ' + playerNick, '#4ff');
     };
     window.__showLB = function () { showLB(); };
-    window.__play = function () { startGame(); };
+    window.__play = function () {
+      var el = document.getElementById('nick-input');
+      if (el && el.value && el.value !== playerNick) { saveNick(el.value); }
+      startGame();
+    };
     window.__test = function () {
       var bc = 0;
       for (var ti = 0; ti < enemies.length; ti++) { if (enemies[ti].boss) bc++; }
