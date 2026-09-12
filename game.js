@@ -87,9 +87,12 @@
       sk_s1: 'Классик', sk_s1_d: 'Стандартный истребитель', sk_s2: 'Неон-Фантом', sk_s2_d: 'Фиолетовый с неоном',
       sk_s3: 'Золотой Герой', sk_s3_d: 'Сверхзвуковой золотой', sk_s4: 'Изумруд', sk_s4_d: 'Смертоносный изумруд',
       sk_s5: 'Ледяной Страж', sk_s5_d: 'Холодная сталь', sk_s6: 'Кобальт', sk_s6_d: 'Атомная мощь кобальта', sk_s7: 'Некрон', sk_s7_d: 'Повелитель самоцветов',
+      sk_s8: 'Истребитель', sk_s8_d: 'Реактивный и со следом', sk_s9: 'Феникс', sk_s9_d: 'Огненный, с пламенным следом',
       am_a1: 'Бластер', am_a1_d: 'Уверенный средний урон', am_a2: 'Лазер', am_a2_d: 'Пронзает врагов насквозь',
       am_a3: 'Дробовик', am_a3_d: 'Веер из осколков', am_a4: 'Ракеты', am_a4_d: 'Взрываются при попадании',
       am_a5: 'Плазма', am_a5_d: 'Быстрая и мощная',
+      am_a6: 'Цепная молния', am_a6_d: 'Бьёт по врагам и перекидывается дальше',
+      boostShield: '🛡 Щит',
       diamSec: '💎 Улучшения за алмазы', diamBal: 'Алмазов: ', puLvl: 'Уровень ', puMax: 'МАКС',
       pu_dmg: 'Урон +10%', pu_dmg_d: 'Постоянно увеличивает урон оружия',
       pu_hp: 'Макс. HP +15', pu_hp_d: 'Постоянно увеличивает запас здоровья',
@@ -153,9 +156,12 @@
       sk_s1: 'Classic', sk_s1_d: 'Standard fighter', sk_s2: 'Neon Phantom', sk_s2_d: 'Purple with neon',
       sk_s3: 'Golden Hero', sk_s3_d: 'Supersonic gold', sk_s4: 'Emerald', sk_s4_d: 'Deadly emerald',
       sk_s5: 'Ice Guardian', sk_s5_d: 'Cold steel', sk_s6: 'Cobalt', sk_s6_d: 'Atomic cobalt power', sk_s7: 'Necron', sk_s7_d: 'Gem master',
+      sk_s8: 'Fighter', sk_s8_d: 'Reactive with trail', sk_s9: 'Phoenix', sk_s9_d: 'Fiery, with a flame trail',
       am_a1: 'Blaster', am_a1_d: 'Steady medium damage', am_a2: 'Laser', am_a2_d: 'Pierces through enemies',
       am_a3: 'Shotgun', am_a3_d: 'Fan of shards', am_a4: 'Rockets', am_a4_d: 'Explode on hit',
       am_a5: 'Plasma', am_a5_d: 'Fast and powerful',
+      am_a6: 'Chain lightning', am_a6_d: 'Hits enemies and jumps to more',
+      boostShield: '🛡 Shield',
       diamSec: '💎 Gem upgrades', diamBal: 'Gems: ', puLvl: 'Level ', puMax: 'MAX',
       pu_dmg: 'Damage +10%', pu_dmg_d: 'Permanently increases weapon damage',
       pu_hp: 'Max HP +15', pu_hp_d: 'Permanently increases health pool',
@@ -314,6 +320,20 @@ var text = t('top10');
     }
   })();
 
+  // кометы (падающие звёзды на фоне)
+  var comets = [];
+  var cometTimer = 6;
+  function spawnComet() {
+    var fromLeft = Math.random() < 0.5;
+    comets.push({
+      x: fromLeft ? -60 : WORLD_W + 60,
+      y: Math.random() * WORLD_H * 0.5,
+      vx: fromLeft ? (420 + Math.random() * 220) : -(420 + Math.random() * 220),
+      vy: 130 + Math.random() * 90,
+      life: 1.4, maxLife: 1.4, tail: 60 + Math.random() * 60
+    });
+  }
+
   // планеты — объекты мира (их можно облетать)
   var planets = [];
   (function () {
@@ -338,7 +358,7 @@ var text = t('top10');
     return {
       x: WORLD_W / 2, y: WORLD_H / 2, r: 18, speed: 190 * (1 + 0.06 * (upg.speed || 0)), hp: 100 + 15 * (upg.hp || 0), maxHp: 100 + 15 * (upg.hp || 0),
       xp: 0, xpNeed: 30, lvl: 1, iframes: 0,
-      skinColor: skin.color, ang: 0, aimAng: 0, speedBoost: 0, dmgBoost: 0, skinModel: 'jet', victory: false,
+      skinColor: skin.color, ang: 0, aimAng: 0, speedBoost: 0, dmgBoost: 0, skinModel: 'jet', victory: false, trail: [], trailColor: skin.trail || null,
       upDmg: 1 + 0.1 * (upg.dmg || 0), pickupR: 60 * (1 + 0.2 * (upg.magnet || 0)),
       upRateMul: Math.pow(0.92, upg.rate || 0), shield: upg.shield || 0, critChance: 0.08 * (upg.crit || 0), xpMul: 1 + 0.1 * (upg.xp || 0),
       weapons: [{ id: 'auto', lvl: 1 }],
@@ -434,7 +454,8 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     s5: { name: 'Ледяной Страж', color: '#7ef', price: 3, gcost: 240, desc: 'Холодная сталь', icon: '✚' },
     s6: { name: 'Кобальт', color: '#38f', price: 4, gcost: 360, desc: 'Атомная мощь кобальта', icon: '♠' },
     s7: { name: 'Некрон', color: '#f26', price: 5, gcost: 480, desc: 'Повелитель самоцветов', icon: 'ꙮ' },
-    s8: { name: 'Истребитель', color: '#9f3', price: 6, gcost: 720, desc: 'Реактивный и со следом', icon: '✈', model: 'jet' }
+    s8: { name: 'Истребитель', color: '#9f3', price: 6, gcost: 720, desc: 'Реактивный и со следом', icon: '✈', model: 'jet' },
+    s9: { name: 'Феникс', color: '#f80', price: 7, gcost: 900, desc: 'Пламя вместо двигателя', icon: '🦅', model: 'jet', trail: '#fd0' }
   };
   var MUSIC = {
     m1: { name: 'Космический драйв', price: 0 },
@@ -448,7 +469,8 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     a2: { name: 'Лазер', desc: 'Пронзает врагов насквозь', price: 1, gcost: 120, dmgMult: 1.3, rate: 0.85, speed: 680, color: '#f0f', count: 1, spread: 6, r: 4, pierce: true },
     a3: { name: 'Дробовик', desc: 'Веер из осколков', price: 2, gcost: 200, dmgMult: 0.55, rate: 0.9, speed: 470, color: '#fa0', count: 5, spread: 30, r: 5 },
     a4: { name: 'Ракеты', desc: 'Взрываются при попадании', price: 3, gcost: 280, dmgMult: 2.6, rate: 1.35, speed: 380, color: '#f80', count: 1, spread: 10, r: 7, rocket: true },
-    a5: { name: 'Плазма', desc: 'Быстрая и мощная', price: 4, gcost: 360, dmgMult: 1.9, rate: 0.45, speed: 720, color: '#0ff', count: 1, spread: 8, r: 6 }
+    a5: { name: 'Плазма', desc: 'Быстрая и мощная', price: 4, gcost: 360, dmgMult: 1.9, rate: 0.45, speed: 720, color: '#0ff', count: 1, spread: 8, r: 6 },
+    a6: { name: 'Цепная молния', desc: 'Бьёт по врагам и перекидывается', price: 5, gcost: 520, dmgMult: 1.1, rate: 0.7, speed: 560, color: '#e8f', count: 1, spread: 7, r: 6, chain: true, chainTargets: 4, chainRange: 180 }
   };
 
   var MAX_AMMO_COUNT = 3;
@@ -621,7 +643,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
 
     // boosters
     var gb = document.getElementById('bb-boost');
-    var BOOST = { dmg: t('boostDmg'), hp: t('boostHp'), speed: t('boostSpeed') };
+    var BOOST = { dmg: t('boostDmg'), hp: t('boostHp'), speed: t('boostSpeed'), shield: t('boostShield') };
     Object.keys(BOOST).forEach(function (bid) {
       var b = document.createElement('div');
       var count = progress.boosters[bid] || 0;
@@ -835,6 +857,9 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       parts.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.4 + Math.random() * 0.5, maxLife: 0.9, r: 2 + Math.random() * 3, c: color });
     }
     fx.push({ type: 'ring', x: x, y: y, r: 4, maxR: 30 + Math.random() * 20, life: 0.4, c: color });
+    if (n >= 8) {
+      fx.push({ type: 'mist', x: x, y: y, vx: 0, vy: 0, r: 14, life: 0.2, maxLife: 0.2, c: '#fff' });
+    }
   }
 
   function textFx(x, y, txt, color) {
@@ -875,8 +900,11 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         var off = total <= 1 ? 0 : (s - (total - 1) / 2) * spreadStep;
         var ang = a + off;
         var isLaser = w.id === 'auto';
-        var p = { x: player.x, y: player.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, dmg: WEAPONS.auto.dmg * (ammo.dmgMult || 1) * (player.upDmg || 1) * (critType ? 2 : 1) * (1 + 0.5 * (player.dmgBoost || 0)) * (isLaser ? 1.15 : 1), r: ammo.r || 5, c: critType ? '#fff' : (isLaser ? '#af0' : ammo.color), life: isLaser ? 2 : 1.6, splash: hasSplash, pierce: isLaser || !!ammo.pierce || !!player.pierceAll, pierceHits: (isLaser || ammo.pierce || player.pierceAll) ? 8 : 0, rocket: !!ammo.rocket, laser: isLaser };
+        var p = { x: player.x, y: player.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, dmg: WEAPONS.auto.dmg * (ammo.dmgMult || 1) * (player.upDmg || 1) * (critType ? 2 : 1) * (1 + 0.5 * (player.dmgBoost || 0)) * (isLaser ? 1.15 : 1), r: ammo.r || 5, c: critType ? '#fff' : (isLaser ? '#af0' : ammo.color), life: isLaser ? 2 : 1.6, splash: hasSplash, pierce: isLaser || !!ammo.pierce || !!player.pierceAll, pierceHits: (isLaser || ammo.pierce || player.pierceAll) ? 8 : 0, rocket: !!ammo.rocket, laser: isLaser, chain: !!ammo.chain, chainTargets: ammo.chainTargets || 0, chainRange: ammo.chainRange || 0 };
         projectiles.push(p);
+        if (fx.length < 240) {
+          fx.push({ type: 'mist', x: player.x + Math.cos(ang) * 24, y: player.y + Math.sin(ang) * 24, vx: Math.cos(ang) * 60, vy: Math.sin(ang) * 60, r: 5, life: 0.12, maxLife: 0.12, c: '#dfe8ff' });
+        }
         if (isLaser && total % 2 === 1) {
           var parAng = ang + 0.12;
           var p2 = { x: player.x, y: player.y, vx: Math.cos(parAng) * sp, vy: Math.sin(parAng) * sp, dmg: Math.round(p.dmg * 0.45), r: (ammo.r * 0.7) || 4, c: '#8f0', life: 2, splash: hasSplash, pierce: true, pierceHits: 6, laser: true };
@@ -1076,7 +1104,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     }
     e.hp -= dmg * (e.armor ? (1 - e.armor) : 1);
     e.hitFlash = 0.1;
-    boom(e.x, e.y, '#fff', 3);
+    boom(e.x, e.y, e.color, 4);
     if (e.hp <= 0) { killEnemy(idx); }
   }
 
@@ -1364,6 +1392,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     if (progress.boosters.dmg > 0) { progress.boosters.dmg--; player.skinColor = player.skinColor; WEAPONS.auto.dmg = 12; player.dmgBoost = true; }
     if (progress.boosters.hp > 0) { progress.boosters.hp--; player.maxHp = 150; player.hp = 150; }
     if (progress.boosters.speed > 0) { progress.boosters.speed--; player.speed = 235; }
+    if (progress.boosters.shield > 0) { progress.boosters.shield--; player.shield += 2; hud(t('boostShield') || 'SHIELD', '#4ff'); }
 
     document.querySelectorAll('.menu-screen,.gameover-screen').forEach(function (el) { el.remove(); });
     addHUD();
@@ -1609,6 +1638,11 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         parts.push({ x: p.x - dx * 20 + (Math.random() - 0.5) * 6, y: p.y - dy * 20 + (Math.random() - 0.5) * 6, vx: -dx * 30 + (Math.random() - 0.5) * 20, vy: -dy * 30 + (Math.random() - 0.5) * 20, life: 0.5 + Math.random() * 0.2, maxLife: 0.7, r: 3 + Math.random() * 3, c: p.dmgBoost ? '#ffb84d' : '#4af' });
       }
     }
+    // хвост следа: запоминаем позиции позади корабля
+    if (player.trail) {
+      player.trail.push({ x: p.x - dx * 26, y: p.y - dy * 26 });
+      if (player.trail.length > 16) player.trail.shift();
+    }
     p.x += dx * p.speed * (1 + 0.25 * (p.speedBoost || 0)) * dt;
     p.y += dy * p.speed * (1 + 0.25 * (p.speedBoost || 0)) * dt;
     wrapRelax();
@@ -1672,6 +1706,27 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         if (dist(pr, e) < e.r + pr.r) {
           damageEnemy(j, pr.dmg);
           boom(pr.x, pr.y, pr.c || '#4af', pr.rocket ? 14 : 5);
+          if (pr.chain && pr.chainTargets > 0) {
+            // цепная молния: бьёт по ближайшим врагам и перепрыгивает
+            var hit = [j];
+            var cx = pr.x, cy = pr.y, chainDmg = pr.dmg * 0.8;
+            for (var ci = 0; ci < pr.chainTargets; ci++) {
+              var best2 = -1, bd2 = pr.chainRange;
+              for (var cj = enemies.length - 1; cj >= 0; cj--) {
+                if (hit.indexOf(cj) >= 0) continue;
+                var cd2 = dist(enemies[cj], { x: cx, y: cy });
+                if (cd2 < bd2) { bd2 = cd2; best2 = cj; }
+              }
+              if (best2 < 0) break;
+              hit.push(best2);
+              if (fx.length < 260) {
+                fx.push({ type: 'bolt', x: cx, y: cy, tx: enemies[best2].x, ty: enemies[best2].y, life: 0.28, maxLife: 0.28, c: '#e8f' });
+              }
+              damageEnemy(best2, chainDmg);
+              boom(enemies[best2].x, enemies[best2].y, '#e8f', 6);
+              cx = enemies[best2].x; cy = enemies[best2].y;
+            }
+          }
           if (pr.rocket) {
             // взрыв ракеты
             shake = Math.min(shake + 5, 14);
@@ -1908,7 +1963,16 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     for (var fi = fx.length - 1; fi >= 0; fi--) {
       var f = fx[fi];
       f.life -= dt;
+      if (f.type === 'mist' && f.vx !== undefined) { f.x += f.vx * dt; f.y += f.vy * dt; f.vx *= 0.9; f.vy *= 0.9; }
       if (f.life <= 0) fx.splice(fi, 1);
+    }
+    // кометы
+    cometTimer -= dt;
+    if (cometTimer <= 0) { cometTimer = 5 + Math.random() * 7; if (comets.length < 4) spawnComet(); }
+    for (var ci2 = comets.length - 1; ci2 >= 0; ci2--) {
+      var cm = comets[ci2];
+      cm.x += cm.vx * dt; cm.y += cm.vy * dt; cm.life -= dt;
+      if (cm.life <= 0) comets.splice(ci2, 1);
     }
   }
 
@@ -1979,6 +2043,33 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       ctx.stroke();
     }
     ctx.restore();
+
+    // кометы: светящаяся голова + длинный градиентный хвост
+    for (var cmi = 0; cmi < comets.length; cmi++) {
+      var cmt = comets[cmi];
+      var cAl = cmt.life / cmt.maxLife;
+      var cvl = Math.sqrt(cmt.vx * cmt.vx + cmt.vy * cmt.vy) || 1;
+      var cnx = cmt.vx / cvl, cny = cmt.vy / cvl;
+      ctx.save();
+      ctx.globalAlpha = cAl;
+      var ctg = ctx.createLinearGradient(cmt.x, cmt.y, cmt.x - cnx * cmt.tail, cmt.y - cny * cmt.tail);
+      ctg.addColorStop(0, 'rgba(180,230,255,0.95)');
+      ctg.addColorStop(0.4, 'rgba(120,180,255,0.35)');
+      ctg.addColorStop(1, 'rgba(120,180,255,0)');
+      ctx.strokeStyle = ctg;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cmt.x, cmt.y);
+      ctx.lineTo(cmt.x - cnx * cmt.tail, cmt.y - cny * cmt.tail);
+      ctx.stroke();
+      ctx.fillStyle = '#fff';
+      ctx.shadowColor = '#9cf';
+      ctx.shadowBlur = 18;
+      ctx.beginPath();
+      ctx.arc(cmt.x, cmt.y, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
 
     if (state === 'menu' || (state !== 'playing' && state !== 'paused' && state !== 'gameover' && state !== 'reviving')) {
       ctx.save();
@@ -2307,9 +2398,16 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         ctx.lineTo(pt2.x + lx * 20, pt2.y + ly * 20);
         ctx.stroke();
       } else {
+        ctx.shadowColor = pt2.c;
+        ctx.shadowBlur = 10;
         ctx.fillStyle = pt2.c;
         ctx.beginPath();
         ctx.arc(pt2.x, pt2.y, pt2.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(pt2.x, pt2.y, pt2.r * 0.45, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.restore();
@@ -2487,6 +2585,23 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       var blink2 = player.iframes > 0 && Math.sin(gameTime * 30) > 0;
       var pAng = player.ang || 0;
       var skinColor = player.skinColor || SKINS.s1.color;
+      // светящийся след (только когда двигаешься)
+      if (player.trail && player.trail.length > 1) {
+        ctx.save();
+        for (var tri = 0; tri < player.trail.length; tri++) {
+          var trP = player.trail[tri];
+          var trA = (1 - tri / player.trail.length) * 0.35;
+          var trCol = player.trailColor || skinColor;
+          ctx.globalAlpha = trA;
+          ctx.fillStyle = trCol;
+          ctx.shadowColor = trCol;
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.arc(trP.x, trP.y, 4 + (1 - tri / player.trail.length) * 5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
       ctx.save();
       ctx.globalAlpha = blink2 ? 0.4 : 1;
       ctx.translate(player.x, player.y);
@@ -2594,13 +2709,25 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
           ctx.fill();
         }
       }
+      // сияние двигателя даже на месте (пульсирует) — для всех моделей
+      ctx.shadowColor = (player.trailColor || '#f80');
+      ctx.shadowBlur = 12 + Math.sin(gameTime * 6) * 4;
+      ctx.fillStyle = (player.trailColor || 'rgba(255,140,0,0.5)');
+      ctx.beginPath();
+      ctx.arc(-10, 0, 4 + Math.sin(gameTime * 9) * 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
       // shield
-      if (player.freezeCd > 0 || freezeTimer > 0) {
+      if (player.shield > 0 || player.freezeCd > 0 || freezeTimer > 0) {
         ctx.strokeStyle = 'rgba(70,220,255,0.6)';
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.arc(0, 0, 26 + Math.sin(gameTime * 8) * 3, 0, Math.PI * 2);
         ctx.stroke();
+        ctx.fillStyle = 'rgba(70,220,255,0.06)';
+        ctx.beginPath();
+        ctx.arc(0, 0, 26, 0, Math.PI * 2);
+        ctx.fill();
       }
       ctx.restore();
     }
@@ -2769,6 +2896,34 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         ctx.font = 'bold 16px Arial';
         ctx.textAlign = 'center';
         ctx.fillText(ef.txt, ef.x, ef.y - (1 - pr) * 40);
+      } else if (ef.type === 'bolt') {
+        // цепная молния: зигзагообразная линия между двумя точками
+        ctx.strokeStyle = ef.c;
+        ctx.lineWidth = 2.5 * pr;
+        ctx.shadowColor = ef.c;
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.moveTo(ef.x, ef.y);
+        var distX = ef.tx - ef.x, distY = ef.ty - ef.y;
+        var segs = Math.max(4, Math.floor(Math.sqrt(distX * distX + distY * distY) / 18));
+        for (var bi = 1; bi <= segs; bi++) {
+          var bx = ef.x + distX * bi / segs + (Math.random() - 0.5) * 22;
+          var by = ef.y + distY * bi / segs + (Math.random() - 0.5) * 22;
+          ctx.lineTo(bx, by);
+        }
+        ctx.lineTo(ef.tx, ef.ty);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      } else if (ef.type === 'mist') {
+        // вспышка выстрела
+        var mr = ef.r + (1 - pr) * 14;
+        ctx.fillStyle = ef.c;
+        ctx.shadowColor = ef.c;
+        ctx.shadowBlur = 16;
+        ctx.beginPath();
+        ctx.arc(ef.x + ef.vx * (1 - pr), ef.y + ef.vy * (1 - pr), mr, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
       }
       ctx.restore();
     }
