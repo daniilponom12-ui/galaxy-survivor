@@ -40,6 +40,7 @@
       newRecord: 'НОВЫЙ РЕКОРД!', again: 'Играть снова',
       reviveBtn: '💎 Вернуться (+1 жизнь) — смотри рекламу',
       reviveMax: 'МАКС. РЕВАЙВОВ (3/3)',
+      mapLbl: 'КАРТА',
       lbBtn: '🏆 Лидерборд', menuBtn: 'Меню',
       waveLbl: 'Волна: ', waveTitle: 'Волна ', lvlLbl: 'Ур: ', ptsLbl: 'Очки: ', frozen: '  |  ❄',
       levelT: 'УРОВЕНЬ ',
@@ -105,6 +106,7 @@
       newRecord: 'NEW RECORD!', again: 'Play again',
       reviveBtn: '💎 Come back (+1 life) — watch ad',
       reviveMax: 'MAX REVIVES (3/3)',
+      mapLbl: 'MAP',
       lbBtn: '🏆 Leaderboard', menuBtn: 'Menu',
       waveLbl: 'Wave: ', waveTitle: 'Wave ', lvlLbl: 'Lvl: ', ptsLbl: 'Score: ', frozen: '  |  ❄',
       levelT: 'LEVEL ',
@@ -1482,6 +1484,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       return 'victory=' + victory + ' state=' + state + ' playerR=' + player.r + ' playerVictory=' + player.victory;
     };
     window.__killPlayer = function () { player.hp = 0; endGame(); return state; };
+    window.__moveTo = function (x, y) { player.x = x; player.y = y; camX = x; camY = y; };
     window.__test.balance = function () {
       var out = { helper: null, overlords: [] };
       if (helper) out.helper = { maxHp: helper.maxHp };
@@ -2025,25 +2028,33 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     ctx.stroke();
     ctx.restore();
 
-    // видимые границы мира (светящийся пунктир по контуру мира + маркеры по периметру)
-    ctx.save();
-    ctx.strokeStyle = 'rgba(120,200,255,0.9)';
-    ctx.lineWidth = 3;
-    ctx.setLineDash([14, 10]);
-    ctx.strokeRect(0, 0, WORLD_W, WORLD_H);
-    ctx.setLineDash([]);
-    ctx.globalAlpha = 0.25;
-    ctx.fillStyle = 'rgba(120,200,255,0.18)';
-    var mk = 400, bd = 40;
-    for (var mgx = bd; mgx < WORLD_W; mgx += mk) {
-      ctx.fillRect(mgx, 0, 16, bd);
-      ctx.fillRect(mgx, WORLD_H - bd, 16, bd);
+    // видимые границы мира (яркий светящийся контур, виден когда камера у края)
+    var atEdge = camX - W / 2 < 0 || camY - H / 2 < 0 || camX + W / 2 > WORLD_W || camY + H / 2 > WORLD_H;
+    if (atEdge) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(120,210,255,1)';
+      ctx.lineWidth = 10;
+      ctx.shadowColor = 'rgba(120,210,255,1)';
+      ctx.shadowBlur = 40;
+      ctx.strokeRect(0, 0, WORLD_W, WORLD_H);
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = 'rgba(200,240,255,1)';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(0, 0, WORLD_W, WORLD_H);
+      ctx.restore();
+      ctx.save();
+      ctx.fillStyle = 'rgba(120,210,255,0.35)';
+      var mkw = 500, mbd = 60;
+      for (var mgx = mbd; mgx < WORLD_W; mgx += mkw) {
+        ctx.fillRect(mgx, 0, 26, mbd);
+        ctx.fillRect(mgx, WORLD_H - mbd, 26, mbd);
+      }
+      for (var mgy = mbd; mgy < WORLD_H; mgy += mkw) {
+        ctx.fillRect(0, mgy, mbd, 26);
+        ctx.fillRect(WORLD_W - mbd, mgy, mbd, 26);
+      }
+      ctx.restore();
     }
-    for (var mgy = bd; mgy < WORLD_H; mgy += mk) {
-      ctx.fillRect(0, mgy, bd, 16);
-      ctx.fillRect(WORLD_W - bd, mgy, bd, 16);
-    }
-    ctx.restore();
 
     // asteroids (decor)
     ctx.fillStyle = 'rgba(90,90,110,0.12)';
@@ -2770,6 +2781,84 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     vg.addColorStop(1, 'rgba(0,0,0,0.55)');
     ctx.fillStyle = vg;
     ctx.fillRect(0, 0, W, H);
+
+    // screen-space edge warning (после vignette — ярко и всегда видно при подходе к краю)
+    if (player && (state === 'playing' || state === 'reviving')) {
+      var leftD = Math.max(0, (W / 2 - camX)) / 300;
+      var rightD = Math.max(0, (camX + W / 2) - WORLD_W) / 300;
+      var topD = Math.max(0, (H / 2 - camY)) / 300;
+      var bottomD = Math.max(0, (camY + H / 2) - WORLD_H) / 300;
+      if (leftD > 0 || rightD > 0 || topD > 0 || bottomD > 0) {
+        ctx.save();
+        var edgeIntensity = Math.min(1, Math.max(leftD, rightD, topD, bottomD));
+        ctx.globalAlpha = edgeIntensity * 0.7;
+        var eGrad;
+        if (leftD > 0) {
+          eGrad = ctx.createLinearGradient(0, 0, 160, 0);
+          eGrad.addColorStop(0, 'rgba(120,210,255,0.85)');
+          eGrad.addColorStop(1, 'rgba(120,210,255,0)');
+          ctx.fillStyle = eGrad;
+          ctx.fillRect(0, 0, 160, H);
+        }
+        if (rightD > 0) {
+          eGrad = ctx.createLinearGradient(W - 160, 0, W, 0);
+          eGrad.addColorStop(0, 'rgba(120,210,255,0)');
+          eGrad.addColorStop(1, 'rgba(120,210,255,0.85)');
+          ctx.fillStyle = eGrad;
+          ctx.fillRect(W - 160, 0, 160, H);
+        }
+        if (topD > 0) {
+          eGrad = ctx.createLinearGradient(0, 0, 0, 160);
+          eGrad.addColorStop(0, 'rgba(120,210,255,0.85)');
+          eGrad.addColorStop(1, 'rgba(120,210,255,0)');
+          ctx.fillStyle = eGrad;
+          ctx.fillRect(0, 0, W, 160);
+        }
+        if (bottomD > 0) {
+          eGrad = ctx.createLinearGradient(0, H - 160, 0, H);
+          eGrad.addColorStop(0, 'rgba(120,210,255,0)');
+          eGrad.addColorStop(1, 'rgba(120,210,255,0.85)');
+          ctx.fillStyle = eGrad;
+          ctx.fillRect(0, H - 160, W, 160);
+        }
+        ctx.restore();
+      }
+    }
+
+    // mini-map (контур мира + позиция игрока) — видна всегда, после vignette
+    if (player && (state === 'playing' || state === 'paused' || state === 'reviving')) {
+      var mmS = 150, mmX = W - mmS - 14, mmY = 14;
+      ctx.save();
+      ctx.fillStyle = 'rgba(5,8,20,0.92)';
+      ctx.fillRect(mmX - 6, mmY - 6, mmS + 12, mmS + 12);
+      ctx.strokeStyle = 'rgba(120,210,255,1)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(mmX, mmY, mmS, mmS);
+      ctx.strokeStyle = 'rgba(120,210,255,0.5)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(mmX + 2, mmY + 2, mmS - 4, mmS - 4);
+      ctx.fillStyle = 'rgba(160,230,255,0.95)';
+      ctx.font = 'bold 10px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(t('mapLbl') || 'MAP', mmX + mmS / 2, mmY + 12);
+      var mxx = mmX + (camX / WORLD_W) * mmS;
+      var myy = mmY + (camY / WORLD_H) * mmS;
+      ctx.strokeStyle = 'rgba(160,230,255,0.9)';
+      ctx.lineWidth = 2.5;
+      var mvh = (H / WORLD_H) * mmS, mvw = (W / WORLD_W) * mmS;
+      ctx.strokeRect(mxx - mvw / 2, myy - mvh / 2, mvw, mvh);
+      ctx.fillStyle = '#4af';
+      ctx.shadowColor = '#4af';
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.arc(mxx, myy, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.restore();
+    }
 
     // freeze overlay
     if (freezeTimer > 0) {
