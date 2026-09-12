@@ -1415,6 +1415,9 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
 
   /* ============ INPUT ============ */
   document.addEventListener('keydown', function (e) {
+    // не мешаем набору текста в полях ввода (ник в меню)
+    var tag = e.target ? e.target.tagName : '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA') { return; }
     keys[e.code] = true;
     if (e.code === 'KeyP' || e.code === 'Escape') { togglePause(); }
     if (e.code === 'Space' && state === 'playing') {
@@ -1422,7 +1425,11 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     }
     e.preventDefault();
   });
-  document.addEventListener('keyup', function (e) { keys[e.code] = false; });
+  document.addEventListener('keyup', function (e) {
+    var tag = e.target ? e.target.tagName : '';
+    if (tag === 'INPUT' || tag === 'TEXTAREA') { return; }
+    keys[e.code] = false;
+  });
 
   canvas.addEventListener('touchstart', function (e) {
     e.preventDefault();
@@ -1639,6 +1646,14 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       '<button class="btn-leaderboard" onclick="window.__showLB()">' + t('top') + '</button>' +
       '<div class="subtitle" style="font-size:13px;color:#666;margin-top:20px">' + t('controls') + '</div>';
     document.body.appendChild(scr);
+    var nickEl = document.getElementById('nick-input');
+    if (nickEl) {
+      nickEl.setAttribute('autocomplete', 'off');
+      nickEl.focus();
+      nickEl.onkeydown = function (ev) {
+        if (ev.key === 'Enter') { window.__setNick(); nickEl.blur(); }
+      };
+    }
     window.__setNick = function () {
       var el = document.getElementById('nick-input');
       saveNick(el ? el.value : '');
