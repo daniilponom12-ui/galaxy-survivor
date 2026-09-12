@@ -403,9 +403,10 @@ var text = t('top10');
             var e = d[k];
             if (!e || !e.name) continue;
             if (e.name === 'Player' || e.name === '') continue;
-            arr.push({ name: String(e.name).slice(0, 16), exp: e.exp || 0, score: e.score || 0, wave: e.wave || 1, t: e.t || 0 });
+            arr.push({ name: String(e.name).slice(0, 16), exp: e.exp || 0, score: e.score || 0, wave: e.wave || 1, t: e.t || 0, ts: e.ts || 0 });
           }
-          arr.sort(function (a, b) { return (b.exp || 0) - (a.exp || 0) || (a.t || 0) - (b.t || 0); });
+          arr = dedupeLB(arr);
+          arr.sort(function (a, b) { return (b.exp || 0) - (a.exp || 0) || (b.ts || 0) - (a.ts || 0); });
           onOk(arr.slice(0, 10));
         } else { onErr(); }
       })
@@ -1622,6 +1623,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   }
 
   function renderLB(list, intoEl) {
+    list = dedupeLB(list || []);
     if (!list || list.length === 0) {
       intoEl.innerHTML = '<div class="lb-row" style="justify-content:center;color:#888">' + t('lbEmpty') + '</div>';
       return;
@@ -1636,6 +1638,19 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         '<span class="lb-wave">' + t('lbWave') + ' ' + r.wave + '</span>';
       intoEl.appendChild(row);
     });
+  }
+
+  // оставить один ник в лидерборде — самую последнюю игру игрока (по ts)
+  function dedupeLB(arr) {
+    var byName = {}, out = [];
+    for (var di = 0; di < arr.length; di++) {
+      var de = arr[di];
+      var cur = byName[de.name];
+      if (!cur) { byName[de.name] = de; }
+      else if ((de.ts || 0) > (cur.ts || 0)) { byName[de.name] = de; }
+    }
+    for (var dk in byName) { if (byName.hasOwnProperty(dk)) out.push(byName[dk]); }
+    return out;
   }
 
   function showLB() {
@@ -1737,7 +1752,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     window.__test.giveDiam = function (n) { progress.diamonds += n; saveProgress(); return progress.diamonds; };
     window.__test.giveBoost = function (id) { progress.boosters[id] = (progress.boosters[id] || 0) + 1; return progress.boosters[id]; };
     window.__test.giveXp = function (v) { gainXp(v); return window.__test(); };
-    window.__test.lbPush = function (s, w, t) { lbPush(s, w, t); return 'sent'; };
+    window.__test.lbPush = function (s, w, t, ex) { lbPush(s, w, t, ex); return 'sent'; };
     window.__test.lbUrl = function () { return lbUrl(); };
     window.__test.loadServ = function (cb) {
       loadLB(function (lst) { if (cb) cb(JSON.stringify({ ok: lst })); }, function () { if (cb) cb(JSON.stringify({ err: 1 })); });
