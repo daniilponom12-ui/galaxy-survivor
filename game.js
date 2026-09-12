@@ -1640,14 +1640,14 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     });
   }
 
-  // оставить один ник в лидерборде — самую последнюю игру игрока (по ts)
+  // оставить один ник в лидерборде — лучший результат игрока (по опыту)
   function dedupeLB(arr) {
     var byName = {}, out = [];
     for (var di = 0; di < arr.length; di++) {
       var de = arr[di];
       var cur = byName[de.name];
       if (!cur) { byName[de.name] = de; }
-      else if ((de.ts || 0) > (cur.ts || 0)) { byName[de.name] = de; }
+      else if ((de.exp || 0) > (cur.exp || 0)) { byName[de.name] = de; }
     }
     for (var dk in byName) { if (byName.hasOwnProperty(dk)) out.push(byName[dk]); }
     return out;
