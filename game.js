@@ -332,7 +332,7 @@ var text = t('top10');
   // Готово! Теперь все игроки одного устройства видят общий лидерборд.
   // Если URL пустой ('') — используется только локальный топ (на этом устройстве).
   // ──────────────────────────────────────────────────────────────────────────────
-  var LB_URL = (typeof window !== 'undefined' && window.gsLBUrl) ? window.gsLBUrl : '';
+  var LB_URL = 'https://galaxy-scores-default-rtdb.firebaseio.com';
   function lbUrl() { return (typeof window !== 'undefined' && window.gsLBUrl) ? window.gsLBUrl : LB_URL; }
   // лидерборд: топ-10 локальных результатов {name, score, wave, t}
   var lbLocal = [];
@@ -366,9 +366,9 @@ var text = t('top10');
   // загрузка общего лидерборда; onError -> пустой список (покажем локальный)
   function loadLB(onOk, onErr) {
     if (!lbUrl()) { onErr(); return; }
-    var q = '?orderBy=' + encodeURIComponent('"score"') + '&limitToLast=15';
-    fetch(lbUrl() + '/scores.json' + q, { method: 'GET' })
-      .then(function (r) { return r.json(); })
+    // без orderBy-параметра: не требует индекса в правилах Firebase, сортируем тут
+    fetch(lbUrl() + '/scores.json', { method: 'GET' })
+      .then(function (r) { if (!r.ok) throw 0; return r.json(); })
       .then(function (d) {
         var arr = [];
         if (d) {
