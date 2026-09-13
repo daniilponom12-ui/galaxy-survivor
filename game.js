@@ -589,7 +589,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     s8: { name: 'Истребитель', color: '#9f3', price: 6, gcost: 720, desc: 'Реактивный и со следом', icon: '✈', model: 'jet', trail: '#dfd' },
     s9: { name: 'Феникс', color: '#f80', price: 7, gcost: 900, desc: 'Пламя вместо двигателя', icon: '🦅', model: 'jet', trail: '#fd0' },
     s10: { name: 'Космический Рыцарь', color: '#7af', price: 8, gcost: 1080, desc: 'Благородный неоновый страж', icon: '⚔', model: 'jet', trail: '#7af' },
-    s11: { name: 'Тёмная Материя', color: '#23242c', price: 9, gcost: 1200, desc: 'Поглощает свет вокруг', icon: '🕳', model: 'jet', trail: '#335' },
+    s11: { name: 'Тёмная Материя', color: '#4a2a7a', price: 9, gcost: 1200, desc: 'Поглощает свет и искривляет его', icon: '🕳', model: 'jet', trail: '#a4f' },
     s12: { name: 'Солнечный Вихрь', color: '#fc2', price: 10, gcost: 1400, desc: 'Ярче самых ярких звёзд', icon: '☀', model: 'jet', trail: '#fc2' },
     s13: { name: 'Гипер-Дракон', color: '#c2f', price: 12, gcost: 1800, desc: 'Древний космический дракон', icon: '🐉', model: 'jet', trail: '#c2f' },
     s14: { name: 'Чёрный Призрак', color: '#37414d', price: 13, gcost: 2200, desc: 'Невидимый в тени', icon: '👻', model: 'jet', trail: '#7ef' },
