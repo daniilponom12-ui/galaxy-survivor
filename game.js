@@ -698,6 +698,18 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     showShop();
   }
 
+  function jetSvg(c) {
+    return '<svg viewBox="-24 -16 46 32" style="filter:drop-shadow(0 0 5px ' + c + ')">' +
+      '<polygon points="20,0 4,5 4,12 -4,8 -8,12 -14,7 -18,4 -18,-4 -14,-7 -8,-12 -4,-8 4,-12 4,-5" fill="' + c + '"/>' +
+      '<polygon points="6,3 -4,6 -6,2" fill="' + c + '"/>' +
+      '<polygon points="6,-3 -4,-6 -6,-2" fill="' + c + '"/>' +
+      '<polygon points="-12,2 -22,6 -19,0" fill="' + c + '"/>' +
+      '<polygon points="-12,-2 -22,-6 -19,0" fill="' + c + '"/>' +
+      '<circle cx="-15" cy="0" r="3" fill="rgba(255,255,255,0.85)"/>' +
+      '<polygon points="14,0 -2,3 -5,0 -2,-3" fill="#fff" opacity="0.95"/>' +
+      '</svg>';
+  }
+
   function showShop() {
     state = 'shop';
     // удалить старые экраны магазина
@@ -730,7 +742,8 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       var selected = progress.selectedSkin === id;
       var d = document.createElement('div');
       d.className = 'garage-item' + (owned ? (selected ? ' selected' : '') : ' locked');
-      var body = '<div class="g-preview" style="color:' + s.color + ';font-size:40px">' + s.icon + '</div>' +
+      var preview = s.model === 'jet' ? jetSvg(s.color) : s.icon;
+      var body = '<div class="g-preview" style="color:' + s.color + ';font-size:40px">' + preview + '</div>' +
         '<div class="g-name">' + t('sk_' + id) + '</div><div class="g-desc">' + t('sk_' + id + '_d') + '</div>';
       if (owned) { body += selected ? '<div class="g-selected">' + t('skSel') + '</div>' : '<div class="g-hint" style="color:#4af">' + t('choose') + '</div>'; }
       else {
