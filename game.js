@@ -90,11 +90,16 @@
       sk_s3: 'Золотой Герой', sk_s3_d: 'Сверхзвуковой золотой', sk_s4: 'Изумруд', sk_s4_d: 'Смертоносный изумруд',
       sk_s5: 'Ледяной Страж', sk_s5_d: 'Холодная сталь', sk_s6: 'Кобальт', sk_s6_d: 'Атомная мощь кобальта', sk_s7: 'Некрон', sk_s7_d: 'Повелитель самоцветов',
       sk_s8: 'Истребитель', sk_s8_d: 'Реактивный и со следом', sk_s9: 'Феникс', sk_s9_d: 'Огненный, с пламенным следом', sk_s10: 'Космический Рыцарь', sk_s10_d: 'Неоновый страж Вселенной',
+      sk_s11: 'Тёмная Материя', sk_s11_d: 'Поглощает свет вокруг', sk_s12: 'Солнечный Вихрь', sk_s12_d: 'Ярче самых ярких звёзд', sk_s13: 'Гипер-Дракон', sk_s13_d: 'Древний космический дракон',
       am_a1: 'Бластер', am_a1_d: 'Уверенный средний урон', am_a2: 'Лазер', am_a2_d: 'Пронзает врагов насквозь',
       am_a3: 'Дробовик', am_a3_d: 'Веер из осколков', am_a4: 'Ракеты', am_a4_d: 'Взрываются при попадании',
       am_a5: 'Плазма', am_a5_d: 'Быстрая и мощная',
       am_a6: 'Цепная молния', am_a6_d: 'Бьёт по врагам и перекидывается дальше',
       am_a7: 'Крио', am_a7_d: 'Замораживает врагов при попадании',
+      am_a8: 'Фантом', am_a8_d: 'Рой частых слабых лучей', am_a9: 'Рейлган', am_a9_d: 'Мощная молния пронзает всё насквозь',
+      am_a10: 'Шрапнель', am_a10_d: 'Шквал осколков из 7 зарядов', am_a11: 'Мини-ракеты', am_a11_d: 'Три ракеты за залп со взрывом',
+      am_a12: 'Цепной шторм', am_a12_d: 'Молния с шестью перескоками по врагам', am_a13: 'Кристальный удар', am_a13_d: 'Пронзает врагов и замораживает их',
+      boostCrit: '🎯 Крит +50%',
       boostShield: '🛡 Щит', boostRegen: '❤ Регенерация',
       diamSec: '💎 Улучшения за алмазы', diamBal: 'Алмазов: ', puLvl: 'Уровень ', puMax: 'МАКС',
       pu_dmg: 'Урон +10%', pu_dmg_d: 'Постоянно увеличивает урон оружия',
@@ -162,11 +167,16 @@
       sk_s3: 'Golden Hero', sk_s3_d: 'Supersonic gold', sk_s4: 'Emerald', sk_s4_d: 'Deadly emerald',
       sk_s5: 'Ice Guardian', sk_s5_d: 'Cold steel', sk_s6: 'Cobalt', sk_s6_d: 'Atomic cobalt power', sk_s7: 'Necron', sk_s7_d: 'Gem master',
       sk_s8: 'Fighter', sk_s8_d: 'Reactive with trail', sk_s9: 'Phoenix', sk_s9_d: 'Fiery, with a flame trail', sk_s10: 'Cosmic Knight', sk_s10_d: 'Neon guardian of the universe',
+      sk_s11: 'Dark Matter', sk_s11_d: 'Absorbs the light around', sk_s12: 'Solar Storm', sk_s12_d: 'Brighter than the brightest stars', sk_s13: 'Hyper Dragon', sk_s13_d: 'Ancient space dragon',
       am_a1: 'Blaster', am_a1_d: 'Steady medium damage', am_a2: 'Laser', am_a2_d: 'Pierces through enemies',
       am_a3: 'Shotgun', am_a3_d: 'Fan of shards', am_a4: 'Rockets', am_a4_d: 'Explode on hit',
       am_a5: 'Plasma', am_a5_d: 'Fast and powerful',
       am_a6: 'Chain lightning', am_a6_d: 'Hits enemies and jumps to more',
       am_a7: 'Cryo', am_a7_d: 'Slows enemies on hit',
+      am_a8: 'Phantom', am_a8_d: 'Swarm of rapid weak rays', am_a9: 'Railgun', am_a9_d: 'Powerful bolt pierces everything',
+      am_a10: 'Shrapnel', am_a10_d: 'Storm of 7 shards', am_a11: 'Mini rockets', am_a11_d: 'Three rockets per volley with blast',
+      am_a12: 'Chain storm', am_a12_d: 'Lightning with six jumps', am_a13: 'Crystal strike', am_a13_d: 'Pierces and chills enemies',
+      boostCrit: '🎯 Crit +50%',
       boostShield: '🛡 Shield', boostRegen: '❤ Regen',
       diamSec: '💎 Gem upgrades', diamBal: 'Gems: ', puLvl: 'Level ', puMax: 'MAX',
       pu_dmg: 'Damage +10%', pu_dmg_d: 'Permanently increases weapon damage',
@@ -576,7 +586,10 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     s7: { name: 'Некрон', color: '#f26', price: 5, gcost: 480, desc: 'Повелитель самоцветов', icon: 'ꙮ' },
     s8: { name: 'Истребитель', color: '#9f3', price: 6, gcost: 720, desc: 'Реактивный и со следом', icon: '✈', model: 'jet', trail: '#dfd' },
     s9: { name: 'Феникс', color: '#f80', price: 7, gcost: 900, desc: 'Пламя вместо двигателя', icon: '🦅', model: 'jet', trail: '#fd0' },
-    s10: { name: 'Космический Рыцарь', color: '#7af', price: 8, gcost: 1080, desc: 'Благородный неоновый страж', icon: '⚔', model: 'jet', trail: '#7af' }
+    s10: { name: 'Космический Рыцарь', color: '#7af', price: 8, gcost: 1080, desc: 'Благородный неоновый страж', icon: '⚔', model: 'jet', trail: '#7af' },
+    s11: { name: 'Тёмная Материя', color: '#23242c', price: 9, gcost: 1200, desc: 'Поглощает свет вокруг', icon: '🕳', model: 'jet', trail: '#335' },
+    s12: { name: 'Солнечный Вихрь', color: '#fc2', price: 10, gcost: 1400, desc: 'Ярче самых ярких звёзд', icon: '☀', model: 'jet', trail: '#fc2' },
+    s13: { name: 'Гипер-Дракон', color: '#c2f', price: 12, gcost: 1800, desc: 'Древний космический дракон', icon: '🐉', model: 'jet', trail: '#c2f' }
   };
   var MUSIC = {
     m1: { name: 'Космический драйв', price: 0 },
@@ -592,7 +605,13 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     a4: { name: 'Ракеты', desc: 'Взрываются при попадании', price: 3, gcost: 280, dmgMult: 2.6, rate: 1.35, speed: 380, color: '#f80', count: 1, spread: 10, r: 7, rocket: true },
     a5: { name: 'Плазма', desc: 'Быстрая и мощная', price: 4, gcost: 360, dmgMult: 1.9, rate: 0.45, speed: 720, color: '#0ff', count: 1, spread: 8, r: 6 },
     a6: { name: 'Цепная молния', desc: 'Бьёт по врагам и перекидывается', price: 5, gcost: 520, dmgMult: 1.1, rate: 0.7, speed: 560, color: '#e8f', count: 1, spread: 7, r: 6, chain: true, chainTargets: 4, chainRange: 180 },
-    a7: { name: 'Крио', desc: 'Замораживает врагов при попадании', price: 6, gcost: 600, dmgMult: 1.0, rate: 0.5, speed: 600, color: '#8ef', count: 1, spread: 7, r: 5, cryo: true, cryoDur: 2.2 }
+    a7: { name: 'Крио', desc: 'Замораживает врагов при попадании', price: 6, gcost: 600, dmgMult: 1.0, rate: 0.5, speed: 600, color: '#8ef', count: 1, spread: 7, r: 5, cryo: true, cryoDur: 2.2 },
+    a8: { name: 'Фантом', desc: 'Рой частых слабых лучей', price: 7, gcost: 700, dmgMult: 0.7, rate: 0.3, speed: 640, color: '#0ff', count: 3, spread: 12, r: 4 },
+    a9: { name: 'Рейлган', desc: 'Мощная молния пронзает всё', price: 7, gcost: 760, dmgMult: 3.2, rate: 1.6, speed: 980, color: '#8fa', count: 1, spread: 0, r: 4, pierce: true },
+    a10: { name: 'Шрапнель', desc: 'Шквал осколков', price: 7, gcost: 800, dmgMult: 0.45, rate: 1.1, speed: 500, color: '#fb0', count: 7, spread: 42, r: 5 },
+    a11: { name: 'Мини-ракеты', desc: 'Три ракеты за залп', price: 8, gcost: 900, dmgMult: 1.3, rate: 1.35, speed: 430, color: '#f60', count: 3, spread: 24, r: 6, rocket: true },
+    a12: { name: 'Цепной шторм', desc: 'Молния с шестью перескоками', price: 8, gcost: 960, dmgMult: 1.0, rate: 0.6, speed: 600, color: '#e8f', count: 1, spread: 7, r: 6, chain: true, chainTargets: 6, chainRange: 220 },
+    a13: { name: 'Кристальный удар', desc: 'Пронзает и замораживает', price: 9, gcost: 1100, dmgMult: 1.35, rate: 0.8, speed: 660, color: '#cf6', count: 1, spread: 7, r: 5, pierce: true, cryo: true, cryoDur: 3 }
   };
 
   var MAX_AMMO_COUNT = 3;
@@ -765,7 +784,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
 
     // boosters
     var gb = document.getElementById('bb-boost');
-    var BOOST = { dmg: t('boostDmg'), hp: t('boostHp'), speed: t('boostSpeed'), shield: t('boostShield'), regen: t('boostRegen') };
+    var BOOST = { dmg: t('boostDmg'), hp: t('boostHp'), speed: t('boostSpeed'), shield: t('boostShield'), regen: t('boostRegen'), crit: t('boostCrit') };
     Object.keys(BOOST).forEach(function (bid) {
       var b = document.createElement('div');
       var count = progress.boosters[bid] || 0;
@@ -1539,6 +1558,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     if (progress.boosters.speed > 0) { progress.boosters.speed--; player.speed = 235; }
     if (progress.boosters.shield > 0) { progress.boosters.shield--; player.shield += 2; hud(t('boostShield') || 'SHIELD', '#4ff'); }
     if (progress.boosters.regen > 0) { progress.boosters.regen--; player.regenRate = 5; hud(t('boostRegen') || 'REGEN', '#f77'); }
+    if (progress.boosters.crit > 0) { progress.boosters.crit--; player.critChance = (player.critChance || 0) + 0.5; hud(t('boostCrit') || 'CRIT', '#fd0'); }
 
     document.querySelectorAll('.menu-screen,.gameover-screen').forEach(function (el) { el.remove(); });
     addHUD();
@@ -1714,7 +1734,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     window.__test = function () {
       var bc = 0;
       for (var ti = 0; ti < enemies.length; ti++) { if (enemies[ti].boss) bc++; }
-      return { enemies: enemies.length, waveNum: waveNum, bosses: bc, helper: helper ? 1 : 0, diamonds: progress.diamonds, upg: progress.upg, hp: Math.round(player.hp), regen: player.regenRate || 0, types: enemies.map(function (e) { return e.type; }).slice(0, 10), bossTypes: enemies.filter(function (e) { return e.boss; }).map(function (e) { return e.type; }) };
+      return { enemies: enemies.length, waveNum: waveNum, bosses: bc, helper: helper ? 1 : 0, diamonds: progress.diamonds, upg: progress.upg, hp: Math.round(player.hp), regen: player.regenRate || 0, critChance: player.critChance || 0, boosters: progress.boosters, types: enemies.map(function (e) { return e.type; }).slice(0, 10), bossTypes: enemies.filter(function (e) { return e.boss; }).map(function (e) { return e.type; }) };
     };
     window.__test.forceWave = function () { spawnWave(); return window.__test(); };
     window.__test.bp = function (w) { return pickBossPool(w); };
