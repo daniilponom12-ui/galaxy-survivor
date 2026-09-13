@@ -91,6 +91,7 @@
       sk_s5: 'Ледяной Страж', sk_s5_d: 'Холодная сталь', sk_s6: 'Кобальт', sk_s6_d: 'Атомная мощь кобальта', sk_s7: 'Некрон', sk_s7_d: 'Повелитель самоцветов',
       sk_s8: 'Истребитель', sk_s8_d: 'Реактивный и со следом', sk_s9: 'Феникс', sk_s9_d: 'Огненный, с пламенным следом', sk_s10: 'Космический Рыцарь', sk_s10_d: 'Неоновый страж Вселенной',
       sk_s11: 'Тёмная Материя', sk_s11_d: 'Поглощает свет вокруг', sk_s12: 'Солнечный Вихрь', sk_s12_d: 'Ярче самых ярких звёзд', sk_s13: 'Гипер-Дракон', sk_s13_d: 'Древний космический дракон',
+      sk_s14: 'Чёрный Призрак', sk_s14_d: 'Невидимый в тени', sk_s15: 'Неоновый Шторм', sk_s15_d: 'Буря в чистом небе', sk_s16: 'Алый Демон', sk_s16_d: 'Молниеносный красный', sk_s17: 'Золотое Пламя', sk_s17_d: 'Горит как звезда',
       am_a1: 'Бластер', am_a1_d: 'Уверенный средний урон', am_a2: 'Лазер', am_a2_d: 'Пронзает врагов насквозь',
       am_a3: 'Дробовик', am_a3_d: 'Веер из осколков', am_a4: 'Ракеты', am_a4_d: 'Взрываются при попадании',
       am_a5: 'Плазма', am_a5_d: 'Быстрая и мощная',
@@ -168,6 +169,7 @@
       sk_s5: 'Ice Guardian', sk_s5_d: 'Cold steel', sk_s6: 'Cobalt', sk_s6_d: 'Atomic cobalt power', sk_s7: 'Necron', sk_s7_d: 'Gem master',
       sk_s8: 'Fighter', sk_s8_d: 'Reactive with trail', sk_s9: 'Phoenix', sk_s9_d: 'Fiery, with a flame trail', sk_s10: 'Cosmic Knight', sk_s10_d: 'Neon guardian of the universe',
       sk_s11: 'Dark Matter', sk_s11_d: 'Absorbs the light around', sk_s12: 'Solar Storm', sk_s12_d: 'Brighter than the brightest stars', sk_s13: 'Hyper Dragon', sk_s13_d: 'Ancient space dragon',
+      sk_s14: 'Black Ghost', sk_s14_d: 'Invisible in the dark', sk_s15: 'Neon Storm', sk_s15_d: 'Storm in the clear sky', sk_s16: 'Scarlet Demon', sk_s16_d: 'Lightning red speed', sk_s17: 'Golden Flame', sk_s17_d: 'Burns like a star',
       am_a1: 'Blaster', am_a1_d: 'Steady medium damage', am_a2: 'Laser', am_a2_d: 'Pierces through enemies',
       am_a3: 'Shotgun', am_a3_d: 'Fan of shards', am_a4: 'Rockets', am_a4_d: 'Explode on hit',
       am_a5: 'Plasma', am_a5_d: 'Fast and powerful',
@@ -589,7 +591,11 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     s10: { name: 'Космический Рыцарь', color: '#7af', price: 8, gcost: 1080, desc: 'Благородный неоновый страж', icon: '⚔', model: 'jet', trail: '#7af' },
     s11: { name: 'Тёмная Материя', color: '#23242c', price: 9, gcost: 1200, desc: 'Поглощает свет вокруг', icon: '🕳', model: 'jet', trail: '#335' },
     s12: { name: 'Солнечный Вихрь', color: '#fc2', price: 10, gcost: 1400, desc: 'Ярче самых ярких звёзд', icon: '☀', model: 'jet', trail: '#fc2' },
-    s13: { name: 'Гипер-Дракон', color: '#c2f', price: 12, gcost: 1800, desc: 'Древний космический дракон', icon: '🐉', model: 'jet', trail: '#c2f' }
+    s13: { name: 'Гипер-Дракон', color: '#c2f', price: 12, gcost: 1800, desc: 'Древний космический дракон', icon: '🐉', model: 'jet', trail: '#c2f' },
+    s14: { name: 'Чёрный Призрак', color: '#37414d', price: 13, gcost: 2200, desc: 'Невидимый в тени', icon: '👻', model: 'jet', trail: '#7ef' },
+    s15: { name: 'Неоновый Шторм', color: '#8cf', price: 14, gcost: 2600, desc: 'Буря в чистом небе', icon: '⚡', model: 'jet', trail: '#8cf' },
+    s16: { name: 'Алый Демон', color: '#f33', price: 15, gcost: 3000, desc: 'Молниеносный красный', icon: '😈', model: 'jet', trail: '#f33' },
+    s17: { name: 'Золотое Пламя', color: '#fd4', price: 16, gcost: 3400, desc: 'Горит как звезда', icon: '🔥', model: 'jet', trail: '#fd4' }
   };
   var MUSIC = {
     m1: { name: 'Космический драйв', price: 0 },
