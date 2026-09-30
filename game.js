@@ -49,6 +49,11 @@
       ammoCountSec: '🔁 Количество снарядов за выстрел',
       boostSec: '⚡ Усиления на матч (просмотр рекламы)', back: 'Назад',
       skSel: '✓ Выбран', ammoSel: '✓ В бою', choose: 'Выбрать', watch: '▶ Реклама (',
+      musSec: '🎵 Музыка (просмотр рекламы)', musSel: '♫ Играет', musVol: 'Громкость музыки',
+      mus_m1: 'Космический драйв', mus_m1_d: 'Классический синтвейв: бас, арпеджио, ровный бит',
+      mus_m2: 'Неоновый рейв', mus_m2_d: 'Быстрый пульс, синкопы, открытые хэты',
+      mus_m3: 'Энергия орды', mus_m3_d: 'Тяжёлый драйв шестнадцатыми для больших волн',
+      mus_m4: 'Турбо-бит', mus_m4_d: '132 BPM, двойные хэты и лид на боссах',
       maxLabel: 'Максимум', watchPlus: '▶ Реклама +1', barrels: 'Стволы: ', baseLbl: 'база ',
       boostDmg: '⚔ Урон', boostHp: '❤ HP', boostSpeed: '⚡ Скорость',
       top10: 'Топ-10 игроков\n', playerName: 'Игрок', noRecords: 'Пока нет рекордов. Ты будешь первым!\n',
@@ -137,6 +142,11 @@
       ammoCountSec: '🔁 Projectiles per shot',
       boostSec: '⚡ Match boosts (watch ads)', back: 'Back',
       skSel: '✓ Selected', ammoSel: '✓ Active', choose: 'Select', watch: '▶ Watch ad (',
+      musSec: '🎵 Music (watch ads)', musSel: '♫ Playing', musVol: 'Music volume',
+      mus_m1: 'Cosmic Drive', mus_m1_d: 'Classic synthwave: bass, arpeggio, steady beat',
+      mus_m2: 'Neon Rave', mus_m2_d: 'Fast pulse, syncopation, open hats',
+      mus_m3: 'Horde Energy', mus_m3_d: 'Heavy sixteenth drive for big waves',
+      mus_m4: 'Turbo Beat', mus_m4_d: '132 BPM, double hats and boss lead',
       maxLabel: 'Max', watchPlus: '▶ Watch ad +1', barrels: 'Barrels: ', baseLbl: 'base ',
       boostDmg: '⚔ Damage', boostHp: '❤ HP', boostSpeed: '⚡ Speed',
       top10: 'Top-10 players\n', playerName: 'Player', noRecords: 'No records yet. Be the first!\n',
@@ -628,10 +638,10 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     s20: { name: 'Неоновая Пантера', color: '#f9f', price: 20, gcost: 9200, desc: 'Молниеносная и дерзкая', icon: '🐆', model: 'jet', trail: '#f9f' }
   };
   var MUSIC = {
-    m1: { name: 'Космический драйв', price: 0 },
-    m2: { name: 'Неоновый рейв', price: 1 },
-    m3: { name: 'Энергия орды', price: 1 },
-    m4: { name: 'Турбо-бит', price: 2 }
+    m1: { name: 'Космический драйв', price: 0, gcost: 0 },
+    m2: { name: 'Неоновый рейв', price: 1, gcost: 600 },
+    m3: { name: 'Энергия орды', price: 1, gcost: 900 },
+    m4: { name: 'Турбо-бит', price: 2, gcost: 1400 }
   };
 
   var AMMO_TYPES = {
@@ -655,7 +665,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
 
   var MAX_AMMO_COUNT = 3;
 
-  var musicCtx = null, musicNodes = null, musicTimer = null, curTrack = 'm1';
+  var curTrack = 'm1';
 
   function isSkinOwned(id) { return progress.skinsUnlocked.indexOf(id) >= 0; }
   function isMusicOwned(id) { return progress.musicUnlocked.indexOf(id) >= 0; }
@@ -865,6 +875,10 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       '<div class="garage-grid" id="gg-ammo"></div>' +
       '<div style="width:100%;max-width:680px;color:#fff;margin:14px 0 4px;font-size:14px;text-align:left">' + t('ammoCountSec') + '</div>' +
       '<div class="booster-row" id="bb-ammo-count"></div>' +
+      '<div style="width:100%;max-width:680px;color:#fff;margin:24px 0 4px;font-size:18px;text-align:left">' + t('musSec') + '</div>' +
+      '<div class="garage-grid" id="gg-music"></div>' +
+      '<div style="width:100%;max-width:680px;color:#fff;margin:14px 0 4px;font-size:14px;text-align:left">' + t('musVol') + ' <span id="musvolval">' + Math.round(musicVol * 100) + '%</span></div>' +
+      '<div class="booster-row"><input id="musvol" type="range" min="0" max="100" value="' + Math.round(musicVol * 100) + '" style="width:100%;max-width:340px"></div>' +
       '<div style="width:100%;max-width:680px;color:#fff;margin:24px 0 4px;font-size:18px;text-align:left">' + t('boostSec') + '</div>' +
       '<div class="booster-row" id="bb-boost"></div>' +
       '<div style="width:100%;max-width:680px;color:#fff;margin:24px 0 4px;font-size:18px;text-align:left">' + t('petSec') + '</div>' +
@@ -925,6 +939,42 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       var buyAmmoEl = d.querySelector('[data-buy]');
       if (buyAmmoEl) buyAmmoEl.addEventListener('click', function (ev) { ev.stopPropagation(); buyWithGems('ammo', id); });
     });
+
+    // музыка
+    var gm = document.getElementById('gg-music');
+    if (gm) {
+      Object.keys(MUSIC).forEach(function (id) {
+        var mi = MUSIC[id];
+        var owned = isMusicOwned(id);
+        var selected = progress.selectedMusic === id;
+        var card = document.createElement('div');
+        card.className = 'garage-item' + (owned ? (selected ? ' selected' : '') : ' locked');
+        var body = '<div class="g-preview" style="font-size:32px">' + (selected ? '▶' : '♫') + '</div>' +
+          '<div class="g-name">' + t('mus_' + id) + '</div><div class="g-desc">' + t('mus_' + id + '_d') + '</div>';
+        if (owned) { body += selected ? '<div class="g-selected">' + t('musSel') + '</div>' : '<div class="g-hint" style="color:#4af">' + t('choose') + '</div>'; }
+        else {
+          body += '<div class="g-hint">' + t('watch') + mi.price + ')</div>';
+          if (mi.gcost) body += '<div class="g-hint" style="color:#4ff" data-mbuy="' + id + '">' + t('buyDiam') + ' ' + mi.gcost + '</div>';
+        }
+        card.innerHTML = body;
+        card.onclick = function () {
+          if (!owned) { watchForReward({ type: 'music', id: id }); }
+          else if (!selected) { setMusicTrack(id); showShop(); }
+        };
+        gm.appendChild(card);
+        var mb = card.querySelector('[data-mbuy]');
+        if (mb) mb.addEventListener('click', function (ev) { ev.stopPropagation(); buyWithGems('music', id); });
+      });
+    }
+    var mvEl = document.getElementById('musvol');
+    if (mvEl) {
+      mvEl.oninput = function () {
+        var v = parseInt(mvEl.value, 10) / 100;
+        setMusicVolume(v);
+        var lbl = document.getElementById('musvolval');
+        if (lbl) lbl.textContent = Math.round(v * 100) + '%';
+      };
+    }
 
     // ammo count
     var gac = document.getElementById('bb-ammo-count');
@@ -987,58 +1037,389 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     window.__closeShop = function () { showMenu(); };
   }
 
-  var MUSIC_CHORDS = [
-    { pad: [220.00, 261.63, 329.63, 440.00], bass: 110.00 },
-    { pad: [174.61, 220.00, 261.63, 349.23], bass: 87.31 },
-    { pad: [261.63, 329.63, 392.00, 523.25], bass: 130.81 },
-    { pad: [196.00, 246.94, 293.66, 392.00], bass: 98.00 }
-  ];
-  var MUSIC_LEAD = [523.25, 587.33, 659.25, 783.99, 880.00, 659.25, 587.33];
-  function startMusic() {
-    if (!sndOn) return null;
-    var a = audio(); if (!a) return null;
-    if (musicTimer) return;
+  /* ============ MUSIC: adaptive synthwave ============ */
+  function mfreq(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+
+  // прогрессии: r — корень относительно тоники (полутоны), q — качество (m/M)
+  var MUSIC_THEMES = {
+    m1: {
+      bpm: 112, root: 45, prog: [{ r: 0, q: 'm' }, { r: 8, q: 'M' }, { r: 3, q: 'M' }, { r: 5, q: 'M' }],
+      bossProg: [{ r: 0, q: 'm' }, { r: 1, q: 'M' }, { r: 0, q: 'm' }, { r: 10, q: 'M' }],
+      arp: [0, 7, 12, 7, 3, 7, 12, 15], bass: 'eighth', drums: 0, lead: [12, 10, 7, 10, 12, 15, 12, 7], mood: 0.5
+    },
+    m2: {
+      bpm: 124, root: 42, prog: [{ r: 0, q: 'm' }, { r: 5, q: 'M' }, { r: 8, q: 'M' }, { r: 7, q: 'M' }],
+      bossProg: [{ r: 0, q: 'm' }, { r: 6, q: 'M' }, { r: 1, q: 'M' }, { r: 8, q: 'M' }],
+      arp: [0, 3, 7, 12, 7, 3, 0, 3], bass: 'sync', drums: 1, lead: [7, 10, 12, 15, 12, 10, 7, 3], mood: 0.65
+    },
+    m3: {
+      bpm: 118, root: 48, prog: [{ r: 0, q: 'm' }, { r: 8, q: 'M' }, { r: 3, q: 'M' }, { r: 10, q: 'M' }],
+      bossProg: [{ r: 0, q: 'm' }, { r: 2, q: 'M' }, { r: 8, q: 'M' }, { r: 7, q: 'M' }],
+      arp: [0, 12, 7, 12, 15, 12, 7, 12], bass: 'sixteenth', drums: 2, lead: [12, 15, 19, 15, 12, 10, 12, 15], mood: 0.8
+    },
+    m4: {
+      bpm: 132, root: 50, prog: [{ r: 0, q: 'm' }, { r: 7, q: 'M' }, { r: 3, q: 'M' }, { r: 5, q: 'M' }],
+      bossProg: [{ r: 0, q: 'm' }, { r: 3, q: 'M' }, { r: 0, q: 'm' }, { r: 8, q: 'M' }],
+      arp: [0, 7, 3, 7, 12, 7, 3, 7], bass: 'sixteenth', drums: 3, lead: [12, 12, 15, 12, 19, 15, 12, 10], mood: 1
+    }
+  };
+  var QUAL = { m: [0, 3, 7, 12], M: [0, 4, 7, 12] };
+  var musicVol = 0.6;
+  try { var mv = parseFloat(localStorage.getItem('gs_musicvol')); if (!isNaN(mv)) musicVol = Math.max(0, Math.min(1, mv)); } catch (e) {}
+  var musTimer = null, musCtx = null, musMaster = null, musComp = null, musDelay = null, musNoise = null;
+  var musLayers = null, musStep = 0, musBar = 0, musNext = 0, musTrack = 'm1';
+  var musIntensity = 0, musBoss = false, musStarted = 0, musFade = 0;
+
+  function musTheme() { return MUSIC_THEMES[musTrack] || MUSIC_THEMES.m1; }
+
+  function musNoiseBuf(a) {
+    if (musNoise && musNoise.sampleRate === a.sampleRate) return musNoise;
     try {
-      var g = a.createGain();
-      g.gain.value = 0.05;
-      g.connect(a.destination);
-      var step = 0;
-      musicTimer = setInterval(function () {
-        if (!sndOn || a.state === 'suspended') return;
-        try {
-          var chord = MUSIC_CHORDS[Math.floor(step / 8) % MUSIC_CHORDS.length];
-          var pos = step % 8;
-          if (pos === 0) {
-            var bo = a.createOscillator(); bo.type = 'sine'; bo.frequency.value = chord.bass;
-            var bg = a.createGain(); bg.gain.setValueAtTime(0.09, a.currentTime); bg.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 1.0);
-            bo.connect(bg); bg.connect(g); bo.start(); bo.stop(a.currentTime + 1.0);
-          }
-          if (pos % 2 === 0) {
-            var note = chord.pad[(pos / 2) % chord.pad.length];
-            var po = a.createOscillator(); po.type = 'triangle'; po.frequency.value = note;
-            var pg = a.createGain(); pg.gain.setValueAtTime(0.022, a.currentTime); pg.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 1.6);
-            po.connect(pg); pg.connect(g); po.start(); po.stop(a.currentTime + 1.6);
-          }
-          if (pos === 4) {
-            var lead = MUSIC_LEAD[Math.floor(Math.random() * MUSIC_LEAD.length)];
-            var lo = a.createOscillator(); lo.type = 'sine'; lo.frequency.value = lead;
-            var lg = a.createGain(); lg.gain.setValueAtTime(0.05, a.currentTime); lg.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.5);
-            lo.connect(lg); lg.connect(g); lo.start(); lo.stop(a.currentTime + 0.5);
-          }
-          step++;
-        } catch (e) {}
-      }, 150);
+      var len = Math.floor(a.sampleRate * 1.2);
+      musNoise = a.createBuffer(1, len, a.sampleRate);
+      var d = musNoise.getChannelData(0);
+      for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    } catch (e) { musNoise = null; }
+    return musNoise;
+  }
+
+  function musEnv(a, t, vol, dur, atk) {
+    var g = a.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, vol), t + (atk || 0.006));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    return g;
+  }
+
+  function musKick(a, t, vol) {
+    var o = a.createOscillator(), g = a.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(150, t);
+    o.frequency.exponentialRampToValueAtTime(42, t + 0.11);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
+    o.connect(g); g.connect(musLayers.drums);
+    o.start(t); o.stop(t + 0.26);
+  }
+  function musNoiseHit(a, t, vol, dur, freq, q, type, dest) {
+    var buf = musNoiseBuf(a); if (!buf) return;
+    var s = a.createBufferSource(); s.buffer = buf;
+    s.playbackRate.value = 0.9 + Math.random() * 0.2;
+    var f = a.createBiquadFilter(); f.type = type || 'highpass'; f.frequency.value = freq; f.Q.value = q || 0.8;
+    var g = a.createGain();
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(dest || musLayers.drums);
+    s.start(t); s.stop(t + dur + 0.02);
+  }
+  function musSnare(a, t, vol) {
+    musNoiseHit(a, t, vol, 0.16, 1900, 0.7, 'bandpass');
+    var o = a.createOscillator(), g = a.createGain();
+    o.type = 'triangle'; o.frequency.setValueAtTime(320, t); o.frequency.exponentialRampToValueAtTime(180, t + 0.08);
+    g.gain.setValueAtTime(vol * 0.5, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
+    o.connect(g); g.connect(musLayers.drums);
+    o.start(t); o.stop(t + 0.12);
+  }
+  function musHat(a, t, vol, open) {
+    musNoiseHit(a, t, vol, open ? 0.17 : 0.035, 8200, 0.6, 'highpass');
+  }
+  function musBass(a, t, freq, dur, vol) {
+    var f = a.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 6;
+    f.frequency.setValueAtTime(Math.min(1500, freq * 9), t);
+    f.frequency.exponentialRampToValueAtTime(Math.max(90, freq * 2.2), t + dur);
+    var g = musEnv(a, t, vol, dur, 0.008);
+    f.connect(g); g.connect(musLayers.bass);
+    for (var k = 0; k < 2; k++) {
+      var o = a.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.value = freq * (k === 0 ? 1 : 1.005);
+      o.connect(f); o.start(t); o.stop(t + dur + 0.03);
+    }
+    var sub = a.createOscillator(), sg = a.createGain();
+    sub.type = 'sine'; sub.frequency.value = freq / 2;
+    sg.gain.setValueAtTime(vol * 0.75, t); sg.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    sub.connect(sg); sg.connect(musLayers.bass);
+    sub.start(t); sub.stop(t + dur + 0.03);
+  }
+  function musArp(a, t, freq, dur, vol) {
+    var f = a.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 4;
+    f.frequency.setValueAtTime(Math.min(7000, freq * 7), t);
+    f.frequency.exponentialRampToValueAtTime(Math.max(400, freq * 2), t + dur);
+    var g = musEnv(a, t, vol, dur, 0.004);
+    f.connect(g); g.connect(musLayers.arp);
+    var send = a.createGain(); send.gain.value = 0.5;
+    g.connect(send); send.connect(musDelay);
+    for (var k = 0; k < 2; k++) {
+      var o = a.createOscillator();
+      o.type = k === 0 ? 'square' : 'sawtooth';
+      o.frequency.value = freq * (k === 0 ? 1 : 1.008);
+      o.connect(f); o.start(t); o.stop(t + dur + 0.03);
+    }
+  }
+  function musPad(a, t, freqs, dur, vol) {
+    var f = a.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 1.2;
+    f.frequency.setValueAtTime(500, t);
+    f.frequency.linearRampToValueAtTime(2600, t + dur * 0.6);
+    f.frequency.linearRampToValueAtTime(700, t + dur);
+    var g = a.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + dur * 0.25);
+    g.gain.linearRampToValueAtTime(0.0001, t + dur);
+    f.connect(g); g.connect(musLayers.pad);
+    for (var i = 0; i < freqs.length; i++) {
+      for (var d = 0; d < 2; d++) {
+        var o = a.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.value = freqs[i] * (d === 0 ? 1 : 1.006);
+        o.connect(f); o.start(t); o.stop(t + dur + 0.05);
+      }
+    }
+  }
+  function musLead(a, t, freq, dur, vol) {
+    var f = a.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 9;
+    f.frequency.setValueAtTime(600, t);
+    f.frequency.exponentialRampToValueAtTime(5200, t + dur * 0.5);
+    f.frequency.exponentialRampToValueAtTime(900, t + dur);
+    var g = musEnv(a, t, vol, dur, 0.01);
+    f.connect(g); g.connect(musLayers.lead);
+    var send = a.createGain(); send.gain.value = 0.35;
+    g.connect(send); send.connect(musDelay);
+    for (var k = 0; k < 3; k++) {
+      var o = a.createOscillator();
+      o.type = k === 2 ? 'square' : 'sawtooth';
+      o.frequency.value = freq * (k === 0 ? 1 : (k === 1 ? 1.007 : 0.5));
+      o.connect(f); o.start(t); o.stop(t + dur + 0.03);
+    }
+  }
+
+  // насколько сейчас «жарко»: 0 — меню, 1 — крупный босс
+  function musTarget() {
+    if (typeof state === 'string' && state !== 'playing') return 0.22;
+    var boss = 0, big = 0, n = 0;
+    try {
+      n = enemies.length;
+      for (var i = 0; i < enemies.length; i++) {
+        if (enemies[i].boss) { boss++; if (enemies[i].r >= 80 || enemies[i].overlord || enemies[i].final) big++; }
+      }
+    } catch (e) {}
+    if (big > 0 || boss >= 3) { musBoss = true; return 1; }
+    musBoss = false;
+    var w = 0;
+    try { w = waveNum || 0; } catch (e) {}
+    var crowd = Math.min(1, n / 45);
+    var prog = Math.min(1, w / 12);
+    var low = 0;
+    try { if (player && player.maxHp) low = player.hp / player.maxHp < 0.3 ? 1 : 0; } catch (e) {}
+    return Math.max(0.3, Math.min(0.98, 0.34 + prog * 0.28 + crowd * 0.26 + (boss > 0 ? 0.08 : 0) + low * 0.1));
+  }
+
+  function musChordNow() {
+    var th = musTheme();
+    var prog = musBoss && th.bossProg ? th.bossProg : th.prog;
+    return prog[musBar % prog.length];
+  }
+
+  function musTempo() {
+    var th = musTheme();
+    var mul = 0.82;
+    if (typeof state === 'string' && state === 'playing') mul = musBoss ? 1.1 : 1;
+    else if (typeof state === 'string' && (state === 'gameover' || state === 'victory')) mul = 0.7;
+    return th.bpm * mul;
+  }
+
+  function musLayerGain(a, node, val, t) {
+    try { node.gain.setTargetAtTime(val, t, 0.35); } catch (e) {}
+  }
+
+  function musStepSchedule(a, step, t) {
+    var th = musTheme();
+    var ch = musChordNow();
+    var ints = QUAL[ch.q] || QUAL.m;
+    var barDur = 60 / musTempo() * 4;
+    var sDur = barDur / 4;
+    var I = musIntensity;
+    var rootM = th.root + ch.r;
+
+    if (step === 0) {
+      var padFreqs = [];
+      for (var i = 0; i < 3; i++) padFreqs.push(mfreq(rootM + 12 + ints[i]));
+      padFreqs.push(mfreq(rootM + 24));
+      musPad(a, t, padFreqs, barDur, 0.028 + 0.012 * I);
+    }
+
+    // бас
+    var bSteps = [];
+    if (th.bass === 'eighth') bSteps = [0, 2, 4, 6, 8, 10, 12, 14];
+    else if (th.bass === 'sync') bSteps = [0, 3, 6, 8, 11, 14];
+    else bSteps = [0, 2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15];
+    for (var b = 0; b < bSteps.length; b++) {
+      if (bSteps[b] !== step) continue;
+      var oct = (b % 3 === 2) ? 12 : 0;
+      musBass(a, t, mfreq(rootM + oct), sDur * 0.92, 0.075 + 0.03 * I);
+    }
+
+    // арпеджио
+    if (I > 0.14) {
+      var shape = th.arp;
+      var deg = shape[step % shape.length];
+      var note = mfreq(rootM + 12 + ints[deg % 3] + (deg >= 3 ? 12 : 0));
+      musArp(a, t, note, sDur * 0.9, (0.02 + 0.016 * I) * (step % 4 === 2 ? 1.25 : 1));
+    }
+
+    // ударные
+    if (I > 0.3) {
+      var st = th.drums;
+      var kickOn = (st === 3) ? (step % 2 === 0) : (step % 4 === 0);
+      if (kickOn) musKick(a, t, 0.16 + 0.05 * I);
+      if (step === 4 || step === 12) musSnare(a, t, 0.05 + 0.03 * I);
+      if (st === 0) { if (step % 2 === 0) musHat(a, t, 0.018, step === 14); }
+      else if (st === 1) { if (step % 2 === 1) musHat(a, t, 0.02, step === 7 || step === 15); }
+      else if (st === 2) { if (step % 2 === 0) musHat(a, t, 0.022, step === 14); }
+      else { musHat(a, t, 0.014, step % 8 === 7); if (step % 2 === 1) musHat(a, t, 0.009, false); }
+      if (st >= 2 && step === 15 && musBoss) musSnare(a, t, 0.03 + 0.02 * I);
+    }
+
+    // лид только на боссе
+    if (musBoss && I > 0.8) {
+      var L = th.lead;
+      if (step % 2 === 0) {
+        var li = L[(musStep / 2 | 0) % L.length];
+        musLead(a, t, mfreq(rootM + 12 + li), sDur * 1.7, 0.035);
+      }
+    }
+  }
+
+  function musTick() {
+    var a = musCtx;
+    if (!a || !sndOn) return;
+    if (a.state === 'suspended') { try { a.resume(); } catch (e) {} return; }
+    try {
+      if (musFade) return;
+      var look = a.currentTime + 0.18;
+      var guard = 0;
+      while (musNext < look && guard++ < 64) {
+        var tgt = musTarget();
+        musIntensity += (tgt - musIntensity) * 0.12;
+        var now = a.currentTime;
+        musLayerGain(a, musLayers.pad, 0.9, now);
+        musLayerGain(a, musLayers.bass, state === 'menu' ? 0.45 : 1, now);
+        musLayerGain(a, musLayers.arp, musIntensity > 0.14 ? 1 : 0, now);
+        musLayerGain(a, musLayers.drums, musIntensity > 0.3 ? 1 : 0, now);
+        musLayerGain(a, musLayers.lead, musBoss ? 1 : 0, now);
+        if (musNext < now) musNext = now + 0.02;
+        musStepSchedule(a, musStep, musNext);
+        musNext += (60 / musTempo()) / 4;
+        musStep++;
+        if (musStep >= 16) { musStep = 0; musBar++; }
+        musStarted++;
+      }
     } catch (e) {}
   }
 
-  function stopMusic() {
-    if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
-    if (musicNodes) {
+  function musicStinger(kind) {
+    var a = audio(); if (!a || !sndOn || !musCtx || !musLayers) return;
+    if (a.state === 'suspended') return;
+    try {
+      var t = a.currentTime + 0.02;
+      if (kind === 'wave') {
+        var buf = musNoiseBuf(a); if (buf) {
+          var s = a.createBufferSource(); s.buffer = buf; s.loop = true;
+          var f = a.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 3;
+          f.frequency.setValueAtTime(500, t);
+          f.frequency.exponentialRampToValueAtTime(6500, t + 0.55);
+          var g = a.createGain();
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(0.05, t + 0.5);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.62);
+          s.connect(f); f.connect(g); g.connect(musMaster);
+          s.start(t); s.stop(t + 0.66);
+        }
+      } else if (kind === 'boss') {
+        var seq = [0, 3, 6, 10];
+        for (var i = 0; i < seq.length; i++) {
+          var th = musTheme();
+          musBass(a, t + i * 0.13, mfreq(th.root + seq[i]), 0.16, 0.1);
+        }
+        musNoiseHit(a, t, 0.06, 0.5, 240, 1.2, 'lowpass', musMaster);
+      } else if (kind === 'win') {
+        var maj = [0, 4, 7, 12, 16];
+        for (var w = 0; w < maj.length; w++) musLead(a, t + w * 0.11, mfreq(69 + maj[w]), 0.42, 0.05);
+      } else if (kind === 'lose') {
+        var min = [0, -3, -7, -12];
+        for (var l = 0; l < min.length; l++) musPad(a, t + l * 0.17, [mfreq(52 + min[l]), mfreq(59 + min[l]), mfreq(64 + min[l])], 0.5, 0.05);
+      }
+    } catch (e) {}
+  }
+
+  function startMusic(trackId) {
+    if (!sndOn) return null;
+    var a = audio(); if (!a) return null;
+    if (trackId) musTrack = MUSIC_THEMES[trackId] ? trackId : musTrack;
+    else musTrack = MUSIC[progress.selectedMusic] ? progress.selectedMusic : musTrack;
+    if (musTimer) return musCtx;
+    try {
+      musCtx = a;
+      musMaster = a.createGain(); musMaster.gain.value = 0.0001;
+      musComp = a.createDynamicsCompressor();
       try {
-        musicNodes.oscs.forEach(function (o) { try { o.stop(); } catch (e) {} });
-        try { musicNodes.gain.disconnect(); } catch (e) {}
+        musComp.threshold.value = -20; musComp.knee.value = 14; musComp.ratio.value = 4;
+        musComp.attack.value = 0.006; musComp.release.value = 0.22;
       } catch (e) {}
-      musicNodes = null;
+      musDelay = a.createDelay(1.0); musDelay.delayTime.value = 0.28;
+      var fb = a.createGain(); fb.gain.value = 0.3;
+      var wet = a.createGain(); wet.gain.value = 0.32;
+      musDelay.connect(fb); fb.connect(musDelay);
+      musDelay.connect(wet); wet.connect(musComp);
+      musMaster.connect(musComp); musComp.connect(a.destination);
+      musLayers = {};
+      ['pad', 'bass', 'arp', 'drums', 'lead'].forEach(function (n) {
+        var g = a.createGain(); g.gain.value = 0; g.connect(musMaster); musLayers[n] = g;
+      });
+      musStep = 0; musBar = 0; musStarted = 0; musFade = 0;
+      musIntensity = 0.2;
+      musNext = a.currentTime + 0.08;
+      musMaster.gain.setValueAtTime(0.0001, a.currentTime);
+      musMaster.gain.exponentialRampToValueAtTime(Math.max(0.02, musicVol * 0.55), a.currentTime + 1.1);
+      musTimer = setInterval(musTick, 25);
+      if (a.state === 'suspended') { try { a.resume(); } catch (e) {} }
+    } catch (e) { musTimer = null; }
+    return musCtx;
+  }
+
+  function stopMusic(fade) {
+    if (musTimer) { clearInterval(musTimer); musTimer = null; }
+    var m = musMaster, c = musComp;
+    if (m) {
+      try {
+        var a = musCtx, now = a ? a.currentTime : 0;
+        m.gain.cancelScheduledValues(now);
+        m.gain.setValueAtTime(Math.max(0.0001, m.gain.value), now);
+        if (fade) m.gain.exponentialRampToValueAtTime(0.0001, now + 0.7);
+        else m.gain.value = 0.0001;
+      } catch (e) {}
+    }
+    musLayers = null; musMaster = null; musDelay = null; musComp = null; musFade = 0;
+    if (c) { try { setTimeout(function () { try { c.disconnect(); } catch (e) {} }, fade ? 900 : 30); } catch (e) {} }
+  }
+
+  function setMusicTrack(id) {
+    if (!MUSIC[id] || !isMusicOwned(id)) return false;
+    progress.selectedMusic = id; saveProgress();
+    musTrack = id;
+    var was = !!musTimer;
+    if (was) { stopMusic(); startMusic(id); }
+    return true;
+  }
+
+  function setMusicVolume(v) {
+    musicVol = Math.max(0, Math.min(1, v));
+    try { localStorage.setItem('gs_musicvol', String(musicVol)); } catch (e) {}
+    if (musMaster) {
+      try {
+        var now = musCtx ? musCtx.currentTime : 0;
+        musMaster.gain.cancelScheduledValues(now);
+        musMaster.gain.setTargetAtTime(Math.max(0.02, musicVol * 0.55), now, 0.08);
+      } catch (e) {}
     }
   }
 
@@ -1131,6 +1512,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     waveNum++;
     if (!endlessRun && waveNum > 12) { waveNum = 12; return; }
     announceWave();
+    musicStinger('wave');
     if (!endlessRun && waveNum === 10) {
       helper = makeHelper();
       hud('GIANT HELPER ASSEMBLED!', '#0ff');
@@ -1149,6 +1531,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         spawnEnemy('boss_overlord', player.x + Math.cos(ovAng) * ovR, player.y + Math.sin(ovAng) * ovR);
       }
       hud('THREE OVERLORDS!', '#f0f');
+      musicStinger('boss');
       soundBigBoom();
       shake = Math.min(shake + 12, 22);
     }
@@ -1161,6 +1544,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       projectiles = [];
       spawnEnemy('boss_thanos', player.x, player.y - 400);
       hud('★ THANOS AWAKENS ★', '#e33');
+      musicStinger('boss');
       soundBigBoom();
       shake = Math.min(shake + 15, 24);
     }
@@ -1780,6 +2164,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     sndOn = !sndOn;
     try { localStorage.setItem('gs_snd', sndOn ? '1' : '0'); } catch (e) {}
     if (sndOn) { audio(); startMusic(); blip(700, 0.08, 'sine', 0.05); }
+    else stopMusic(true);
     return sndOn;
   }
   function blip(f, d, type, vol) {
@@ -1921,7 +2306,8 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   function endGame() {
     if (victory) { state = 'victory'; showVictory(); return; }
     state = 'gameover';
-    stopMusic();
+    musicStinger('lose');
+    stopMusic(true);
     if (gameMode === 'hardcore') { score *= 2; xpEarned *= 2; }
     if (gameMode === 'endless') score = Math.round(score * (1 + Math.floor(waveNum / 20) * 0.25));
     achMax('bestWave', waveNum);
@@ -2007,6 +2393,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   }
 
   function showVictory() {
+    musicStinger('win');
     var scr = document.createElement('div');
     scr.className = 'gameover-screen';
     scr.innerHTML = '<h2 style="color:#ff0;font-size:48px">★ VICTORY ★</h2>' +
@@ -2146,6 +2533,23 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       return { enemies: enemies.length, waveNum: waveNum, bosses: bc, helper: helper ? 1 : 0, diamonds: progress.diamonds, upg: progress.upg, hp: Math.round(player.hp), regen: player.regenRate || 0, critChance: player.critChance || 0, boosters: progress.boosters, types: enemies.map(function (e) { return e.type; }).slice(0, 10), bossTypes: enemies.filter(function (e) { return e.boss; }).map(function (e) { return e.type; }) };
     };
     window.__test.forceWave = function () { spawnWave(); return window.__test(); };
+    window.__test.music = function () {
+      var lv = {};
+      if (musLayers) { ['pad', 'bass', 'arp', 'drums', 'lead'].forEach(function (n) { lv[n] = Math.round(musLayers[n].gain.value * 100) / 100; }); }
+      return {
+        on: musTimer ? 1 : 0, track: musTrack, selected: progress.selectedMusic,
+        steps: musStarted, step: musStep, bar: musBar, boss: musBoss ? 1 : 0,
+        bpm: Math.round(musTempo()), intensity: Math.round(musIntensity * 100) / 100,
+        vol: musicVol, ctxState: actx ? actx.state : 'none', layers: lv
+      };
+    };
+    window.__test.musicPick = function (id) {
+      if (MUSIC[id] && !isMusicOwned(id)) { progress.musicUnlocked.push(id); saveProgress(); }
+      var okSet = setMusicTrack(id);
+      return { set: okSet, music: window.__test.music() };
+    };
+    window.__test.musicVol = function (v) { setMusicVolume(v); return window.__test.music(); };
+    window.__test.stinger = function (k) { musicStinger(k); return 'ok:' + k; };
     window.__test.bp = function (w) { return pickBossPool(w); };
     window.__test.thanosDist = function () {
       for (var i = 0; i < enemies.length; i++) {
