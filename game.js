@@ -2857,7 +2857,6 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
             blip(900 + Math.random() * 300, 0.05, 'sine', 0.03);
           } else {
             gainXp(gem.val);
-            blip(400 + Math.random() * 200, 0.04, 'sine', 0.03);
           }
         }
       }
