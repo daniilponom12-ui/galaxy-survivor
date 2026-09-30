@@ -1070,6 +1070,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   var musLayers = null, musStep = 0, musBar = 0, musNext = 0, musTrack = 'm1';
   var musIntensity = 0, musBoss = false, musStarted = 0, musFade = 0, musStingerAt = 0;
   var musLiveTrack = '', musSavedStep = 0, musSavedBar = 0, musPaused = false, musMuted = false;
+  var musChainSeq = 0, musChainId = 0, actxCount = 0;
   function musicTargetVol() { return Math.max(0.02, musicVol * 0.55); }
 
   function musTheme() { return MUSIC_THEMES[musTrack] || MUSIC_THEMES.m1; }
@@ -1392,6 +1393,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       musStep = 0; musBar = 0; musStarted = 0; musFade = 0;
       if (resume) { musStep = musSavedStep || 0; musBar = musSavedBar || 0; }
       musLiveTrack = musTrack;
+      musChainId = ++musChainSeq;
       musIntensity = 0.2;
       musNext = a.currentTime + 0.08;
       musMaster.gain.setValueAtTime(0.0001, a.currentTime);
@@ -1416,7 +1418,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         else m.gain.value = 0.0001;
       } catch (e) {}
     }
-    musLayers = null; musMaster = null; musDelay = null; musComp = null; musFade = 0;
+    musLayers = null; musMaster = null; musDelay = null; musComp = null; musFade = 0; musChainId = 0;
     if (c) { try { setTimeout(function () { try { c.disconnect(); } catch (e) {} }, ms + 40); } catch (e) {} }
   }
 
@@ -2173,9 +2175,9 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   var actx = null;
   function audio() {
     if (!sndOn) return null;
-    if (!actx) {
-      try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
-    }
+      if (!actx) {
+        try { actx = new (window.AudioContext || window.webkitAudioContext)(); actxCount++; } catch (e) {}
+      }
     return actx;
   }
   function toggleSound() {
@@ -4665,10 +4667,46 @@ function quitToMenu() {
     }
   }
 
-  /* ============ INIT ============ */
-  initSDK(function () {
-    showMenu();
-  });
+/* ============ MUSIC DEBUG (?dbg=1) ============ */
+function initMusicDebug() {
+  var on = false;
+  try { on = /(\?|&)dbg=1/.test(location.search); } catch (e) {}
+  if (!on) return;
+  var osc = 0, prev = 0;
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (AC && AC.prototype) {
+      var orig = AC.prototype.createOscillator;
+      AC.prototype.createOscillator = function () { osc++; return orig.apply(this, arguments); };
+    }
+  } catch (e) {}
+  var el = document.createElement('div');
+  el.style.cssText = 'position:fixed;left:6px;top:6px;z-index:99999;background:rgba(0,0,0,.82);color:#0f0;'
+    + 'font:12px/1.45 monospace;padding:6px 9px;border-radius:6px;pointer-events:none;white-space:pre;';
+  document.body.appendChild(el);
+  setInterval(function () {
+    var now = Date.now(), rate = prev ? Math.round(osc * 1000 / (now - prev)) : 0;
+    prev = now; osc = 0;
+    var g = 0;
+    try { g = musMaster ? Math.round(musMaster.gain.value * 1000) / 1000 : -1; } catch (e) {}
+    el.textContent =
+      'DBG snd=' + (sndOn ? 'ON' : 'off')
+      + '  chain=' + (musChainId || 'none')
+      + '  actx=' + actxCount
+      + '  track=' + musTrack
+      + '  bpm=' + Math.round(musTempo())
+      + '  bar=' + musBar + ':' + musStep
+      + '  gain=' + g
+      + '  osc/s=' + rate
+      + '  state=' + (typeof state === 'string' ? state : '?');
+  }, 300);
+}
+
+/* ============ INIT ============ */
+initSDK(function () {
+showMenu();
+});
+initMusicDebug();
 
   window.addEventListener('beforeunload', function () {
     if (SDK.inited && SDK.ysdk && SDK.ysdk.adv && SDK.ysdk.adv.hideBannerAdv) {
