@@ -1068,7 +1068,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   try { var mv = parseFloat(localStorage.getItem('gs_musicvol')); if (!isNaN(mv)) musicVol = Math.max(0, Math.min(1, mv)); } catch (e) {}
   var musTimer = null, musCtx = null, musMaster = null, musComp = null, musDelay = null, musNoise = null;
   var musLayers = null, musStep = 0, musBar = 0, musNext = 0, musTrack = 'm1';
-  var musIntensity = 0, musBoss = false, musStarted = 0, musFade = 0;
+  var musIntensity = 0, musBoss = false, musStarted = 0, musFade = 0, musStingerAt = 0;
 
   function musTheme() { return MUSIC_THEMES[musTrack] || MUSIC_THEMES.m1; }
 
@@ -1147,7 +1147,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     f.frequency.exponentialRampToValueAtTime(Math.max(400, freq * 2), t + dur);
     var g = musEnv(a, t, vol, dur, 0.004);
     f.connect(g); g.connect(musLayers.arp);
-    var send = a.createGain(); send.gain.value = 0.5;
+    var send = a.createGain(); send.gain.value = 0.2;
     g.connect(send); send.connect(musDelay);
     for (var k = 0; k < 2; k++) {
       var o = a.createOscillator();
@@ -1182,7 +1182,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     f.frequency.exponentialRampToValueAtTime(900, t + dur);
     var g = musEnv(a, t, vol, dur, 0.01);
     f.connect(g); g.connect(musLayers.lead);
-    var send = a.createGain(); send.gain.value = 0.35;
+    var send = a.createGain(); send.gain.value = 0.18;
     g.connect(send); send.connect(musDelay);
     for (var k = 0; k < 3; k++) {
       var o = a.createOscillator();
@@ -1258,12 +1258,15 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       musBass(a, t, mfreq(rootM + oct), sDur * 0.92, 0.075 + 0.03 * I);
     }
 
-    // арпеджио
+    // арпеджио: 8-е ноты, 16-е только на пиках напряжения
     if (I > 0.14) {
-      var shape = th.arp;
-      var deg = shape[step % shape.length];
-      var note = mfreq(rootM + 12 + ints[deg % 3] + (deg >= 3 ? 12 : 0));
-      musArp(a, t, note, sDur * 0.9, (0.02 + 0.016 * I) * (step % 4 === 2 ? 1.25 : 1));
+      var sixteenth = I > 0.8 && th.bass === 'sixteenth';
+      if (step % 2 === 0 || sixteenth) {
+        var shape = th.arp;
+        var deg = shape[step % shape.length];
+        var note = mfreq(rootM + 12 + ints[deg % 3] + (deg >= 3 ? 12 : 0));
+        musArp(a, t, note, sDur * (sixteenth && step % 2 ? 0.6 : 0.9), (0.02 + 0.016 * I) * (step % 4 === 2 ? 1.25 : 1));
+      }
     }
 
     // ударные
@@ -1308,6 +1311,9 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         musLayerGain(a, musLayers.drums, musIntensity > 0.3 ? 1 : 0, now);
         musLayerGain(a, musLayers.lead, musBoss ? 1 : 0, now);
         if (musNext < now) musNext = now + 0.02;
+        if (musStep === 0 && musDelay) {
+          try { musDelay.delayTime.setTargetAtTime((60 / musTempo()) * 0.75, now, 0.1); } catch (e) {}
+        }
         musStepSchedule(a, musStep, musNext);
         musNext += (60 / musTempo()) / 4;
         musStep++;
@@ -1320,6 +1326,8 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   function musicStinger(kind) {
     var a = audio(); if (!a || !sndOn || !musCtx || !musLayers) return;
     if (a.state === 'suspended') return;
+    if (musStingerAt && a.currentTime - musStingerAt < 0.3) return;
+    musStingerAt = a.currentTime;
     try {
       var t = a.currentTime + 0.02;
       if (kind === 'wave') {
@@ -1357,7 +1365,8 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     var a = audio(); if (!a) return null;
     if (trackId) musTrack = MUSIC_THEMES[trackId] ? trackId : musTrack;
     else musTrack = MUSIC[progress.selectedMusic] ? progress.selectedMusic : musTrack;
-    if (musTimer) return musCtx;
+    // всегда ровно одна цепочка: старую глушим мгновенно, иначе две музыки одновременно
+    if (musTimer || musMaster) stopMusic(90);
     try {
       musCtx = a;
       musMaster = a.createGain(); musMaster.gain.value = 0.0001;
@@ -1367,8 +1376,8 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         musComp.attack.value = 0.006; musComp.release.value = 0.22;
       } catch (e) {}
       musDelay = a.createDelay(1.0); musDelay.delayTime.value = 0.28;
-      var fb = a.createGain(); fb.gain.value = 0.3;
-      var wet = a.createGain(); wet.gain.value = 0.32;
+      var fb = a.createGain(); fb.gain.value = 0.2;
+      var wet = a.createGain(); wet.gain.value = 0.14;
       musDelay.connect(fb); fb.connect(musDelay);
       musDelay.connect(wet); wet.connect(musComp);
       musMaster.connect(musComp); musComp.connect(a.destination);
@@ -1390,17 +1399,18 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   function stopMusic(fade) {
     if (musTimer) { clearInterval(musTimer); musTimer = null; }
     var m = musMaster, c = musComp;
+    var ms = (fade === true) ? 700 : (typeof fade === 'number' ? fade : 0);
     if (m) {
       try {
         var a = musCtx, now = a ? a.currentTime : 0;
         m.gain.cancelScheduledValues(now);
         m.gain.setValueAtTime(Math.max(0.0001, m.gain.value), now);
-        if (fade) m.gain.exponentialRampToValueAtTime(0.0001, now + 0.7);
+        if (ms > 0) m.gain.exponentialRampToValueAtTime(0.0001, now + ms / 1000);
         else m.gain.value = 0.0001;
       } catch (e) {}
     }
     musLayers = null; musMaster = null; musDelay = null; musComp = null; musFade = 0;
-    if (c) { try { setTimeout(function () { try { c.disconnect(); } catch (e) {} }, fade ? 900 : 30); } catch (e) {} }
+    if (c) { try { setTimeout(function () { try { c.disconnect(); } catch (e) {} }, ms + 40); } catch (e) {} }
   }
 
   function setMusicTrack(id) {
@@ -2304,6 +2314,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   }
 
   function endGame() {
+    if (state === 'gameover' || state === 'victory') return;
     if (victory) { state = 'victory'; showVictory(); return; }
     state = 'gameover';
     musicStinger('lose');
@@ -2392,6 +2403,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   }
 
   function showVictory() {
+    if (document.querySelector('.gameover-screen')) return;
     musicStinger('win');
     var scr = document.createElement('div');
     scr.className = 'gameover-screen';
@@ -2539,7 +2551,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         on: musTimer ? 1 : 0, track: musTrack, selected: progress.selectedMusic,
         steps: musStarted, step: musStep, bar: musBar, boss: musBoss ? 1 : 0,
         bpm: Math.round(musTempo()), intensity: Math.round(musIntensity * 100) / 100,
-        vol: musicVol, ctxState: actx ? actx.state : 'none', layers: lv
+        vol: musicVol, ctxState: musCtx ? musCtx.state : 'none', layers: lv
       };
     };
     window.__test.musicPick = function (id) {
