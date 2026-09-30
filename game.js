@@ -76,6 +76,12 @@
       u_crit: 'Крит 20% (урон x2)', u_crit_d: 'Каждый 5-й выстрел наносит двойной урон',
       u_pierce: 'Пронзание', u_pierce_d: 'Все выстрелы пробивают врагов насквозь',
       u_life: '+1 жизнь', u_life_d: 'Одно воскрешение за бой',
+      u_greed: 'Алчность +25%', u_greed_d: 'Больше очков за убийства',
+      u_regen: 'Регенерация', u_regen_d: 'Восстанавливает 1.5 HP в секунду',
+      u_vamp: 'Вампиризм', u_vamp_d: 'Каждые 8 убийств лечат на 5 HP',
+      u_evo_pulsar: '★ ПУЛЬСАР', u_evo_pulsar_d: 'Бластер + мины: урон x2.2, стрельба x1.8, всё пробивает',
+      u_evo_eclipse: '★ ЗАТМЕНИЕ', u_evo_eclipse_d: 'Диски + волна: волна x2 урона и x1.6 радиуса, диски шире',
+      u_evo_swarm: '★ РОЙ', u_evo_swarm_d: 'Мины + волна: мины сыплятся вдвое чаще и поджигают',
       pu_rate: 'Скорострельность +8%', pu_rate_d: 'Постоянно увеличивает темп стрельбы',
       pu_speed: 'Скорость +6%', pu_speed_d: 'Постоянно увеличивает скорость героя',
       pu_shield: '🛡 Щит', pu_shield_d: 'Бесплатно поглощает 1 удар за бой на уровень',
@@ -164,6 +170,12 @@
       u_crit: 'Crit 20% (x2 dmg)', u_crit_d: 'Every 5th shot deals double damage',
       u_pierce: 'Piercing', u_pierce_d: 'All shots pierce through enemies',
       u_life: '+1 life', u_life_d: 'One revive per run',
+      u_greed: 'Greed +25%', u_greed_d: 'More score from kills',
+      u_regen: 'Regeneration', u_regen_d: 'Heals 1.5 HP per second',
+      u_vamp: 'Vampirism', u_vamp_d: 'Every 8 kills heal 5 HP',
+      u_evo_pulsar: '★ PULSAR', u_evo_pulsar_d: 'Blaster + mines: x2.2 damage, x1.8 fire rate, pierces all',
+      u_evo_eclipse: '★ ECLIPSE', u_evo_eclipse_d: 'Discs + wave: wave x2 damage, x1.6 radius, wider discs',
+      u_evo_swarm: '★ SWARM', u_evo_swarm_d: 'Mines + wave: twice as many mines, they burn enemies',
       pu_rate: 'Fire rate +8%', pu_rate_d: 'Permanently increases fire rate',
       pu_speed: 'Speed +6%', pu_speed_d: 'Permanently increases hero speed',
       pu_shield: '🛡 Shield', pu_shield_d: 'Free absorbs 1 hit per run per level',
@@ -521,7 +533,8 @@ var text = t('top10');
       upDmg: 1 + 0.1 * (upg.dmg || 0), pickupR: 60 * (1 + 0.2 * (upg.magnet || 0)),
       upRateMul: Math.pow(0.92, upg.rate || 0), shield: upg.shield || 0, critChance: 0.08 * (upg.crit || 0), xpMul: 1 + 0.1 * (upg.xp || 0), slowT: 0, rapidT: 0, rapidMul: 1, magnetT: 0, coinT: 0, coinMul: 1, baseMagnet: !!(upg.magnet > 0),
       weapons: [{ id: 'auto', lvl: 1 }],
-      orbitWeps: [], aoeWeps: [], specials: []
+      orbitWeps: [], aoeWeps: [], specials: [],
+      dashT: 0, dashCd: 0, dashAng: 0, dashes: 0, rerolls: 1, bans: 1, evolved: {}, chests: 0
     };
   }
 
@@ -555,8 +568,113 @@ var text = t('top10');
     { id: 'multishot', name: 'Доп. снаряд', desc: 'Стреляет на один снаряд больше', icon: '🎇' },
     { id: 'crit', name: 'Крит 20% (урон x2)', desc: 'Каждый 5-й выстрел наносит двойной урон', icon: '🎯' },
     { id: 'pierce', name: 'Пронзание', desc: 'Все выстрелы пробивают врагов насквозь', icon: '🏹' },
+    { id: 'greed', name: 'Алчность +25%', desc: 'Больше очков за убийства', icon: '💰' },
+    { id: 'regen', name: 'Регенерация', desc: 'Восстанавливает 1.5 HP в секунду', icon: '💚' },
+    { id: 'vamp', name: 'Вампиризм', desc: 'Каждые 8 убийств лечат на 5 HP', icon: '🧛' },
     { id: 'life', name: '+1 жизнь', desc: 'Одно воскрешение за бой', icon: '❤' }
   ];
+
+  /* ============ ЭВОЛЮЦИИ ОРУЖИЯ (синергия) ============ */
+  var EVOLUTIONS = {
+    pulsar: { name: '★ ПУЛЬСАР', desc: 'Бластер + мины: урон x2.2, стрельба x1.8, всё пробивает', icon: '🌟', req: { auto: 4, mine: 1 } },
+    eclipse: { name: '★ ЗАТМЕНИЕ', desc: 'Диски + волна: волна x2 урона и x1.6 радиуса, диски шире', icon: '🌑', req: { orbit: 2, nova: 1 } },
+    swarm: { name: '★ РОЙ', desc: 'Мины + волна: мины сыплятся вдвое чаще и поджигают', icon: '☄', req: { mine: 1, nova: 1 } }
+  };
+  var AURA_COLORS = { swift: '#ff5', armored: '#9cf', vampiric: '#c4f', explosive: '#f80' };
+  var AURA_NAMES = { swift: 'СКОРОСТЬ', armored: 'БРОНЯ', vampiric: 'ВАМПИРИЗМ', explosive: 'ВЗРЫВ' };
+  var WAVE_MODS = [
+    { id: 'gold', name: 'ЗОЛОТАЯ ЛИХОРАДКА', desc: 'Опыт x2', c: '#fd0', xp: 2 },
+    { id: 'blood', name: 'КРОВАВАЯ ЛУНА', desc: 'Враги быстрее и злее', c: '#f44', espeed: 1.4, edmg: 1.3 },
+    { id: 'swarm', name: 'ЧУМА', desc: 'Врагов в 1.7 раза больше', c: '#8f6', count: 1.7 },
+    { id: 'armor', name: 'ЖЕЛЕЗНЫЙ ДОЖДЬ', desc: 'Враги в броне', c: '#9cf', armor: 0.3 },
+    { id: 'treasure', name: 'ОХОТА ЗА СУНДУКАМИ', desc: 'Сундуки чаще, враги злее', c: '#f8f', chest: 3, espeed: 1.15, edmg: 1.15 }
+  ];
+  var waveMod = null, lastModId = '';
+  var DASH_SPEED = 940, DASH_TIME = 0.16, DASH_CD = 1.9;
+  var lvlBans = {};
+
+  var WEAPONS_BASE = null;
+  function restoreWeapons() {
+    if (!WEAPONS_BASE) { WEAPONS_BASE = JSON.parse(JSON.stringify(WEAPONS)); return; }
+    for (var wk in WEAPONS_BASE) {
+      if (WEAPONS_BASE[wk] && typeof WEAPONS_BASE[wk] === 'object') WEAPONS[wk] = JSON.parse(JSON.stringify(WEAPONS_BASE[wk]));
+    }
+  }
+  function weaponLvl(id) {
+    for (var i = 0; i < player.weapons.length; i++) {
+      var w = player.weapons[i];
+      if (w && w.id === id) return w.lvl || 0;
+    }
+    return 0;
+  }
+  function dropChest(x, y) {
+    gems.push({ x: x, y: y, vx: 0, vy: 0, val: 0, r: 12, c: '#ffd24d', chest: true });
+  }
+  function openChest() {
+    var p = player;
+    p.chests = (p.chests || 0) + 1;
+    achInc('chests', 1);
+    var roll = Math.random(), label = '', color = '#ffd24d';
+    if (roll < 0.28) { p.hp = Math.min(p.maxHp, p.hp + p.maxHp * 0.5); label = '❤ +50% HP'; color = '#f66'; }
+    else if (roll < 0.44) { p.hp = p.maxHp; label = '✚ ПОЛНОЕ ЛЕЧЕНИЕ'; color = '#f88'; }
+    else if (roll < 0.60) { var up = ['auto', 'auto', 'orbit', 'nova'][Math.floor(Math.random() * 4)]; applyUpgrade(up); label = '🎁 УЛУЧШЕНИЕ: ' + up; color = '#4ff'; }
+    else if (roll < 0.72) { p.coinT = 12; p.coinMul = 3; label = '⭐ 3x ОЧКИ (12с)'; color = '#ff0'; }
+    else if (roll < 0.82) { nukeAll(); label = '💥 ЯДЕРНЫЙ ЗАЛП!'; color = '#f80'; }
+    else if (roll < 0.9) { p.shield = (p.shield || 0) + 1; label = '🛡 +1 ЩИТ'; color = '#4ff'; }
+    else if (roll < 0.96) { progress.diamonds += 3; achInc('diamEarned', 3); saveProgress(); label = '💎 +3 АЛМАЗА'; color = '#b9f'; }
+    else { p.lives = (p.lives || 0) + 1; label = '❤ +1 ЖИЗНЬ'; color = '#ff8'; }
+    hud('🎁 ' + label, color);
+    fx.push({ type: 'ring', x: p.x, y: p.y, r: 10, maxR: 150, life: 0.5, maxLife: 0.5, c: color });
+    fx.push({ type: 'boom', x: p.x, y: p.y, r: 120, life: 0.4, maxLife: 0.4, c: color });
+    for (var cpi = 0; cpi < 24; cpi++) {
+      var cpa = Math.random() * Math.PI * 2;
+      parts.push({ x: p.x, y: p.y, vx: Math.cos(cpa) * 240, vy: Math.sin(cpa) * 240, life: 0.7, maxLife: 0.9, r: 2.5, c: color });
+    }
+    shake = Math.min(shake + 5, 14);
+    soundChest();
+  }
+  function drawChest(ch) {
+    var pl = 0.5 + 0.5 * Math.sin(gameTime * 4);
+    ctx.save();
+    ctx.shadowColor = '#ffd24d';
+    ctx.shadowBlur = 18 + pl * 14;
+    ctx.fillStyle = '#8a5a1e';
+    ctx.fillRect(ch.x - 13, ch.y - 9, 26, 19);
+    ctx.fillStyle = '#ffd24d';
+    ctx.fillRect(ch.x - 13, ch.y - 9, 26, 6);
+    ctx.fillRect(ch.x - 3, ch.y - 9, 6, 19);
+    ctx.strokeStyle = 'rgba(255,210,77,' + (0.7 + pl * 0.3) + ')';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(ch.x - 13, ch.y - 9, 26, 19);
+    ctx.globalAlpha = 0.25 + pl * 0.35;
+    ctx.beginPath();
+    ctx.arc(ch.x, ch.y, 24 + pl * 6, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#fff6c8';
+    ctx.font = 'bold 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('★', ch.x, ch.y + 4);
+    ctx.restore();
+  }
+  function doDash(dx, dy) {
+    var p = player;
+    if (!p || state !== 'playing' || victory) return false;
+    if (p.dashCd > 0 || p.dashT > 0) return false;
+    var ang = (dx || dy) ? Math.atan2(dy, dx) : (p.aimAng || 0);
+    p.dashAng = ang; p.dashT = DASH_TIME; p.dashCd = DASH_CD;
+    p.dashes = (p.dashes || 0) + 1;
+    achInc('dashes', 1);
+    p.iframes = Math.max(p.iframes, DASH_TIME + 0.14);
+    fx.push({ type: 'ring', x: p.x, y: p.y, r: 8, maxR: 70, life: 0.3, maxLife: 0.3, c: '#6ff' });
+    for (var dsi = 0; dsi < 14; dsi++) {
+      var dsa = ang + (Math.random() - 0.5) * 1.6;
+      parts.push({ x: p.x, y: p.y, vx: Math.cos(dsa) * 180, vy: Math.sin(dsa) * 180, life: 0.35, maxLife: 0.5, r: 2.5, c: '#9df' });
+    }
+    shake = Math.min(shake + 3, 12);
+    soundDash();
+    return true;
+  }
 
   function applyUpgrade(id) {
     var p = player;
@@ -578,7 +696,41 @@ var text = t('top10');
     else if (id === 'crit') { p.critChance = (p.critChance || 0) + 0.2; }
     else if (id === 'pierce') { p.pierceAll = true; }
 else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
+    else if (id === 'greed') { p.greed = (p.greed || 0) + 0.25; }
+    else if (id === 'regen') { p.regenRate = (p.regenRate || 0) + 1.5; }
+    else if (id === 'vamp') { p.vamp = (p.vamp || 0) + 1; }
+    else if (id.indexOf('evo_') === 0) { applyEvolution(id.slice(4)); }
     }
+
+  function applyEvolution(key) {
+    var p = player;
+    if (!EVOLUTIONS[key] || p.evolved[key]) return;
+    p.evolved[key] = 1;
+    achInc('evos', 1);
+    if (key === 'pulsar') {
+      WEAPONS.auto.dmg = Math.round(WEAPONS.auto.dmg * 2.2);
+      WEAPONS.auto.rate = Math.max(0.09, WEAPONS.auto.rate / 1.8);
+      WEAPONS.auto.color = '#fff';
+      p.pierceAll = true;
+    } else if (key === 'eclipse') {
+      WEAPONS.nova.dmg = Math.round(WEAPONS.nova.dmg * 2);
+      WEAPONS.nova.radius = Math.round(WEAPONS.nova.radius * 1.6);
+      for (var oi = 0; oi < p.aoeWeps.length; oi++) p.aoeWeps[oi].dmg = Math.round(p.aoeWeps[oi].dmg * 2);
+      for (var wi = 0; wi < p.orbitWeps.length; wi++) { p.orbitWeps[wi].dmg = Math.round(p.orbitWeps[wi].dmg * 1.8); p.orbitWeps[wi].wide = true; }
+    } else if (key === 'swarm') {
+      WEAPONS.mine.rate = Math.max(0.3, WEAPONS.mine.rate * 0.5);
+      p.mineEvo = 1;
+    }
+    hud('★ ЭВОЛЮЦИЯ: ' + EVOLUTIONS[key].name.replace('★ ', '') + ' ★', '#ffd24d');
+    fx.push({ type: 'boom', x: p.x, y: p.y, r: 300, life: 0.8, maxLife: 0.8, c: '#ffd24d' });
+    fx.push({ type: 'ring', x: p.x, y: p.y, r: 20, maxR: 260, life: 0.7, maxLife: 0.7, c: '#fff' });
+    for (var evi = 0; evi < 46; evi++) {
+      var eva = Math.random() * Math.PI * 2;
+      parts.push({ x: p.x, y: p.y, vx: Math.cos(eva) * 320, vy: Math.sin(eva) * 320, life: 1, maxLife: 1.3, r: 3, c: eva % 1 < 0.5 ? '#ffd24d' : '#fff' });
+    }
+    shake = Math.min(shake + 10, 22);
+    soundBigBoom();
+  }
 
   function getWeapon(id) {
     for (var i = 0; i < player.weapons.length; i++) if (player.weapons[i].id === id) return player.weapons[i];
@@ -589,7 +741,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
 
   function addOrbit() { var o = getWeapon('orbit'); o.lvl++; player.orbitWeps.push({ ang: Math.random() * Math.PI * 2, hitTimer: 0, dmg: WEAPONS.orbit.dmg + o.lvl * 4 }); }
   function addNova() { var n = getWeapon('nova'); n.lvl++; player.aoeWeps.push({ timer: 1, dmg: WEAPONS.nova.dmg + n.lvl * 8 }); }
-  function addMines() { getWeapon('mine'); }
+  function addMines() { var mw = getWeapon('mine'); mw.lvl = (mw.lvl || 0) + 1; }
 
   /* ============ SHOP / SKINS / MUSIC / BOOSTERS (за рекламу) ============ */
   var SAVE_KEY = 'gs_progress_v2';
@@ -790,7 +942,11 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     { id: 'heal_50', t: 'Убей 50 хиллеров', stat: 'healerKills', need: 50, rew: 150 },
     { id: 'frost_50', t: 'Убей 50 морозных', stat: 'frostKills', need: 50, rew: 150 },
     { id: 'nem_1', t: 'Победи НЕМЕЗИСА', stat: 'nemesisKills', need: 1, rew: 250 },
-    { id: 'time_300', t: 'Выживи 5 минут', stat: 'timeSurv', need: 300, rew: 200 }
+    { id: 'time_300', t: 'Выживи 5 минут', stat: 'timeSurv', need: 300, rew: 200 },
+    { id: 'dash_100', t: 'Рывок 100 раз', stat: 'dashes', need: 100, rew: 200 },
+    { id: 'chest_25', t: 'Открой 25 сундуков', stat: 'chests', need: 25, rew: 300 },
+    { id: 'evo_3', t: 'Открой 3 эволюции', stat: 'evos', need: 3, rew: 400 },
+    { id: 'mod_25', t: 'Переживи 25 модификаторов волн', stat: 'mods', need: 25, rew: 250 }
   ];
 
   function achStats() { return progress.stats || (progress.stats = {}); }
@@ -1092,6 +1248,16 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       e.dmg = Math.round(e.dmg * 1.5);
       e.xp = Math.round(e.xp * 4);
       e.score = Math.round(e.score * 3);
+      var auraKeys = ['swift', 'armored', 'vampiric', 'explosive'];
+      e.aura = auraKeys[Math.floor(Math.random() * auraKeys.length)];
+      if (e.aura === 'swift') { e.speed *= 1.5; }
+      else if (e.aura === 'armored') { e.armor = Math.min(0.5, (e.armor || 0) + 0.3); e.baseArmor = e.armor; }
+      else if (e.aura === 'vampiric') { e.regen = e.maxHp * 0.025; }
+    }
+    if (waveMod) {
+      if (waveMod.espeed) e.speed *= waveMod.espeed;
+      if (waveMod.edmg) e.dmg = Math.round(e.dmg * waveMod.edmg);
+      if (waveMod.armor) { e.armor = Math.min(0.45, (e.armor || 0) + waveMod.armor); e.baseArmor = e.armor; }
     }
     // спавн по кольцу вокруг игрока, но всегда внутри мира и не вплотную
     for (var spa = 0; spa < 10; spa++) {
@@ -1138,6 +1304,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     waveNum++;
     if (!endlessRun && waveNum > 12) { waveNum = 12; return; }
     announceWave();
+    rollWaveMod();
     if (!endlessRun && waveNum === 10) {
       helper = makeHelper();
       hud('GIANT HELPER ASSEMBLED!', '#0ff');
@@ -1198,6 +1365,29 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     el.textContent = t('waveTitle') + waveNum;
     document.body.appendChild(el);
     setTimeout(function () { el.remove(); }, 2200);
+  }
+
+  function rollWaveMod() {
+    waveMod = null;
+    if (waveNum < 3 || waveNum % 2 !== 0) return;
+    var pick = null;
+    for (var tr = 0; tr < 8 && !pick; tr++) {
+      var cand = WAVE_MODS[Math.floor(Math.random() * WAVE_MODS.length)];
+      if (cand.id !== lastModId) pick = cand;
+    }
+    if (!pick) return;
+    lastModId = pick.id;
+    waveMod = pick;
+    waveMod.t = 0;
+    achInc('mods', 1);
+    var el = document.createElement('div');
+    el.className = 'wave-mod';
+    el.style.color = pick.c;
+    el.innerHTML = '<b>' + pick.name + '</b><br><span>' + pick.desc + '</span>';
+    document.body.appendChild(el);
+    setTimeout(function () { el.remove(); }, 2600);
+    hud('⚠ ' + pick.name + ' ⚠', pick.c);
+    soundBigBoom();
   }
 
   function waveEnemyPool() {
@@ -1330,12 +1520,15 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     if (m.exploded) return;
     m.exploded = true;
     soundPop(m);
-    boom(m.x, m.y, '#f80', 16);
-    shake = Math.min(shake + 4, 12);
+    var mR = player.mineEvo ? 150 : 90;
+    boom(m.x, m.y, player.mineEvo ? '#ff0' : '#f80', 16);
+    fx.push({ type: 'boom', x: m.x, y: m.y, r: mR, life: 0.35, maxLife: 0.35, c: player.mineEvo ? '#ff0' : '#f80' });
+    shake = Math.min(shake + (player.mineEvo ? 6 : 4), 14);
     for (var i = enemies.length - 1; i >= 0; i--) {
       var e = enemies[i];
-      if (dist(m, e) < 90) {
+      if (dist(m, e) < mR) {
         damageEnemy(i, WEAPONS.mine.dmg * (getOrbitLevel() || 1) || WEAPONS.mine.dmg * 2);
+        if (player.mineEvo) { e.slowT = 2; }
       }
     }
   }
@@ -1563,7 +1756,15 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     if (combo > maxCombo) { maxCombo = combo; achMax('maxCombo', maxCombo); }
     var combMult = 1 + Math.floor(combo / 8);
     if (combMult > 10) combMult = 10;
-    score += (e.score || 10) * combMult * (player.coinMul || 1);
+    score += (e.score || 10) * combMult * (player.coinMul || 1) * (1 + (player.greed || 0));
+    if (player.vamp) {
+      player.killTick = (player.killTick || 0) + 1;
+      var vampEvery = Math.max(3, 8 - (player.vamp - 1) * 3);
+      if (player.killTick % vampEvery === 0 && player.hp < player.maxHp) {
+        player.hp = Math.min(player.maxHp, player.hp + 5);
+        fx.push({ type: 'ring', x: player.x, y: player.y, r: 6, maxR: 40, life: 0.3, maxLife: 0.3, c: '#c4f' });
+      }
+    }
     if (combo > 0 && combo % 8 === 0) {
       hud('COMBO x' + combMult, '#ff8');
       comboFlash = Math.min(comboFlash + 0.35, 1);
@@ -1584,8 +1785,22 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     if (e.boss) {
       var puN = 1 + Math.floor(Math.random() * 2);
       for (var pui = 0; pui < puN; pui++) dropPowerUp(e.x + (Math.random() - 0.5) * e.r, e.y + (Math.random() - 0.5) * e.r);
+      var chN = 1 + (Math.random() < 0.5 ? 1 : 0);
+      for (var chi = 0; chi < chN; chi++) dropChest(e.x + (Math.random() - 0.5) * e.r, e.y + (Math.random() - 0.5) * e.r);
     } else if (!e.elite && Math.random() < 0.05) {
       dropPowerUp(e.x, e.y);
+    }
+    if (e.elite) {
+      var chestChance = 0.14 * (waveMod && waveMod.chest ? waveMod.chest : 1);
+      if (Math.random() < chestChance) dropChest(e.x, e.y);
+    }
+    // аура «взрыв»: элита сносит всё вокруг при смерти
+    if (e.aura === 'explosive') {
+      boom(e.x, e.y, '#f80', 26);
+      fx.push({ type: 'boom', x: e.x, y: e.y, r: 150, life: 0.4, maxLife: 0.4, c: '#f80' });
+      shake = Math.min(shake + 4, 12);
+      soundBoom();
+      if (dist(e, player) < 150 + player.r && player.iframes <= 0) { if (hitPlayer(Math.round(e.dmg * 1.1))) return; }
     }
     if (e.boss) {
       soundBigBoom();
@@ -1710,13 +1925,15 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   }
 
   function gainXp(v) {
-    var gv = Math.max(0, Math.round(v * (player.xpMul || 1)));
+    var gv = Math.max(0, Math.round(v * (player.xpMul || 1) * (waveMod && waveMod.xp ? waveMod.xp : 1)));
     xpEarned += gv;
     player.xp += gv;
     if (player.xp >= player.xpNeed) {
       player.xp -= player.xpNeed;
       player.lvl++;
       player.xpNeed = Math.round(player.xpNeed * 1.28 + 10);
+      player.rerolls = (player.rerolls || 0) + 1;
+      player.bans = (player.bans || 0) + 1;
       // золотой взрыв левел-апа
       fx.push({ type: 'boom', x: player.x, y: player.y, r: 90, life: 0.7, maxLife: 0.7, c: '#ffd700' });
       fx.push({ type: 'ring', x: player.x, y: player.y, r: 20, maxR: 160, life: 0.6, maxLife: 0.6, c: '#ffd700' });
@@ -1725,49 +1942,116 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         parts.push({ x: player.x, y: player.y, vx: Math.cos(la) * lsp, vy: Math.sin(la) * lsp, life: 0.6 + Math.random() * 0.5, maxLife: 1.1, r: 2 + Math.random() * 3, c: Math.random() < 0.5 ? '#ffd700' : '#fff' });
       }
       shake = Math.min(shake + 3, 10);
-      showLevelUp();
+      if (state !== 'levelup') showLevelUp();
       if (player.lvl % 2 === 0) spawnWave();
     }
   }
 
+  function resolveLevelQueue() {
+    if (state !== 'playing') return;
+    if (player.xp >= player.xpNeed) { gainXp(0); }
+  }
+
   function showLevelUp() {
     state = 'levelup';
+    document.querySelectorAll('.levelup-screen').forEach(function (el) { el.remove(); });
     var options = pickUpgrades(3);
     var scr = document.createElement('div');
     scr.className = 'levelup-screen';
     scr.innerHTML = '<h2>' + t('levelT') + player.lvl + '!</h2>';
     options.forEach(function (u) {
       var b = document.createElement('button');
-      b.className = 'upgrade-choice';
+      b.className = 'upgrade-choice' + (u.evo ? ' evo' : '');
       b.innerHTML = '<div class="uname">' + (u.icon || '⭐') + ' ' + t('u_' + u.id) + '</div><div class="udesc">' + t('u_' + u.id + '_d') + '</div>';
       b.onclick = function () {
         applyUpgrade(u.id);
         scr.remove();
         state = 'playing';
+        resolveLevelQueue();
         if (SDK.inited && player.lvl % 5 === 0) { SDK.showInterstitial(function () {}); }
       };
       scr.appendChild(b);
+      if (player.bans > 0 && !u.evo) {
+        var ban = document.createElement('button');
+        ban.className = 'ban-btn';
+        ban.textContent = '🚫';
+        ban.title = 'Запретить';
+        ban.onclick = function (ev) {
+          ev.stopPropagation();
+          if (player.bans <= 0) return;
+          player.bans--;
+          lvlBans[u.id] = 1;
+          scr.remove();
+          showLevelUp();
+        };
+        b.appendChild(ban);
+      }
     });
+    var foot = document.createElement('div');
+    foot.className = 'levelup-foot';
+    var rr = document.createElement('button');
+    rr.className = 'mini-btn';
+    rr.textContent = '🔄 Обменять (' + (player.rerolls || 0) + ')';
+    rr.disabled = !(player.rerolls > 0);
+    rr.onclick = function () {
+      if (!(player.rerolls > 0)) return;
+      player.rerolls--;
+      scr.remove();
+      showLevelUp();
+    };
+    var sk = document.createElement('button');
+    sk.className = 'mini-btn';
+    sk.textContent = '⏭ Пропустить';
+    sk.onclick = function () { scr.remove(); state = 'playing'; resolveLevelQueue(); };
+    foot.appendChild(rr); foot.appendChild(sk);
+    scr.appendChild(foot);
     document.body.appendChild(scr);
   }
 
   function pickUpgrades(n) {
     var pool = UPGRADES_POOL.slice();
     var have = {};
-    player.weapons.forEach(function (w) { have[w.id] = (have[w.id] || 0) + 1; });
+    player.weapons.forEach(function (w) { if (w && w.id) have[w.id] = (have[w.id] || 0) + (w.lvl || 1); });
     // filter: orbit max 4
     pool = pool.filter(function (u) {
       if (u.id === 'orbit') return have.orbit < 4;
       if (u.id === 'orbitplus') return have.orbit > 0;
       if (u.id === 'nova') return have.nova < 3;
-      if (u.id === 'auto') return have.auto < 5;
-      if (u.id === 'mines') return have.mine < 1;
+      if (u.id === 'auto') return have.auto < 12;
+      if (u.id === 'mines') return have.mine < 4;
+      if (u.id === 'heal') return player.hp < player.maxHp;
+      if (u.id === 'life') return (player.lives || 0) < 3;
+      if (lvlBans[u.id]) return false;
       return true;
     });
+    // эволюции оружия: всегда доступная эволюция идёт первой карточкой
+    var evoCards = [];
+    for (var ek in EVOLUTIONS) {
+      var evo = EVOLUTIONS[ek];
+      if (player.evolved[ek]) continue;
+      var evoOk = true;
+      for (var rk in evo.req) { if (weaponLvl(rk) < evo.req[rk]) evoOk = false; }
+      if (evoOk) evoCards.push({ id: 'evo_' + ek, name: evo.name, desc: evo.desc, icon: evo.icon, evo: ek });
+    }
     var out = [];
+    if (evoCards.length) {
+      var evoPickIdx = Math.floor(Math.random() * evoCards.length);
+      out.push(evoCards.splice(evoPickIdx, 1)[0]);
+    }
+    for (var pci = 0; pci < evoCards.length && out.length < n; pci++) { out.push(evoCards[pci]); }
+    pool = pool.concat(evoCards);
+    var evoSeen = out.length > 0;
     while (out.length < n && pool.length) {
       var idx = Math.floor(Math.random() * pool.length);
-      out.push(pool.splice(idx, 1)[0]);
+      var pick = pool.splice(idx, 1)[0];
+      if (pick.evo) {
+        if (evoSeen) continue;
+        evoSeen = true;
+        out.unshift(pick);
+        if (out.length >= n) break;
+      } else {
+        out.push(pick);
+      }
     }
     return out;
   }
@@ -1806,6 +2090,8 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   function soundBoom() { try { var a = audio(); if (!a) return; var o = a.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(240, a.currentTime); o.frequency.exponentialRampToValueAtTime(38, a.currentTime + 0.32); var g = a.createGain(); g.gain.setValueAtTime(0.07, a.currentTime); g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.32); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + 0.32); } catch (e) {} }
   function soundBigBoom() { soundBoom(); soundBoom(); soundBoom(); }
   function soundLevel() { blip(440, 0.08, 'triangle', 0.045); setTimeout(function () { blip(660, 0.08, 'triangle', 0.045); }, 90); setTimeout(function () { blip(880, 0.12, 'triangle', 0.05); }, 180); }
+  function soundDash() { try { var a = audio(); if (!a) return; var o = a.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(320, a.currentTime); o.frequency.exponentialRampToValueAtTime(1500, a.currentTime + 0.13); var g = a.createGain(); g.gain.setValueAtTime(0.05, a.currentTime); g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.15); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + 0.15); } catch (e) {} }
+  function soundChest() { blip(523, 0.1, 'triangle', 0.05); setTimeout(function () { blip(784, 0.1, 'triangle', 0.05); }, 100); setTimeout(function () { blip(1046, 0.22, 'sine', 0.06); }, 200); }
 
   /* ============ INPUT ============ */
   document.addEventListener('keydown', function (e) {
@@ -1817,6 +2103,11 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     if (e.code === 'Space' && state === 'playing') {
       if (player.freezeUnlocked) { doFreeze(); }
     }
+    if ((e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyJ') && state === 'playing') {
+      var ddx = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0);
+      var ddy = (keys.ArrowDown || keys.KeyS ? 1 : 0) - (keys.ArrowUp || keys.KeyW ? 1 : 0);
+      doDash(ddx, ddy);
+    }
     e.preventDefault();
   });
   document.addEventListener('keyup', function (e) {
@@ -1825,11 +2116,23 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     keys[e.code] = false;
   });
 
+  var lastTapT = 0, lastTapX = 0, lastTapY = 0;
   canvas.addEventListener('touchstart', function (e) {
     e.preventDefault();
     var t = e.changedTouches[0];
     touchId = t.identifier;
     mouse.x = t.clientX; mouse.y = t.clientY; mouse.down = true;
+    // двойной тап = рывок в сторону тапа
+    var nowT = Date.now();
+    if (nowT - lastTapT < 260 && Math.abs(t.clientX - lastTapX) < 60 && Math.abs(t.clientY - lastTapY) < 60) {
+      var tl = Math.sqrt(Math.pow(t.clientX - lastTapX, 2) + Math.pow(t.clientY - lastTapY, 2));
+      var tdx = tl > 6 ? (t.clientX - lastTapX) / tl : Math.cos(player.aimAng || 0);
+      var tdy = tl > 6 ? (t.clientY - lastTapY) / tl : Math.sin(player.aimAng || 0);
+      doDash(tdx, tdy);
+      lastTapT = 0;
+    } else {
+      lastTapT = nowT; lastTapX = t.clientX; lastTapY = t.clientY;
+    }
   }, { passive: false });
   canvas.addEventListener('touchmove', function (e) {
     e.preventDefault();
@@ -1848,6 +2151,20 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   canvas.addEventListener('mousedown', function (e) { mouse.down = true; });
   canvas.addEventListener('mouseup', function () { mouse.down = false; });
   canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  (function () {
+    var db = document.createElement('button');
+    db.className = 'dash-btn';
+    db.textContent = '⚡';
+    db.onclick = function (ev) {
+      ev.preventDefault(); ev.stopPropagation();
+      if (state !== 'playing' || !player) return;
+      var bdx = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0);
+      var bdy = (keys.ArrowDown || keys.KeyS ? 1 : 0) - (keys.ArrowUp || keys.KeyW ? 1 : 0);
+      doDash(bdx, bdy);
+    };
+    document.body.appendChild(db);
+    window.__dashBtn = db;
+  })();
 
   function doFreeze() {
     if (player.freezeCd > 0) return;
@@ -1888,6 +2205,8 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     audio(); // unlock audio
     startMusic();
     state = 'playing';
+    restoreWeapons();
+    lvlBans = {}; waveMod = null; lastModId = '';
     player = makePlayer();
     enemies = []; projectiles = []; gems = []; parts = []; fx = []; orbHit = []; magnet = [];
     helper = null;
@@ -2186,6 +2505,41 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     window.__test.victoryState = function () { return 'victory=' + victory + ' state=' + state + ' playerR=' + player.r + ' playerVictory=' + player.victory; };
     window.__test.types = function () { var s = {}; for (var i = 0; i < enemies.length; i++) { s[enemies[i].type] = (s[enemies[i].type] || 0) + 1; } return s; };
     window.__test.keepAlive = function () { player.hp = player.maxHp; player.iframes = 3; if (state === 'levelup') { var lb = document.querySelector('.levelup-screen .upgrade-choice'); if (lb) lb.click(); } return state; };
+  window.__test.dash = function (dx, dy) { var ok = doDash(dx || 0, dy || 0); return { ok: ok, cd: player.dashCd, t: player.dashT, dashes: player.dashes, iframes: player.iframes }; };
+  window.__test.lvlBtns = function () { return { cards: document.querySelectorAll('.levelup-screen .upgrade-choice').length, reroll: !!document.querySelector('.levelup-screen .mini-btn'), bans: document.querySelectorAll('.levelup-screen .ban-btn').length }; };
+  window.__test.ban = function () { var b = document.querySelector('.levelup-screen .ban-btn'); if (b) b.click(); return { bans: player.bans, banned: JSON.stringify(lvlBans) }; };
+  window.__test.reroll = function () { var r = document.querySelectorAll('.levelup-screen .mini-btn')[0]; if (r) r.click(); return { rerolls: player.rerolls, cards: document.querySelectorAll('.levelup-screen .upgrade-choice').length }; };
+  window.__test.giveWeapons = function (ids) { for (var i = 0; i < ids.length; i++) { for (var k = 0; k < 6; k++) applyUpgrade(ids[i]); } return window.__test.wlvl(); };
+  window.__test.wlvl = function () { return { auto: weaponLvl('auto'), orbit: weaponLvl('orbit'), nova: weaponLvl('nova'), mine: weaponLvl('mine') }; };
+  window.__test.evoPick = function () { var opts = pickUpgrades(6); var found = []; for (var i = 0; i < opts.length; i++) if (opts[i].evo) found.push(opts[i].id); return found; };
+  window.__test.evo = function (k) { applyEvolution(k); return { evolved: JSON.stringify(player.evolved), autoDmg: WEAPONS.auto.dmg, autoRate: WEAPONS.auto.rate, mineRate: WEAPONS.mine.rate, novaDmg: WEAPONS.nova.dmg, novaRadius: WEAPONS.nova.radius }; };
+  window.__test.mod = function () { waveNum = 4; var out = []; for (var mi = 0; mi < 12; mi++) { waveMod = null; rollWaveMod(); if (waveMod) out.push(waveMod.id); } return out.join(','); };
+  window.__test.aura = function () { for (var i = 0; i < 60; i++) spawnEnemy('chaser'); var found = {}; for (var j = 0; j < enemies.length; j++) if (enemies[j].aura) found[enemies[j].aura] = (found[enemies[j].aura] || 0) + 1; return found; };
+  window.__test.chest = function (x, y) { var before = player.chests; dropChest(x === undefined ? player.x + 40 : x, y === undefined ? player.y : y); return { onField: gems.filter(function (g) { return g.chest; }).length, chests: player.chests - before }; };
+  window.__test.openChests = function () { var n = 0; for (var i = 0; i < 3; i++) { openChest(); n++; } return { opened: n, chests: player.chests, hp: Math.round(player.hp), lives: player.lives || 0, shield: player.shield || 0, coinT: Math.round(player.coinT) }; };
+  window.__test.levelUp = function () { gainXp(player.xpNeed + 5); return { state: state, btns: window.__test.lvlBtns() }; };
+  window.__test.auraOn = function (kind) {
+    spawnEnemy('chaser');
+    var e = enemies[enemies.length - 1];
+    e.x = player.x + 20; e.y = player.y + 20;
+    if (kind) { e.elite = true; e.aura = kind; }
+    e.hp = 400; e.maxHp = 400; e.dmg = 12;
+    if (kind === 'armored') { e.armor = 0.3; e.baseArmor = 0.3; }
+    var h0 = e.hp;
+    damageEnemy(enemies.length - 1, 100);
+    return { aura: e.aura || 'none', armor: e.armor || 0, dealt: Math.round(h0 - e.hp) };
+  };
+  window.__test.auraKill = function (kind) {
+    spawnEnemy('chaser');
+    var idx = enemies.length - 1;
+    var e = enemies[idx];
+    e.x = player.x + 30; e.y = player.y + 30;
+    e.elite = true; e.aura = kind; e.hp = 5; e.maxHp = 5; e.dmg = 10;
+    var hpBefore = player.hp;
+    damageEnemy(idx, 9999);
+    return { killed: enemies.indexOf(e) < 0, hpBefore: Math.round(hpBefore), hpAfter: Math.round(player.hp), chests: gems.filter(function (g) { return g.chest; }).length };
+  };
+  window.__test.chestClose = function () { dropChest(player.x + 10, player.y); return gems.filter(function (g) { return g.chest; }).length; };
     window.__test.stuck = function () {
       var far = 0, out = 0, minD = 1e9, maxD = 0, slow = 0;
       for (var i = 0; i < enemies.length; i++) {
@@ -2256,14 +2610,24 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     if (xpEl) xpEl.style.width = Math.min(100, player.xp / player.xpNeed * 100) + '%';
     if (infoEl) {
       var xpField = 0;
-      for (var hI = 0; hI < gems.length; hI++) { if (!gems[hI].d) xpField++; }
+      for (var hI = 0; hI < gems.length; hI++) { if (!gems[hI].d && !gems[hI].pu && !gems[hI].chest && !gems[hI].bonus) xpField++; }
       var combHtml = '';
       if (combo >= 4) {
         var cm = 1 + Math.floor(combo / 8);
         if (cm > 10) cm = 10;
         combHtml = '  <span style="color:#ff8;font-weight:700">COMBO ' + combo + ' (x' + cm + ')</span>';
       }
-      infoEl.innerHTML = t('waveLbl') + waveNum + '  |  ' + t('lvlLbl') + player.lvl + '  |  ' + t('ptsLbl') + Math.round(score) + '  |  <span style="color:#4ff">💎' + progress.diamonds + '</span>' + (xpField > 0 ? '  <span style="color:#0f6">✦' + xpField + '</span>' : '') + (gameMode !== 'normal' ? '  <b style="color:' + (gameMode === 'hardcore' ? '#f44' : (gameMode === 'timer' ? '#f80' : '#6ff')) + '">' + t('mode' + (gameMode === 'hardcore' ? 'Hard' : (gameMode === 'endless' ? 'Endless' : 'Timer'))) + '</b>' : '') + (gameMode === 'timer' ? '  <b style="color:#f80">⏱' + fmtTime(Math.max(0, timerTime)) + '</b>' : '') + combHtml + (player.freezeUnlocked && player.freezeCd > 0 ? t('frozen') + Math.ceil(player.freezeCd) : '');
+      var evoCount = 0, evoHtml = '';
+      for (var ekI in player.evolved) { if (player.evolved[ekI]) evoCount++; }
+      if (evoCount) evoHtml = '  <span style="color:#ffd24d;font-weight:700">★' + evoCount + '</span>';
+      var dashHtml = player.dashCd > 0 ? '<span style="color:#888">⚡' + player.dashCd.toFixed(1) + '</span>' : '<span style="color:#6ff;font-weight:700">⚡</span>';
+      var modHtml = waveMod ? '  <b style="color:' + waveMod.c + '">' + waveMod.name + '</b>' : '';
+      infoEl.innerHTML = t('waveLbl') + waveNum + '  |  ' + t('lvlLbl') + player.lvl + '  |  ' + t('ptsLbl') + Math.round(score) + '  |  ' + dashHtml + evoHtml + '  |  <span style="color:#4ff">??' + progress.diamonds + '</span>' + (xpField > 0 ? '  <span style="color:#0f6">?' + xpField + '</span>' : '') + (gameMode !== 'normal' ? '  <b style="color:' + (gameMode === 'hardcore' ? '#f44' : (gameMode === 'timer' ? '#f80' : '#6ff')) + '">' + t('mode' + (gameMode === 'hardcore' ? 'Hard' : (gameMode === 'endless' ? 'Endless' : 'Timer'))) + '</b>' : '') + (gameMode === 'timer' ? '  <b style="color:#f80">?' + fmtTime(Math.max(0, timerTime)) + '</b>' : '') + modHtml + combHtml + (player.freezeUnlocked && player.freezeCd > 0 ? t('frozen') + Math.ceil(player.freezeCd) : '');
+    }
+    var db = window.__dashBtn;
+    if (db && player) {
+      db.style.opacity = player.dashCd > 0 ? '0.3' : '0.85';
+      db.textContent = player.dashCd > 0 ? Math.ceil(player.dashCd) : '⚡';
     }
   }
 
@@ -2363,8 +2727,24 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         parts.push({ x: p.x + (Math.random() - 0.5) * 22, y: p.y + (Math.random() - 0.5) * 22, vx: (Math.random() - 0.5) * 20, vy: -20 - Math.random() * 15, life: 0.6, maxLife: 0.6, r: 2 + Math.random() * 2, c: '#5f5' });
       }
     }
-    p.x += dx * p.speed * (1 + 0.25 * (p.speedBoost || 0)) * (p.slowT > 0 ? 0.55 : 1) * dt;
-    p.y += dy * p.speed * (1 + 0.25 * (p.speedBoost || 0)) * (p.slowT > 0 ? 0.55 : 1) * dt;
+    if (p.dashCd > 0) p.dashCd -= dt;
+    if (p.dashT > 0) {
+      p.dashT -= dt;
+      p.x += Math.cos(p.dashAng) * DASH_SPEED * dt;
+      p.y += Math.sin(p.dashAng) * DASH_SPEED * dt;
+      if (fx.length < 260) fx.push({ type: 'mist', x: p.x - Math.cos(p.dashAng) * 18, y: p.y - Math.sin(p.dashAng) * 18, vx: 0, vy: 0, r: 16, life: 0.18, maxLife: 0.18, c: '#9df' });
+      for (var dhi = enemies.length - 1; dhi >= 0; dhi--) {
+        var dhe = enemies[dhi];
+        if (dhe.ghostOn) continue;
+        if (dist(dhe, p) < dhe.r + p.r + 16 && dhe.dashHit !== player.dashes) {
+          dhe.dashHit = player.dashes;
+          damageEnemy(dhi, Math.round(55 * (1 + 0.1 * (progress.upg.dmg || 0))));
+        }
+      }
+    } else {
+      p.x += dx * p.speed * (1 + 0.25 * (p.speedBoost || 0)) * (p.slowT > 0 ? 0.55 : 1) * dt;
+      p.y += dy * p.speed * (1 + 0.25 * (p.speedBoost || 0)) * (p.slowT > 0 ? 0.55 : 1) * dt;
+    }
     wrapRelax();
 
     // поворот модели: в сторону движения, иначе — на ближайшего врага
@@ -2385,6 +2765,11 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     if (p.rapidT > 0) { p.rapidT -= dt; if (p.rapidT <= 0) p.rapidMul = 1; }
     if (p.magnetT > 0) { p.magnetT -= dt; if (p.magnetT <= 0) p.magnet = p.baseMagnet; }
     if (p.coinT > 0) { p.coinT -= dt; if (p.coinT <= 0) p.coinMul = 1; }
+    if (p.regenRate > 0 && p.hp < p.maxHp) {
+      p.regenAcc = (p.regenAcc || 0) + p.regenRate * dt;
+      if (p.regenAcc >= 1) { var regenI = Math.floor(p.regenAcc); p.regenAcc -= regenI; p.hp = Math.min(p.maxHp, p.hp + regenI); }
+    }
+    if (p.greed) score += p.greed * 4 * dt;
     if (hurtFx > 0) hurtFx = Math.max(hurtFx - dt * 2.2, 0);
     if (shake > 0) shake = Math.max(shake - dt * 30, 0);
     if (comboFlash > 0) comboFlash = Math.max(comboFlash - dt * 1.4, 0);
@@ -2397,6 +2782,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     if (spawnTimer <= 0 && enemies.length < 240 && (endlessRun || waveNum !== 12)) {
       var pool = waveEnemyPool();
       var n = Math.min(22 + Math.floor(waveNum * 2.5), 55);
+      if (waveMod && waveMod.count) n = Math.min(Math.round(n * waveMod.count), 80);
       for (var i = 0; i < n; i++) {
         var t = pool[Math.floor(Math.random() * pool.length)];
         spawnEnemy(t);
@@ -2555,6 +2941,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       if (en.slowT > 0) en.slowT -= dt;
       var isBuff = false;
       if (en.elite) { isBuff = true; en.hp = Math.min(en.maxHp, en.hp + 2.5 * dt); }
+      if (en.regen) en.hp = Math.min(en.maxHp, en.hp + en.regen * dt);
       else {
         for (var bi = 0; bi < nearElite.length && !isBuff; bi++) {
           var be = nearElite[bi];
@@ -2915,10 +3302,12 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       var gd = dist(gem, p);
       var pullR = player.pickupR || 60;
       var pull = (player.magnet || gd < pullR) ? 1 : 0;
-      if (pull && gd > 20) {
-        var ga = Math.atan2(p.y - gem.y, p.x - gem.x);
-        gem.x += Math.cos(ga) * 340 * dt;
-        gem.y += Math.sin(ga) * 340 * dt;
+      if (pull) {
+        if (gd > 6) {
+          var ga = Math.atan2(p.y - gem.y, p.x - gem.x);
+          gem.x += Math.cos(ga) * 340 * dt;
+          gem.y += Math.sin(ga) * 340 * dt;
+        }
         var gd2 = dist(gem, { x: player.x, y: player.y });
         if (gd2 < p.r + 8) {
           gems.splice(g, 1);
@@ -2930,7 +3319,9 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
               parts.push({ x: p.x, y: p.y, vx: Math.cos(gsa) * gss, vy: Math.sin(gsa) * gss, life: 0.3 + Math.random() * 0.2, maxLife: 0.5, r: 1.5 + Math.random() * 1.5, c: gem.c || '#0f6' });
             }
           }
-          if (gem.pu) {
+          if (gem.chest) {
+            openChest();
+          } else if (gem.pu) {
             applyPowerUp(gem.pu);
           } else if (gem.bonus) {
             doBonusPickup();
@@ -3363,6 +3754,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     // gems
     for (var gi = 0; gi < gems.length; gi++) {
       var gm = gems[gi];
+      if (gm.chest) { drawChest(gm); continue; }
       ctx.save();
       ctx.shadowColor = gm.c;
       ctx.shadowBlur = gm.d ? 16 : 8;
@@ -3532,6 +3924,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       }
       // элитный враг: аура-кольцо и метка
       if (en2.elite) {
+        var aCol = AURA_COLORS[en2.aura] || '#ffb43c';
         ctx.strokeStyle = 'rgba(255,180,60,' + (0.5 + 0.4 * Math.sin(gameTime * 7)) + ')';
         ctx.lineWidth = 3;
         ctx.beginPath();
@@ -3545,6 +3938,22 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         ctx.beginPath();
         ctx.arc(en2.x, en2.y, en2.r + 8, 0, Math.PI * 2);
         ctx.fill();
+        if (en2.aura) {
+          var aR = en2.r + 20 + Math.sin(gameTime * 5) * 3;
+          ctx.strokeStyle = aCol;
+          ctx.globalAlpha = 0.35 + 0.3 * Math.sin(gameTime * 6);
+          ctx.lineWidth = 2;
+          ctx.setLineDash([6, 6]);
+          ctx.beginPath();
+          ctx.arc(en2.x, en2.y, aR, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = aCol;
+          ctx.font = 'bold 9px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(AURA_NAMES[en2.aura] || '', en2.x, en2.y - en2.r - 20);
+        }
       }
       // ЖНЕЦ: вращающиеся косы
       if (en2.reaperBoss) {
