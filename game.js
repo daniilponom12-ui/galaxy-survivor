@@ -1638,34 +1638,28 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       case 'life':
         p.lives = (p.lives || 0) + 1;
         txt = '❤ +1 LIFE';
-        soundLevel();
         break;
       case 'dmg':
         p.dmgBoost = (p.dmgBoost || 0) + 1;
         txt = '⚔ DMG +50%';
-        soundLevel();
         break;
       case 'speed':
         p.speedBoost = (p.speedBoost || 0) + 1;
         txt = '💨 SPEED +25%';
-        soundLevel();
         break;
       case 'heal':
         p.hp = Math.min(p.maxHp, p.hp + p.maxHp * 0.35);
         txt = '❤ +35% HP';
-        soundLevel();
         break;
       case 'shield':
         p.shield = (p.shield || 0) + 1;
         txt = '🛡 SHIELD +1';
-        soundLevel();
         break;
       default:
         progress.diamonds += 5;
         achInc('diamEarned', 5);
         saveProgress();
         txt = '💎 +5 GEMS';
-        blip(900, 0.1, 'sine', 0.06);
     }
     hud(txt, '#fd0');
     for (var bi = 0; bi < 26; bi++) {
@@ -1802,7 +1796,6 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   function soundShoot() { try { var a = audio(); if (!a) return; var o = a.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(1700, a.currentTime); o.frequency.exponentialRampToValueAtTime(340, a.currentTime + 0.07); var g = a.createGain(); g.gain.setValueAtTime(0.018, a.currentTime); g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.07); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + 0.07); } catch (e) {} }
   function soundPop(e) { blip(e ? 620 : 250, 0.07, e ? 'triangle' : 'sine', 0.045); }
   function soundPowerup() { blip(740, 0.07, 'triangle', 0.055); setTimeout(function () { blip(1109.4, 0.09, 'triangle', 0.05); }, 70); setTimeout(function () { blip(1480, 0.14, 'sine', 0.06); }, 150); }
-  function soundHurt() { blip(140, 0.14, 'sawtooth', 0.05); setTimeout(function () { blip(92, 0.18, 'square', 0.04); }, 90); }
   function soundBoom() { try { var a = audio(); if (!a) return; var o = a.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(240, a.currentTime); o.frequency.exponentialRampToValueAtTime(38, a.currentTime + 0.32); var g = a.createGain(); g.gain.setValueAtTime(0.07, a.currentTime); g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.32); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + 0.32); } catch (e) {} }
   function soundBigBoom() { soundBoom(); soundBoom(); soundBoom(); }
   function soundLevel() { blip(440, 0.08, 'triangle', 0.045); setTimeout(function () { blip(660, 0.08, 'triangle', 0.045); }, 90); setTimeout(function () { blip(880, 0.12, 'triangle', 0.05); }, 180); }
@@ -2278,14 +2271,12 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       shake = Math.min(shake + 4, 12);
       boom(p.x, p.y, '#4ff', 6);
       hud('🛡', '#4ff');
-      soundPop(true);
       return false;
     }
     p.hp -= dmgv;
     combo = 0; comboTimer = 0;
     p.iframes = 0.8;
     hurtFx = 0.5;
-    soundHurt();
     shake = Math.min(shake + 6, 15);
     fx.push({ type: 'boom', x: p.x, y: p.y, r: 40, life: 0.3, maxLife: 0.3, c: '#f55' });
     boom(p.x, p.y, '#f44', 10);
@@ -2813,7 +2804,6 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       var ep = projectiles[ei];
       if (!ep.enemy) continue;
       if (dist(ep, p) < ep.r + p.r && p.iframes <= 0) {
-        soundPop(false);
         if (ep.slow && gameMode !== 'hardcore') p.slowT = 1.6;
         if (!ep.pierce) projectiles.splice(ei, 1);
         if (hitPlayer(ep.dmg)) return;
@@ -2851,8 +2841,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
             progress.diamonds += gem.val;
             achInc('diamEarned', gem.val);
             saveProgress();
-            blip(900 + Math.random() * 300, 0.05, 'sine', 0.03);
-          } else {
+              } else {
             gainXp(gem.val);
           }
         }
