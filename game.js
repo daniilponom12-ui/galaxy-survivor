@@ -113,7 +113,10 @@
       pu_dmg: 'Урон +10%', pu_dmg_d: 'Постоянно увеличивает урон оружия',
       pu_hp: 'Макс. HP +15', pu_hp_d: 'Постоянно увеличивает запас здоровья',
       pu_magnet: 'Сбор +20%', pu_magnet_d: 'Увеличивает радиус подбора кристаллов',
-      diamNo: 'Не хватает алмазов!', diamBuy: 'Куплено!', diamGot: 'Алмаз!'
+      diamNo: 'Не хватает алмазов!', diamBuy: 'Куплено!', diamGot: 'Алмаз!',
+      contLbl: 'Продолжить (∞)', sndOn: '🔊 Звук: ВКЛ', sndOff: '🔇 Звук: ВЫКЛ',
+      statDmg: 'Урон выдан', statCombo: 'Макс. комбо', statAcc: 'Точность',
+      puPower: 'БОНУС!'
     },
     en: {
       play: '▶ PLAY', shop: '🛒 Shop (ads)', top: '🏆 Leaderboards',
@@ -198,7 +201,10 @@
       pu_dmg: 'Damage +10%', pu_dmg_d: 'Permanently increases weapon damage',
       pu_hp: 'Max HP +15', pu_hp_d: 'Permanently increases health pool',
       pu_magnet: 'Pickup +20%', pu_magnet_d: 'Increases crystal pickup radius',
-      diamNo: 'Not enough gems!', diamBuy: 'Bought!', diamGot: 'Gem!'
+      diamNo: 'Not enough gems!', diamBuy: 'Bought!', diamGot: 'Gem!',
+      contLbl: 'Continue (∞)', sndOn: '🔊 Sound: ON', sndOff: '🔇 Sound: OFF',
+      statDmg: 'Damage dealt', statCombo: 'Max combo', statAcc: 'Accuracy',
+      puPower: 'BONUS!'
     }
   };
   function t(key) {
@@ -447,6 +453,8 @@ var text = t('top10');
   var camX = 0, camY = 0;
   var shake = 0;
   var comboFlash = 0;
+  var hurtFx = 0;
+  var shotsFired = 0, shotsHit = 0, dmgDealt = 0;
 
   var asteroids = [];
   for (var i = 0; i < 60; i++) {
@@ -511,7 +519,7 @@ var text = t('top10');
       xp: 0, xpNeed: 30, lvl: 1, iframes: 0,
       skinColor: skin.color, ang: 0, aimAng: 0, speedBoost: 0, dmgBoost: 0, skinModel: 'jet', victory: false, trail: [], trailColor: skin.trail || null, selectedSkin: progress.selectedSkin,
       upDmg: 1 + 0.1 * (upg.dmg || 0), pickupR: 60 * (1 + 0.2 * (upg.magnet || 0)),
-      upRateMul: Math.pow(0.92, upg.rate || 0), shield: upg.shield || 0, critChance: 0.08 * (upg.crit || 0), xpMul: 1 + 0.1 * (upg.xp || 0),
+      upRateMul: Math.pow(0.92, upg.rate || 0), shield: upg.shield || 0, critChance: 0.08 * (upg.crit || 0), xpMul: 1 + 0.1 * (upg.xp || 0), slowT: 0, rapidT: 0, rapidMul: 1, magnetT: 0, coinT: 0, coinMul: 1, baseMagnet: !!(upg.magnet > 0),
       weapons: [{ id: 'auto', lvl: 1 }],
       orbitWeps: [], aoeWeps: [], specials: []
     };
@@ -776,7 +784,13 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     { id: 't_60k', t: '60k очков в Тайм-атаке', stat: 'timerBest', need: 60000, rew: 450 },
     { id: 'pet_3', t: 'Питомец максимального уровня', stat: 'petLvl', need: 3, rew: 300 },
     { id: 'full_15', t: 'Собери 15 типов стрельбы', stat: 'unlocks', need: 15, rew: 300 },
-    { id: 'win_3', t: '3 победы над ТАНОСОМ', stat: 'victories', need: 3, rew: 600 }
+    { id: 'win_3', t: '3 победы над ТАНОСОМ', stat: 'victories', need: 3, rew: 600 },
+    { id: 'combo_20', t: 'Достигни комбо x20', stat: 'maxCombo', need: 20, rew: 150 },
+    { id: 'pu_25', t: 'Подбери 25 бонусов', stat: 'pups', need: 25, rew: 150 },
+    { id: 'heal_50', t: 'Убей 50 хиллеров', stat: 'healerKills', need: 50, rew: 150 },
+    { id: 'frost_50', t: 'Убей 50 морозных', stat: 'frostKills', need: 50, rew: 150 },
+    { id: 'nem_1', t: 'Победи НЕМЕЗИСА', stat: 'nemesisKills', need: 1, rew: 250 },
+    { id: 'time_300', t: 'Выживи 5 минут', stat: 'timeSurv', need: 300, rew: 200 }
   ];
 
   function achStats() { return progress.stats || (progress.stats = {}); }
@@ -974,7 +988,32 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   }
 
   function startMusic() {
-    // музыка отключена
+    if (!sndOn) return null;
+    var a = audio(); if (!a) return null;
+    if (musicTimer) return;
+    try {
+      var g = a.createGain();
+      g.gain.value = 0.04;
+      g.connect(a.destination);
+      var scale = [220, 261.6, 293.7, 329.6, 392, 440, 523.3, 587.3];
+      var i = 0, beat = 0;
+      musicTimer = setInterval(function () {
+        if (!sndOn || a.state === 'suspended') return;
+        try {
+          beat++;
+          var o = a.createOscillator();
+          o.type = beat % 8 === 0 ? 'triangle' : 'sine';
+          var note = scale[(i++) % scale.length];
+          o.frequency.value = note * (beat % 8 < 4 ? 1 : 0.5);
+          var og = a.createGain();
+          var vol = beat % 8 === 0 ? 0.07 : 0.035;
+          og.gain.setValueAtTime(vol, a.currentTime);
+          og.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.6);
+          o.connect(og); og.connect(g);
+          o.start(); o.stop(a.currentTime + 0.6);
+        } catch (e) {}
+      }, 260);
+    } catch (e) {}
   }
 
   function stopMusic() {
@@ -999,6 +1038,9 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     kamikaze: { r: 13, hp: 9, speed: 210, dmg: 12, xp: 5, color: '#ff5', score: 20, kamikaze: true },
     ghost: { r: 15, hp: 15, speed: 115, dmg: 9, xp: 7, color: '#bcf', score: 30, ghost: true },
     teleporter: { r: 17, hp: 22, speed: 130, dmg: 10, xp: 8, color: '#5ff', score: 35, teleport: true },
+    healer: { r: 18, hp: 20, speed: 62, dmg: 4, xp: 9, color: '#6f6', score: 30, heal: true },
+    frost: { r: 15, hp: 16, speed: 86, dmg: 3, xp: 7, color: '#8ff', score: 30, frost: true },
+    orbiter: { r: 14, hp: 12, speed: 175, dmg: 7, xp: 7, color: '#e8d', score: 30, orbit: true },
     boss: { r: 55, hp: 600, speed: 55, dmg: 22, xp: 80, color: '#e02', score: 300, boss: true },
     boss_gunner: { r: 62, hp: 1000, speed: 65, dmg: 16, xp: 120, color: '#b0f', score: 450, boss: true, shoot: true },
     boss_titan: { r: 85, hp: 2400, speed: 38, dmg: 38, xp: 200, color: '#f90', score: 700, boss: true, minSpeed: true },
@@ -1009,6 +1051,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     boss_reaper: { r: 80, hp: 5200, speed: 38, dmg: 22, xp: 520, color: '#f66', score: 2000, boss: true, reaperBoss: true, shoot: true },
     boss_medusa: { r: 85, hp: 4300, speed: 40, dmg: 18, xp: 480, color: '#f0f', score: 1800, boss: true, medusaBoss: true, shoot: true },
     boss_aurora: { r: 90, hp: 5600, speed: 46, dmg: 20, xp: 550, color: '#3cf', score: 2200, boss: true, auroraBoss: true, shoot: true },
+    boss_nemesis: { r: 70, hp: 6800, speed: 64, dmg: 26, xp: 620, color: '#f4a', score: 2400, boss: true, nemesisBoss: true, shoot: true },
     boss_thanos: { r: 300, hp: 100000000000000, speed: 22, dmg: 250, xp: 20000, color: '#e33', score: 40000, boss: true, minSpeed: true, shoot: true, overlord: true, final: true, armor: 0.2 }
   };
 
@@ -1024,7 +1067,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       speed: (t.minSpeed ? Math.max(6, t.speed - waveNum) : t.speed) * (1 + waveNum * 0.02),
       dmg: Math.round(t.dmg * (1 + waveNum * 0.04)), xp: t.xp, color: t.color, score: t.score, x: 0, y: 0,
       hitFlash: 0, shootTimer: Math.random() * 2, splits: t.splits, boss: t.boss, shoot: t.shoot, overlord: !!t.overlord, final: !!t.final, armor: t.armor,
-      shieldHp: t.shieldHp || 0, kamikaze: !!t.kamikaze, ghost: !!t.ghost, ghostOn: !!t.ghost, blinkT: t.ghost ? 2 : 0, swarmBoss: !!t.swarmBoss, auroraBoss: !!t.auroraBoss, teleport: !!t.teleport, medusaBoss: !!t.medusaBoss, reaperBoss: !!t.reaperBoss
+      shieldHp: t.shieldHp || 0, kamikaze: !!t.kamikaze, ghost: !!t.ghost, ghostOn: !!t.ghost, blinkT: t.ghost ? 2 : 0, swarmBoss: !!t.swarmBoss, auroraBoss: !!t.auroraBoss, teleport: !!t.teleport, medusaBoss: !!t.medusaBoss, reaperBoss: !!t.reaperBoss, healer: !!t.heal, frost: !!t.frost, orbit: !!t.orbit, nemesisBoss: !!t.nemesisBoss
     };
     if (!t.boss && Math.random() < 0.09) {
       e.elite = true;
@@ -1064,8 +1107,8 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
 
   /* ============ WAVES ============ */
   function pickBossPool(w) {
-    if (w >= 9) return ['boss_colossus', 'boss_colossus', 'boss_dread', 'boss_titan', 'boss_aurora', 'boss_swarm', 'boss_reaper', 'boss_medusa'];
-    if (w >= 5) return ['boss_colossus', 'boss_dread', 'boss_titan', 'boss_aurora', 'boss_reaper'];
+    if (w >= 9) return ['boss_colossus', 'boss_colossus', 'boss_dread', 'boss_nemesis', 'boss_aurora', 'boss_swarm', 'boss_reaper', 'boss_medusa'];
+    if (w >= 5) return ['boss_colossus', 'boss_dread', 'boss_titan', 'boss_nemesis', 'boss_reaper'];
     if (w >= 3) return ['boss_colossus', 'boss_titan', 'boss_gunner', 'boss_swarm', 'boss_medusa'];
     return ['boss', 'boss_gunner'];
   }
@@ -1146,7 +1189,10 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     if (waveNum >= 6) pool.push('ghost');
     if (waveNum >= 7) pool.push('kamikaze');
     if (waveNum >= 6) pool.push('teleporter');
-    if (waveNum >= 8) pool.push('fast', 'tank', 'splitter', 'shooter', 'shooter', 'ghost', 'kamikaze', 'teleporter');
+    if (waveNum >= 6) pool.push('healer');
+    if (waveNum >= 7) pool.push('frost');
+    if (waveNum >= 8) pool.push('orbiter');
+    if (waveNum >= 8) pool.push('fast', 'tank', 'splitter', 'shooter', 'shooter', 'ghost', 'kamikaze', 'teleporter', 'healer', 'frost', 'orbiter');
     return pool;
   }
 
@@ -1210,13 +1256,15 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       var key = 'a' + i;
       autoTimers[key] = (autoTimers[key] || 0) - dt;
       if (autoTimers[key] > 0) continue;
-      autoTimers[key] = ammo.rate * (player.upRateMul || 1);
+      autoTimers[key] = ammo.rate * (player.upRateMul || 1) * (player.rapidMul || 1);
       var t = findNearest(ammo.speed * 1.6);
       if (!t) continue;
+      soundShoot();
       var tx = t.x, ty = t.y;
       var a = Math.atan2(ty - player.y, tx - player.x);
       var sp = ammo.speed;
       var total = (ammo.count || 1) + (progress.ammoCount || 0) + (player.extraShots || 0);
+      shotsFired += total;
       var spreadStep = total <= 1 ? 0 : (ammo.spread * Math.PI / 180) / Math.max(total - 1, 1);
       var critType = (player.critChance || 0) > 0 && Math.random() < (player.critChance || 0);
       for (var s = 0; s < total; s++) {
@@ -1469,6 +1517,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       return;
     }
     e.hp -= dmg * (e.armor ? (1 - e.armor) : 1);
+    dmgDealt += dmg * (e.armor ? (1 - e.armor) : 1);
     e.hitFlash = 0.1;
     boom(e.x, e.y, e.color, 4);
     if (fx.length < 260) {
@@ -1484,12 +1533,15 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     enemies.splice(idx, 1);
     kills++;
     achInc('kills', 1);
+    if (e.healer) achInc('healerKills', 1);
+    if (e.frost) achInc('frostKills', 1);
+    if (e.nemesisBoss) achInc('nemesisKills', 1);
     combo++;
     comboTimer = 3;
-    if (combo > maxCombo) maxCombo = combo;
+    if (combo > maxCombo) { maxCombo = combo; achMax('maxCombo', maxCombo); }
     var combMult = 1 + Math.floor(combo / 8);
     if (combMult > 10) combMult = 10;
-    score += (e.score || 10) * combMult;
+    score += (e.score || 10) * combMult * (player.coinMul || 1);
     if (combo > 0 && combo % 8 === 0) {
       hud('COMBO x' + combMult, '#ff8');
       comboFlash = Math.min(comboFlash + 0.35, 1);
@@ -1506,6 +1558,12 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       gems.push({ x: e.x, y: e.y, vx: (Math.random() - 0.5) * 60, vy: (Math.random() - 0.5) * 60, val: 1, r: 7, c: '#4ff', d: true });
     } else if (Math.random() < 0.015) {
       gems.push({ x: e.x, y: e.y, vx: (Math.random() - 0.5) * 60, vy: (Math.random() - 0.5) * 60, val: 0, r: 9, c: '#fd0', bonus: true });
+    }
+    if (e.boss) {
+      var puN = 1 + Math.floor(Math.random() * 2);
+      for (var pui = 0; pui < puN; pui++) dropPowerUp(e.x + (Math.random() - 0.5) * e.r, e.y + (Math.random() - 0.5) * e.r);
+    } else if (!e.elite && Math.random() < 0.05) {
+      dropPowerUp(e.x, e.y);
     }
     if (e.boss) {
       soundBigBoom();
@@ -1602,6 +1660,39 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     fx.push({ type: 'boom', x: p.x, y: p.y, r: 80, life: 0.5, maxLife: 0.5 });
   }
 
+  var PU_COLORS = { heal: '#f66', shield: '#4ff', rapid: '#ff8', magnet: '#f8f', coin: '#ff0', nuke: '#f80' };
+  function dropPowerUp(x, y) {
+    var pick = Math.random() < 0.12 ? 'nuke' : ['heal', 'shield', 'rapid', 'magnet', 'coin'][Math.floor(Math.random() * 5)];
+    gems.push({ x: x, y: y, vx: (Math.random() - 0.5) * 40, vy: (Math.random() - 0.5) * 40, val: 0, r: 10, c: PU_COLORS[pick], pu: pick });
+  }
+  function nukeAll() {
+    for (var ni = enemies.length - 1; ni >= 0; ni--) { damageEnemy(ni, 99999); }
+    for (var npi = projectiles.length - 1; npi >= 0; npi--) { if (projectiles[npi].enemy) projectiles.splice(npi, 1); }
+    fx.push({ type: 'boom', x: player.x, y: player.y, r: 520, life: 1, maxLife: 1, c: '#fff' });
+    shake = Math.min(shake + 22, 30);
+    soundBigBoom();
+  }
+  function applyPowerUp(pu) {
+    var p = player;
+    achInc('pups', 1);
+    var label = '';
+    switch (pu) {
+      case 'heal': p.hp = Math.min(p.maxHp, p.hp + p.maxHp * 0.35); label = '❤ +35% HP'; break;
+      case 'shield': p.shield = (p.shield || 0) + 1; label = '🛡 +1 SHIELD'; break;
+      case 'rapid': p.rapidT = 6; p.rapidMul = 0.6; label = '⚡ RAPID!'; break;
+      case 'magnet': p.magnet = true; p.magnetT = 8; label = '🧲 MAGNET!'; break;
+      case 'coin': p.coinT = 8; p.coinMul = 2; label = '⭐ 2x SCORE!'; break;
+      case 'nuke': nukeAll(); label = '💥 NUKE!'; break;
+    }
+    hud(label, PU_COLORS[pu] || '#fff');
+    soundPowerup();
+    fx.push({ type: 'ring', x: p.x, y: p.y, r: 6, maxR: 70, life: 0.45, maxLife: 0.45, c: PU_COLORS[pu] || '#fff' });
+    for (var pa2 = 0; pa2 < 14; pa2++) {
+      var paA = Math.random() * Math.PI * 2;
+      parts.push({ x: p.x, y: p.y, vx: Math.cos(paA) * 160, vy: Math.sin(paA) * 160, life: 0.5 + Math.random() * 0.3, maxLife: 0.8, r: 2 + Math.random() * 2, c: PU_COLORS[pu] || '#fff' });
+    }
+  }
+
   function gainXp(v) {
     var gv = Math.max(0, Math.round(v * (player.xpMul || 1)));
     xpEarned += gv;
@@ -1666,14 +1757,21 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   }
 
   /* ============ SOUND ============ */
-  var SOUND_OFF = true;
+  var sndOn = true;
+  try { sndOn = localStorage.getItem('gs_snd') !== '0'; } catch (e) {}
   var actx = null;
   function audio() {
-    if (SOUND_OFF) return null;
+    if (!sndOn) return null;
     if (!actx) {
       try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
     }
     return actx;
+  }
+  function toggleSound() {
+    sndOn = !sndOn;
+    try { localStorage.setItem('gs_snd', sndOn ? '1' : '0'); } catch (e) {}
+    if (sndOn) { audio(); blip(700, 0.08, 'sine', 0.05); }
+    return sndOn;
   }
   function blip(f, d, type, vol) {
     try {
@@ -1688,6 +1786,8 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   }
   function soundShoot() { blip(880, 0.05, 'square', 0.02); }
   function soundPop(e) { blip(e ? 200 : 320, 0.08, 'sawtooth', 0.04); }
+  function soundPowerup() { blip(660, 0.09, 'triangle', 0.06); setTimeout(function () { blip(990, 0.12, 'triangle', 0.06); }, 90); }
+  function soundHurt() { blip(160, 0.12, 'sawtooth', 0.07); blip(120, 0.16, 'square', 0.05); }
   function soundBoom() { try { var a = audio(); if (!a) return; var o = a.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(200, a.currentTime); o.frequency.exponentialRampToValueAtTime(40, a.currentTime + 0.3); var g = a.createGain(); g.gain.setValueAtTime(0.08, a.currentTime); g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.3); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + 0.3); } catch (e) {} }
   function soundBigBoom() { soundBoom(); soundBoom(); soundBoom(); }
   function soundLevel() { blip(520, 0.1, 'triangle', 0.05); setTimeout(function(){ blip(780, 0.1, 'triangle', 0.05); }, 80); }
@@ -1771,13 +1871,14 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   /* ============ MENU / GAME OVER ============ */
   function startGame() {
     audio(); // unlock audio
+    startMusic();
     state = 'playing';
     player = makePlayer();
     enemies = []; projectiles = []; gems = []; parts = []; fx = []; orbHit = []; magnet = [];
     helper = null;
     victory = false; victoryTime = 0;
     xpEarned = 0; waves = []; gameTime = 0; waveNum = 0; spawnTimer = 0; kills = 0; score = 0; freezeTimer = 0; shake = 0;
-    combo = 0; comboTimer = 0; revivesUsed = 0;
+    combo = 0; comboTimer = 0; revivesUsed = 0; shotsFired = 0; shotsHit = 0; dmgDealt = 0; hurtFx = 0; player.slowT = 0; player.rapidT = 0; player.magnetT = 0; player.coinT = 0;
     autoTimers = {}; hasSplash = false; hasFreezeFreeze = false; victory = false; victoryTime = 0;
 
     // apply boosters (потратить 1 за матч)
@@ -1816,6 +1917,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     if (gameMode === 'hardcore') { score *= 2; xpEarned *= 2; }
     if (gameMode === 'endless') score = Math.round(score * (1 + Math.floor(waveNum / 20) * 0.25));
     achMax('bestWave', waveNum);
+    achMax('timeSurv', Math.round(gameTime));
     if (gameMode === 'endless') achMax('endlessWave', waveNum);
     if (gameMode === 'hardcore') achMax('hardWave', waveNum);
     if (gameMode === 'timer') {
@@ -1838,6 +1940,9 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     scr.innerHTML = '<h2>' + t('gameOver') + '</h2>' +
       '<div class="stats">' + t('waveReached') + '<b>' + waveNum + '</b></div>' +
       '<div class="stats">' + t('kills') + '<b>' + kills + '</b></div>' +
+      '<div class="stats">' + t('statDmg') + '<b>' + Math.round(dmgDealt) + '</b></div>' +
+      '<div class="stats">' + t('statCombo') + '<b>x' + maxCombo + '</b></div>' +
+      '<div class="stats">' + t('statAcc') + '<b>' + (shotsFired > 0 ? Math.round(shotsHit / Math.max(1, shotsFired) * 100) + '%' : '—') + '</b></div>' +
       '<div class="stats">' + t('scoreFinal') + '<b>' + Math.round(score) + '</b></div>' +
       '<div class="stats">' + t('timeSurv') + '<b>' + fmtTime(gameTime) + '</b></div>' +
       '<div class="stats">' + t('recordFinal') + '<b>' + bestScore + '</b>' + (isBest ? ' <span style="color:#ff0">' + t('newRecord') + '</span>' : '') + ' <span style="color:#fd0">' + t('rankLbl') + rankName(bestScore) + '</span></div>' +
@@ -1904,10 +2009,20 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       '<div class="stats">' + t('timeSurv') + '<b>' + fmtTime(gameTime) + '</b></div>' +
       '<div class="stats" style="color:#ff0">★你的战斗机已成为宇宙之王★</div>' +
       '<button class="btn-play" onclick="window.__restart()">' + t('again') + '</button>' +
+      '<button class="btn-leaderboard" onclick="window.__continue()">' + t('contLbl') + '</button>' +
       '<button class="btn-shop" onclick="window.__menu()">' + t('menuBtn') + '</button>';
     document.body.appendChild(scr);
     window.__restart = function () { startGame(); };
     window.__menu = function () { quitToMenu(); };
+    window.__continue = function () {
+      victory = false; victoryTime = 0;
+      endlessRun = true; gameMode = 'endless';
+      progress.mode = 'endless'; saveProgress();
+      var scr3 = document.querySelector('.gameover-screen');
+      if (scr3) scr3.remove();
+      state = 'playing';
+      hud('∞ ENDLESS!', '#6ff');
+    };
   }
 
   function renderLB(list, intoEl) {
@@ -1985,6 +2100,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       '<button class="btn-play" onclick="window.__play()">' + t('play') + '</button>' +
       '<button class="btn-shop" onclick="window.__shop()">' + t('shop') + '</button>' +
       '<button class="btn-ach" onclick="window.__ach()">🏆 ' + t('achBtn') + '</button>' +
+      '<button class="btn-leaderboard" onclick="window.__snd()">' + (sndOn ? t('sndOn') : t('sndOff')) + '</button>' +
       '<button class="btn-leaderboard" onclick="window.__showLB()">' + t('top') + '</button>' +
       '<div class="subtitle" style="font-size:13px;color:#666;margin-top:20px">' + t('controls') + '</div>';
     document.body.appendChild(scr);
@@ -2002,6 +2118,8 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       hud((t('nickSaved') || 'Nick saved') + ': ' + playerNick, '#4ff');
     };
     window.__showLB = function () { showLB(); };
+    window.__snd = function () { toggleSound(); showMenu(); };
+    window.__sndGet = function () { return sndOn ? 1 : 0; };
     window.__setMode = function (m) { progress.mode = m; saveProgress(); showMenu(); };
     window.__getMode = function () { return progress.mode; };
     window.__diams = function () { return progress.diamonds; };
@@ -2061,12 +2179,17 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     window.__test.enemyFlag = function (t) {
       for (var fli = 0; fli < enemies.length; fli++) {
         var fl = enemies[fli];
-        if (fl.type === t) return JSON.stringify({ shieldHp: fl.shieldHp || 0, kamikaze: fl.kamikaze ? 1 : 0, ghost: fl.ghost ? 1 : 0, ghostOn: fl.ghostOn ? 1 : 0, swarmBoss: fl.swarmBoss ? 1 : 0, auroraBoss: fl.auroraBoss ? 1 : 0, teleport: fl.teleport ? 1 : 0, reaperBoss: fl.reaperBoss ? 1 : 0, medusaBoss: fl.medusaBoss ? 1 : 0, elite: fl.elite ? 1 : 0 });
+        if (fl.type === t) return JSON.stringify({ shieldHp: fl.shieldHp || 0, kamikaze: fl.kamikaze ? 1 : 0, ghost: fl.ghost ? 1 : 0, ghostOn: fl.ghostOn ? 1 : 0, swarmBoss: fl.swarmBoss ? 1 : 0, auroraBoss: fl.auroraBoss ? 1 : 0, teleport: fl.teleport ? 1 : 0, reaperBoss: fl.reaperBoss ? 1 : 0, medusaBoss: fl.medusaBoss ? 1 : 0, elite: fl.elite ? 1 : 0, healer: fl.healer ? 1 : 0, frost: fl.frost ? 1 : 0, orbit: fl.orbit ? 1 : 0, nemesisBoss: fl.nemesisBoss ? 1 : 0 });
       }
       return 'not-found';
     };
     window.__test.rank = function () { return rankName(bestScore) + '|' + bestScore; };
     window.__test.timerLeft = function () { return Math.round(timerTime * 10) / 10; };
+    window.__test.spawnPu = function (t) { dropPowerUp(player.x - 60, player.y); gems[gems.length - 1].pu = t; gems[gems.length - 1].c = PU_COLORS[t] || '#fff'; return 'ok'; };
+    window.__test.puAt = function (t) { gems.push({ x: player.x + 45, y: player.y, vx: (Math.random() - 0.5) * 30, vy: (Math.random() - 0.5) * 30, val: 0, r: 11, c: PU_COLORS[t] || '#fff', pu: t }); return 'ok'; };
+    window.__test.puCount = function () { return gems.filter(function (ge) { return ge.pu; }).length; };
+    window.__test.getPlayer = function () { return JSON.stringify({ hp: Math.round(player.hp), shield: player.shield || 0, rapidT: player.rapidT || 0, magnetT: player.magnetT || 0, coinT: player.coinT || 0, slowT: player.slowT || 0 }); };
+    window.__test.stats = function () { return JSON.stringify({ shotsFired: shotsFired, shotsHit: shotsHit, dmgDealt: Math.round(dmgDealt), maxCombo: maxCombo }); };
     window.__test.mode = function () { return gameMode; };
     window.__test.endlessRun = function () { return endlessRun ? 1 : 0; };
     window.__test.giveXp = function (v) { gainXp(v); return window.__test(); };
@@ -2139,11 +2262,14 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       shake = Math.min(shake + 4, 12);
       boom(p.x, p.y, '#4ff', 6);
       hud('🛡', '#4ff');
+      soundPop(true);
       return false;
     }
     p.hp -= dmgv;
     combo = 0; comboTimer = 0;
     p.iframes = 0.8;
+    hurtFx = 0.5;
+    soundHurt();
     shake = Math.min(shake + 6, 15);
     fx.push({ type: 'boom', x: p.x, y: p.y, r: 40, life: 0.3, maxLife: 0.3, c: '#f55' });
     boom(p.x, p.y, '#f44', 10);
@@ -2209,8 +2335,8 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         parts.push({ x: p.x + (Math.random() - 0.5) * 22, y: p.y + (Math.random() - 0.5) * 22, vx: (Math.random() - 0.5) * 20, vy: -20 - Math.random() * 15, life: 0.6, maxLife: 0.6, r: 2 + Math.random() * 2, c: '#5f5' });
       }
     }
-    p.x += dx * p.speed * (1 + 0.25 * (p.speedBoost || 0)) * dt;
-    p.y += dy * p.speed * (1 + 0.25 * (p.speedBoost || 0)) * dt;
+    p.x += dx * p.speed * (1 + 0.25 * (p.speedBoost || 0)) * (p.slowT > 0 ? 0.55 : 1) * dt;
+    p.y += dy * p.speed * (1 + 0.25 * (p.speedBoost || 0)) * (p.slowT > 0 ? 0.55 : 1) * dt;
     wrapRelax();
 
     // поворот модели: в сторону движения, иначе — на ближайшего врага
@@ -2227,6 +2353,11 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     if (comboTimer > 0) { comboTimer -= dt; if (comboTimer <= 0) { combo = 0; } }
     if (p.freezeCd !== undefined && p.freezeCd > 0) p.freezeCd -= dt;
     if (freezeTimer > 0) { freezeTimer -= dt; hasFreezeFreeze = true; } else { hasFreezeFreeze = false; }
+    if (p.slowT !== undefined && p.slowT > 0) p.slowT -= dt;
+    if (p.rapidT > 0) { p.rapidT -= dt; if (p.rapidT <= 0) p.rapidMul = 1; }
+    if (p.magnetT > 0) { p.magnetT -= dt; if (p.magnetT <= 0) p.magnet = p.baseMagnet; }
+    if (p.coinT > 0) { p.coinT -= dt; if (p.coinT <= 0) p.coinMul = 1; }
+    if (hurtFx > 0) hurtFx = Math.max(hurtFx - dt * 2.2, 0);
     if (shake > 0) shake = Math.max(shake - dt * 30, 0);
     if (comboFlash > 0) comboFlash = Math.max(comboFlash - dt * 1.4, 0);
 
@@ -2273,6 +2404,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         var e = enemies[j];
         if (dist(pr, e) < e.r + pr.r) {
           if (e.ghostOn) continue;
+          shotsHit++;
           damageEnemy(j, pr.dmg);
           if (pr.cryo) e.slowT = pr.cryoDur;
           if (pr.heal && player.hp < player.maxHp) {
@@ -2482,8 +2614,69 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
           soundBoom();
         }
       }
+      // ХИЛЕР: лечит союзников вокруг
+      if (en.healer) {
+        en.healT = (en.healT === undefined ? 3 : en.healT) - dt;
+        if (en.healT <= 0) {
+          en.healT = 3;
+          var healed = false;
+          for (var hli = 0; hli < enemies.length; hli++) {
+            var he = enemies[hli];
+            if (he === en) continue;
+            if (Math.abs(he.x - en.x) < 260 && Math.abs(he.y - en.y) < 260) {
+              he.hp = Math.min(he.maxHp, he.hp + 3.5);
+              healed = true;
+            }
+          }
+          if (healed) {
+            fx.push({ type: 'ring', x: en.x, y: en.y, r: en.r, maxR: 260, life: 0.4, maxLife: 0.4, c: '#6f6' });
+            blip(500, 0.15, 'sine', 0.04);
+          }
+        }
+      }
+      // МОРОЗ: стреляет замедляющим льдом
+      if (en.frost) {
+        en.frostT = (en.frostT === undefined ? 2 : en.frostT) - dt;
+        if (en.frostT <= 0) {
+          en.frostT = 2.2;
+          var fta = Math.atan2(p.y - en.y, p.x - en.x);
+          projectiles.push({ x: en.x + Math.cos(fta) * en.r, y: en.y + Math.sin(fta) * en.r, vx: Math.cos(fta) * 230, vy: Math.sin(fta) * 230, dmg: Math.round(en.dmg * 0.6), r: 6, c: '#8ff', life: 2.4, enemy: true, slow: true });
+          blip(300, 0.1, 'sine', 0.03);
+        }
+      }
+      // ОРБИТЕР: кружится вокруг игрока и стреляет
+      if (en.orbit) {
+        en.orT = (en.orT === undefined ? Math.random() * 6.28 : en.orT);
+        en.orT += dt * (1.1 + waveNum * 0.01);
+        en.x = p.x + Math.cos(en.orT) * 180;
+        en.y = p.y + Math.sin(en.orT) * 180;
+        en.shootTimer = (en.shootTimer === undefined ? 1.5 : en.shootTimer) - dt;
+        if (en.shootTimer <= 0) {
+          en.shootTimer = 2.4;
+          var ota = Math.atan2(p.y - en.y, p.x - en.x) + Math.PI / 2;
+          projectiles.push({ x: en.x, y: en.y, vx: Math.cos(ota) * 200, vy: Math.sin(ota) * 200, dmg: Math.round(en.dmg * 0.7), r: 4, c: '#e8d', life: 2, enemy: true });
+        }
+      }
+      // НЕМЕЗИС: телепорт в точку рядом с игроком и револьверный залп
+      if (en.nemesisBoss) {
+        en.nemT = (en.nemT === undefined ? 3 : en.nemT) - dt;
+        if (en.nemT <= 0) {
+          en.nemT = 4.4;
+          var nma = Math.random() * Math.PI * 2;
+          en.x = clamp(p.x + Math.cos(nma) * 300, 100, WORLD_W - 100);
+          en.y = clamp(p.y + Math.sin(nma) * 300, 100, WORLD_H - 100);
+          fx.push({ type: 'boom', x: en.x, y: en.y, r: 40, life: 0.3, maxLife: 0.3, c: '#f4a' });
+          for (var nbi = 0; nbi < 8; nbi++) {
+            var nbAng = nbi / 8 * Math.PI * 2 + Math.atan2(p.y - en.y, p.x - en.x);
+            projectiles.push({ x: en.x + Math.cos(nbAng) * en.r, y: en.y + Math.sin(nbAng) * en.r, vx: Math.cos(nbAng) * 330, vy: Math.sin(nbAng) * 330, dmg: Math.round(en.dmg * 0.6), r: 6, c: '#f4a', life: 2.6, enemy: true });
+          }
+          hud('NEMESIS!', '#f4a');
+          soundBoom();
+        }
+      }
       if (dist(en, p) < en.r + p.r) {
         if (p.iframes <= 0) {
+          if (en.frost && p.slowT <= 0) p.slowT = 1.5;
           if (hitPlayer(en.dmg)) return;
         }
       }
@@ -2605,6 +2798,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       if (!ep.enemy) continue;
       if (dist(ep, p) < ep.r + p.r && p.iframes <= 0) {
         soundPop(false);
+        if (ep.slow && gameMode !== 'hardcore') p.slowT = 1.6;
         if (!ep.pierce) projectiles.splice(ei, 1);
         if (hitPlayer(ep.dmg)) return;
       }
@@ -2633,7 +2827,9 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
               parts.push({ x: p.x, y: p.y, vx: Math.cos(gsa) * gss, vy: Math.sin(gsa) * gss, life: 0.3 + Math.random() * 0.2, maxLife: 0.5, r: 1.5 + Math.random() * 1.5, c: gem.c || '#0f6' });
             }
           }
-          if (gem.bonus) {
+          if (gem.pu) {
+            applyPowerUp(gem.pu);
+          } else if (gem.bonus) {
             doBonusPickup();
           } else if (gem.d) {
             progress.diamonds += gem.val;
@@ -3087,6 +3283,16 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       ctx.arc(gm.x, gm.y, gm.r * (2.2 + Math.sin(gameTime * 3 + gm.y) * 0.4), 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
+      if (gm.pu) {
+        ctx.save();
+        ctx.globalAlpha = 0.5 + 0.4 * Math.sin(gameTime * 8);
+        ctx.strokeStyle = gm.c;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(gm.x, gm.y, gm.r + 6, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
     }
 
     // mines
@@ -3269,6 +3475,47 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         ctx.beginPath();
         ctx.arc(en2.x, en2.y, en2.r * 1.5, 0, Math.PI * 2);
         ctx.fill();
+      }
+      // НЕМЕЗИС: клинки-лезвия
+      if (en2.nemesisBoss) {
+        ctx.strokeStyle = 'rgba(255,90,170,0.85)'; ctx.lineWidth = 3;
+        for (var nmb = 0; nmb < 6; nmb++) {
+          var nmAng = nmb / 6 * Math.PI * 2 + gameTime * 2.2;
+          ctx.beginPath();
+          ctx.moveTo(en2.x + Math.cos(nmAng) * en2.r * 0.5, en2.y + Math.sin(nmAng) * en2.r * 0.5);
+          ctx.lineTo(en2.x + Math.cos(nmAng) * en2.r * 1.6, en2.y + Math.sin(nmAng) * en2.r * 1.6);
+          ctx.stroke();
+        }
+        ctx.fillStyle = 'rgba(255,90,170,0.12)';
+        ctx.beginPath();
+        ctx.arc(en2.x, en2.y, en2.r * 1.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // ХИЛЕР: зелёный крест
+      if (en2.healer) {
+        ctx.strokeStyle = 'rgba(120,255,120,0.9)'; ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(en2.x - 6, en2.y); ctx.lineTo(en2.x + 6, en2.y);
+        ctx.moveTo(en2.x, en2.y - 6); ctx.lineTo(en2.x, en2.y + 6);
+        ctx.stroke();
+      }
+      // МОРОЗ: ледяной трезубец-контур
+      if (en2.frost) {
+        ctx.strokeStyle = 'rgba(140,220,255,0.9)'; ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(en2.x - 7, en2.y + 7); ctx.lineTo(en2.x - 7, en2.y - 5); ctx.lineTo(en2.x, en2.y - 5); ctx.lineTo(en2.x, en2.y - 12);
+        ctx.moveTo(en2.x, en2.y - 5); ctx.lineTo(en2.x, en2.y - 12);
+        ctx.moveTo(en2.x, en2.y); ctx.lineTo(en2.x + 7, en2.y - 12);
+        ctx.stroke();
+      }
+      // ОРБИТЕР: вращающийся серп
+      if (en2.orbit) {
+        ctx.strokeStyle = 'rgba(230,140,220,0.85)'; ctx.lineWidth = 2.5;
+        var obA = gameTime * 6;
+        ctx.beginPath();
+        ctx.moveTo(en2.x + Math.cos(obA) * 10, en2.y + Math.sin(obA) * 10);
+        ctx.lineTo(en2.x - Math.cos(obA) * 10, en2.y - Math.sin(obA) * 10);
+        ctx.stroke();
       }
       // повелитель: аура, корона, большой HP-бар
       if (en2.overlord) {
@@ -3912,6 +4159,20 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       ctx.strokeStyle = 'rgba(255,215,0,' + (cf * 0.5) + ')';
       ctx.lineWidth = 3 + cf * 4;
       ctx.strokeRect(4, 4, W - 8, H - 8);
+    }
+    // красная вспышка при получении урона
+    if (hurtFx > 0) {
+      ctx.fillStyle = 'rgba(255,30,30,' + (hurtFx * 0.28) + ')';
+      ctx.fillRect(0, 0, W, H);
+    }
+    // пульс при критически низком HP
+    if (player && (state === 'playing' || state === 'reviving') && player.hp > 0 && player.hp < player.maxHp * 0.3) {
+      var lpv = 0.1 + 0.13 * Math.sin(gameTime * 7);
+      var lg = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3, W / 2, H / 2, Math.max(W, H) * 0.72);
+      lg.addColorStop(0, 'rgba(190,0,0,0)');
+      lg.addColorStop(1, 'rgba(190,0,0,' + lpv + ')');
+      ctx.fillStyle = lg;
+      ctx.fillRect(0, 0, W, H);
     }
     if (player && player.iframes > 0 && state === 'playing') {
       ctx.fillStyle = 'rgba(255,50,50,0.06)';
