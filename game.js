@@ -1079,7 +1079,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     else if (t.overlord) hpScale = 1 + (waveNum - 10) * 0.5;
     var e = {
       type: type, r: t.r, hp: t.hp * hpScale, maxHp: t.hp * hpScale,
-      speed: (t.minSpeed ? Math.max(6, t.speed - waveNum) : t.speed) * (1 + waveNum * 0.02),
+      speed: (t.minSpeed ? Math.max(72, t.speed - waveNum * 0.5) : t.speed) * (1 + waveNum * 0.02),
       dmg: Math.round(t.dmg * (1 + waveNum * 0.04)), xp: t.xp, color: t.color, score: t.score, x: 0, y: 0,
       hitFlash: 0, shootTimer: Math.random() * 2, splits: t.splits, boss: t.boss, shoot: t.shoot, overlord: !!t.overlord, final: !!t.final, armor: t.armor,
       shieldHp: t.shieldHp || 0, kamikaze: !!t.kamikaze, ghost: !!t.ghost, ghostOn: !!t.ghost, blinkT: t.ghost ? 2 : 0, swarmBoss: !!t.swarmBoss, auroraBoss: !!t.auroraBoss, teleport: !!t.teleport, medusaBoss: !!t.medusaBoss, reaperBoss: !!t.reaperBoss, healer: !!t.heal, frost: !!t.frost, orbit: !!t.orbit, nemesisBoss: !!t.nemesisBoss
@@ -1093,8 +1093,15 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       e.xp = Math.round(e.xp * 4);
       e.score = Math.round(e.score * 3);
     }
-    e.x = player.x + Math.cos(ang) * dist;
-    e.y = player.y + Math.sin(ang) * dist;
+    // спавн по кольцу вокруг игрока, но всегда внутри мира и не вплотную
+    for (var spa = 0; spa < 10; spa++) {
+      e.x = clamp(player.x + Math.cos(ang) * dist, t.r + 10, WORLD_W - t.r - 10);
+      e.y = clamp(player.y + Math.sin(ang) * dist, t.r + 10, WORLD_H - t.r - 10);
+      var spGap = Math.sqrt((e.x - player.x) * (e.x - player.x) + (e.y - player.y) * (e.y - player.y));
+      if (spGap > Math.min(300, dist * 0.55)) break;
+      ang = Math.random() * Math.PI * 2;
+    }
+    e.px = e.x; e.py = e.y; e.stuckT = 0; e.sepX = 0; e.sepY = 0;
     if (e.overlord) {
       // способности повелителя
       e.abilityTimer = 0; e.phase = 0; e.spawnTimer = 8; e.beamTimer = 5; e.shieldUp = false; e.shield = e.final ? 5000000000000 : 20000; e.ringTimer = 7;
@@ -2178,6 +2185,20 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     };
     window.__test.victoryState = function () { return 'victory=' + victory + ' state=' + state + ' playerR=' + player.r + ' playerVictory=' + player.victory; };
     window.__test.types = function () { var s = {}; for (var i = 0; i < enemies.length; i++) { s[enemies[i].type] = (s[enemies[i].type] || 0) + 1; } return s; };
+    window.__test.keepAlive = function () { player.hp = player.maxHp; player.iframes = 3; if (state === 'levelup') { var lb = document.querySelector('.levelup-screen .upgrade-choice'); if (lb) lb.click(); } return state; };
+    window.__test.stuck = function () {
+      var far = 0, out = 0, minD = 1e9, maxD = 0, slow = 0;
+      for (var i = 0; i < enemies.length; i++) {
+        var e = enemies[i];
+        var d = Math.sqrt((e.x - player.x) * (e.x - player.x) + (e.y - player.y) * (e.y - player.y));
+        if (d > 1200) far++;
+        if (d < minD) minD = d;
+        if (d > maxD) maxD = d;
+        if (e.stuckT > 0.4) slow++;
+        if (e.x < e.r || e.x > WORLD_W - e.r || e.y < e.r || e.y > WORLD_H - e.r) out++;
+      }
+      return { n: enemies.length, far: far, outOfWorld: out, slow: slow, minD: Math.round(minD), maxD: Math.round(maxD), world: WORLD_W + 'x' + WORLD_H, pSpeed: player.speed };
+    };
     window.__test.giveDiam = function (n) { progress.diamonds += n; saveProgress(); return progress.diamonds; };
     window.__test.giveBoost = function (id) { progress.boosters[id] = (progress.boosters[id] || 0) + 1; return progress.boosters[id]; };
     window.__test.petLvl = function () { return progress.petLvl; };
@@ -2490,6 +2511,44 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     for (var eli = enemies.length - 1; eli >= 0; eli--) {
       if (enemies[eli].elite) nearElite.push(enemies[eli]);
     }
+    // расталкивание (grid): враги не слипаются в один ком
+    var sepCell = 70, sepGrid = {}, sepFull = enemies.length <= 90;
+    for (var sgi = 0; sgi < enemies.length; sgi++) {
+      var se = enemies[sgi];
+      se.sepX = 0; se.sepY = 0;
+      var skey = Math.floor(se.x / sepCell) + ':' + Math.floor(se.y / sepCell);
+      if (!sepGrid[skey]) sepGrid[skey] = [];
+      sepGrid[skey].push(se);
+    }
+    for (var skk in sepGrid) {
+      var spart = skk.split(':');
+      var sgx = +spart[0], sgy = +spart[1];
+      var slist = sepGrid[skk];
+      for (var sox = -1; sox <= 1; sox++) {
+        for (var soy = -1; soy <= 1; soy++) {
+          if (!sepFull && sox !== 0 && soy !== 0) continue;
+          var sOther = sepGrid[(sgx + sox) + ':' + (sgy + soy)];
+          if (!sOther) continue;
+          for (var sai = 0; sai < slist.length; sai++) {
+            var se1 = slist[sai];
+            for (var sbi = 0; sbi < sOther.length; sbi++) {
+              var se2 = sOther[sbi];
+              if (se1 === se2) continue;
+              var sdx = se2.x - se1.x, sdy = se2.y - se1.y;
+              var sMin = (se1.r + se2.r) * 0.95;
+              var sd2 = sdx * sdx + sdy * sdy;
+              if (sd2 > sMin * sMin || sd2 < 0.001) continue;
+              var sdl = Math.sqrt(sd2);
+              var spush = Math.min(5, (sMin - sdl) * 0.4);
+              var snx = sdx / sdl, sny = sdy / sdl;
+              var sw1 = se1.boss ? 0.12 : 1, sw2 = se2.boss ? 0.12 : 1;
+              se1.sepX -= snx * spush * sw1; se1.sepY -= sny * spush * sw1;
+              se2.sepX += snx * spush * sw2; se2.sepY += sny * spush * sw2;
+            }
+          }
+        }
+      }
+    }
     for (var i2 = enemies.length - 1; i2 >= 0; i2--) {
       var en = enemies[i2];
       if (en.hitFlash > 0) en.hitFlash -= dt;
@@ -2503,9 +2562,47 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         }
       }
       var spd = en.speed * (hasFreezeFreeze ? 0.3 : 1) * (en.slowT > 0 ? 0.35 : 1) * (isBuff ? 1.45 : 1);
-      var a2 = Math.atan2(p.y - en.y, p.x - en.x);
-      en.x += Math.cos(a2) * spd * dt;
-      en.y += Math.sin(a2) * spd * dt;
+      var pdx = p.x - en.x, pdy = p.y - en.y;
+      var pd = Math.sqrt(pdx * pdx + pdy * pdy) || 1;
+      // догоняем игрока — враги не должны отставать и «зависать» на карте
+      if (en.boss) { if (pd > 340) spd *= 1 + Math.min(2.6, (pd - 340) / 320); }
+      else if (pd > 620) { spd *= 1 + Math.min(1.8, (pd - 620) / 450); }
+      var a2 = Math.atan2(pdy, pdx);
+      var mvx = Math.cos(a2), mvy = Math.sin(a2);
+      var touchR = en.r + p.r;
+      if (en.boss) {
+        // босс без стрельбы идёт вплотную, стреляющий — держит дистанцию и кружит
+        if (pd < 340 && (en.shoot || en.overlord)) {
+          var bTang = a2 + Math.PI / 2;
+          mvx = Math.cos(bTang) * 0.95 + Math.cos(a2) * 0.18;
+          mvy = Math.sin(bTang) * 0.95 + Math.sin(a2) * 0.18;
+        }
+      } else if (pd < touchR + 26 && !en.orbit) {
+        // вплотную не липнем к игроку — кружим рядом
+        var tTang = a2 + Math.PI / 2;
+        mvx = Math.cos(tTang) * 0.9 - Math.cos(a2) * 0.2;
+        mvy = Math.sin(tTang) * 0.9 - Math.sin(a2) * 0.2;
+      }
+      en.x += (mvx * spd + en.sepX) * dt;
+      en.y += (mvy * spd + en.sepY) * dt;
+      // держим врагов внутри мира
+      var enMg = en.r + 6;
+      if (en.x < enMg) en.x = enMg;
+      if (en.x > WORLD_W - enMg) en.x = WORLD_W - enMg;
+      if (en.y < enMg) en.y = enMg;
+      if (en.y > WORLD_H - enMg) en.y = WORLD_H - enMg;
+      // антизависание: почти не двигался или слишком далеко — переносим ближе к игроку
+      var enMv = Math.abs(en.x - en.px) + Math.abs(en.y - en.py);
+      en.px = en.x; en.py = en.y;
+      en.stuckT = (enMv < en.speed * dt * 0.25) ? (en.stuckT || 0) + dt : 0;
+      if (en.stuckT > 1.2 || pd > 1900) {
+        en.stuckT = 0;
+        var enRa = Math.random() * Math.PI * 2, enRd = 250 + Math.random() * 240;
+        en.x = clamp(p.x + Math.cos(enRa) * enRd, enMg, WORLD_W - enMg);
+        en.y = clamp(p.y + Math.sin(enRa) * enRd, enMg, WORLD_H - enMg);
+        en.px = en.x; en.py = en.y;
+        if (en.boss && fx.length < 260) fx.push({ type: 'ring', x: en.x, y: en.y, r: 8, maxR: 110, life: 0.35, maxLife: 0.35, c: en.color });
+      }
       if (en.shoot || en.boss) {
         en.shootTimer -= dt;
         if (en.shootTimer <= 0) {
