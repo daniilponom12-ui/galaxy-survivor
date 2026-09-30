@@ -540,7 +540,7 @@ var text = t('top10');
       upRateMul: Math.pow(0.92, upg.rate || 0), shield: upg.shield || 0, critChance: 0.08 * (upg.crit || 0), xpMul: 1 + 0.1 * (upg.xp || 0), slowT: 0, rapidT: 0, rapidMul: 1, magnetT: 0, coinT: 0, coinMul: 1, baseMagnet: !!(upg.magnet > 0),
       weapons: [{ id: 'auto', lvl: 1 }],
       orbitWeps: [], aoeWeps: [], specials: [],
-      dashT: 0, dashCd: 0, dashAng: 0, dashes: 0, rerolls: 1, bans: 1, evolved: {}, chests: 0
+      dashT: 0, dashCd: 0, dashAng: 0, dashes: 0, rerolls: 1, bans: 1, evolved: {}
     };
   }
 
@@ -598,9 +598,10 @@ var text = t('top10');
     { id: 'blood', name: 'КРОВАВАЯ ЛУНА', desc: 'Враги быстрее и злее', c: '#f44', espeed: 1.4, edmg: 1.3 },
     { id: 'swarm', name: 'ЧУМА', desc: 'Врагов в 1.7 раза больше', c: '#8f6', count: 1.7 },
     { id: 'armor', name: 'ЖЕЛЕЗНЫЙ ДОЖДЬ', desc: 'Враги в броне', c: '#9cf', armor: 0.3 },
-    { id: 'treasure', name: 'ОХОТА ЗА СУНДУКАМИ', desc: 'Сундуки чаще, враги злее', c: '#f8f', chest: 3, espeed: 1.15, edmg: 1.15 }
+    { id: 'treasure', name: 'ОХОТА ЗА УСИЛЕНИЯМИ', desc: 'Усиления падают чаще, враги злее', c: '#f8f', pu: 3, espeed: 1.15, edmg: 1.15 }
   ];
   var waveMod = null, lastModId = '';
+  function waveModsById() { var o = {}; for (var mi = 0; mi < WAVE_MODS.length; mi++) o[WAVE_MODS[mi].id] = WAVE_MODS[mi]; return o; }
   var DASH_SPEED = 940, DASH_TIME = 0.16, DASH_CD = 1.9;
   var lvlBans = {};
 
@@ -617,56 +618,6 @@ var text = t('top10');
       if (w && w.id === id) return w.lvl || 0;
     }
     return 0;
-  }
-  function dropChest(x, y) {
-    gems.push({ x: x, y: y, vx: 0, vy: 0, val: 0, r: 12, c: '#ffd24d', chest: true });
-  }
-  function openChest() {
-    var p = player;
-    p.chests = (p.chests || 0) + 1;
-    achInc('chests', 1);
-    var roll = Math.random(), label = '', color = '#ffd24d';
-    if (roll < 0.28) { p.hp = Math.min(p.maxHp, p.hp + p.maxHp * 0.5); label = '❤ +50% HP'; color = '#f66'; }
-    else if (roll < 0.44) { p.hp = p.maxHp; label = '✚ ПОЛНОЕ ЛЕЧЕНИЕ'; color = '#f88'; }
-    else if (roll < 0.60) { p.chestUp = 1; label = '🎁 СЛЕДУЮЩИЙ СУНДУК = АПГРЕЙД'; color = '#4ff'; applyUpgrade(['auto', 'orbit', 'nova', 'mines', 'saw', 'chain'][Math.floor(Math.random() * 6)]); }
-    else if (roll < 0.72) { p.coinT = 12; p.coinMul = 3; label = '⭐ 3x ОЧКИ (12с)'; color = '#ff0'; }
-    else if (roll < 0.82) { nukeAll(); label = '💥 ЯДЕРНЫЙ ЗАЛП!'; color = '#f80'; }
-    else if (roll < 0.9) { p.shield = (p.shield || 0) + 1; label = '🛡 +1 ЩИТ'; color = '#4ff'; }
-    else if (roll < 0.96) { progress.diamonds += 3; achInc('diamEarned', 3); saveProgress(); label = '💎 +3 АЛМАЗА'; color = '#b9f'; }
-    else { p.lives = (p.lives || 0) + 1; label = '❤ +1 ЖИЗНЬ'; color = '#ff8'; }
-    hud('🎁 ' + label, color);
-    fx.push({ type: 'ring', x: p.x, y: p.y, r: 10, maxR: 150, life: 0.5, maxLife: 0.5, c: color });
-    fx.push({ type: 'boom', x: p.x, y: p.y, r: 120, life: 0.4, maxLife: 0.4, c: color });
-    for (var cpi = 0; cpi < 24; cpi++) {
-      var cpa = Math.random() * Math.PI * 2;
-      parts.push({ x: p.x, y: p.y, vx: Math.cos(cpa) * 240, vy: Math.sin(cpa) * 240, life: 0.7, maxLife: 0.9, r: 2.5, c: color });
-    }
-    shake = Math.min(shake + 5, 14);
-    soundChest();
-  }
-  function drawChest(ch) {
-    var pl = 0.5 + 0.5 * Math.sin(gameTime * 4);
-    ctx.save();
-    ctx.shadowColor = '#ffd24d';
-    ctx.shadowBlur = 18 + pl * 14;
-    ctx.fillStyle = '#8a5a1e';
-    ctx.fillRect(ch.x - 13, ch.y - 9, 26, 19);
-    ctx.fillStyle = '#ffd24d';
-    ctx.fillRect(ch.x - 13, ch.y - 9, 26, 6);
-    ctx.fillRect(ch.x - 3, ch.y - 9, 6, 19);
-    ctx.strokeStyle = 'rgba(255,210,77,' + (0.7 + pl * 0.3) + ')';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(ch.x - 13, ch.y - 9, 26, 19);
-    ctx.globalAlpha = 0.25 + pl * 0.35;
-    ctx.beginPath();
-    ctx.arc(ch.x, ch.y, 24 + pl * 6, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = '#fff6c8';
-    ctx.font = 'bold 10px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('★', ch.x, ch.y + 4);
-    ctx.restore();
   }
   function doDash(dx, dy) {
     var p = player;
@@ -986,7 +937,6 @@ var text = t('top10');
     { id: 'nem_1', t: 'Победи НЕМЕЗИСА', stat: 'nemesisKills', need: 1, rew: 250 },
     { id: 'time_300', t: 'Выживи 5 минут', stat: 'timeSurv', need: 300, rew: 200 },
     { id: 'dash_100', t: 'Рывок 100 раз', stat: 'dashes', need: 100, rew: 200 },
-    { id: 'chest_25', t: 'Открой 25 сундуков', stat: 'chests', need: 25, rew: 300 },
     { id: 'evo_3', t: 'Открой 3 эволюции', stat: 'evos', need: 3, rew: 400 },
     { id: 'mod_25', t: 'Переживи 25 модификаторов волн', stat: 'mods', need: 25, rew: 250 },
     { id: 'saw_10', t: 'Убей 10 врагов пилой', stat: 'sawKills', need: 10, rew: 200 },
@@ -1352,6 +1302,10 @@ var text = t('top10');
     if (!endlessRun && waveNum > 12) { waveNum = 12; return; }
     announceWave();
     rollWaveMod();
+    if (waveMod) {
+      bigBanner('⚠ ' + waveMod.name, waveMod.desc, waveMod.c, 3000);
+      slowFor(1, 0.5);
+    }
     if (!endlessRun && waveNum === 10) {
       helper = makeHelper();
       hud('GIANT HELPER ASSEMBLED!', '#0ff');
@@ -1364,6 +1318,7 @@ var text = t('top10');
     for (var lb = 0; lb < enemies.length; lb++) { if (enemies[lb].boss) liveBoss++; }
     if (!endlessRun && waveNum === 10) {
       // три повелителя: сложно убить, огромное хп
+      slowFor(1.6, 0.25);
       for (var ovc = 0; ovc < 3; ovc++) {
         var ovAng = ovc / 3 * Math.PI * 2 + Math.PI / 6;
         var ovR = 550;
@@ -1380,7 +1335,9 @@ var text = t('top10');
         enemies.splice(ci, 1);
       }
       projectiles = [];
+      slowFor(2, 0.22);
       spawnEnemy('boss_thanos', player.x, player.y - 400);
+      bigBanner('★ ТАНОС ★', 'ФИНАЛЬНЫЙ БОСС — УКЛОНЯЙСЯ ОТ КАМНЕЙ', '#ff5544', 3400);
       hud('★ THANOS AWAKENS ★', '#e33');
       soundBigBoom();
       shake = Math.min(shake + 15, 24);
@@ -1397,9 +1354,11 @@ var text = t('top10');
     if (bossCount > maxLive - liveBoss) bossCount = Math.max(0, maxLive - liveBoss);
     for (var bi = 0; bi < bossCount; bi++) {
       var pool = pickBossPool(waveNum);
-      spawnEnemy(pool[Math.min(bi, pool.length - 1)]);
+      var bt = pool[Math.min(bi, pool.length - 1)];
+      spawnEnemy(bt);
+      slowFor(1.4, 0.3);
+      bigBanner('⚠ ' + (BOSS_LABELS[bt] || 'БОСС') + ' ⚠', t('bossAlert'), '#ff5566', 2600);
     }
-    if (bossCount > 0) hud(t('bossAlert'), '#f44');
     if (SDK.showInterstitial && waveNum % 3 === 0) {
       if (SDK.inited) { SDK.showInterstitial(function () {}); }
     }
@@ -1411,7 +1370,8 @@ var text = t('top10');
     el.className = 'wave-announce';
     el.textContent = t('waveTitle') + waveNum;
     document.body.appendChild(el);
-    setTimeout(function () { el.remove(); }, 2200);
+    setTimeout(function () { el.remove(); }, 2400);
+    bigBanner(t('waveTitle') + waveNum, 'СЛЕДУЮЩАЯ ВОЛНА', '#9cf', 2400);
   }
 
   function rollWaveMod() {
@@ -1471,10 +1431,41 @@ var text = t('top10');
 
   function hud(msg, color) {
     var el = document.createElement('div');
-    el.style.cssText = 'position:fixed;top:20%;left:50%;transform:translateX(-50%);font-size:22px;color:' + (color || '#fff') + ';z-index:40;text-shadow:0 0 10px rgba(0,0,0,.8);animation:fadeUp 1.5s forwards;pointer-events:none';
+    el.className = 'hud-msg';
+    el.style.color = color || '#fff';
     el.textContent = msg;
     document.body.appendChild(el);
-    setTimeout(function () { el.remove(); }, 1500);
+    setTimeout(function () { el.remove(); }, 1700);
+  }
+
+  /* ============ ЧИТАЕМОСТЬ: SLOW-MO, БАННЕРЫ, ПОДПИСИ ============ */
+  var slowMo = 0, slowMoScale = 1, hurtSlow = 0;
+  var shakeOn = true;
+  function timeScale() {
+    var s = 1;
+    if (slowMo > 0) s = Math.min(s, slowMoScale);
+    if (hurtSlow > 0) s = Math.min(s, 0.35);
+    return s;
+  }
+  function slowFor(sec, scale) { slowMo = Math.max(slowMo, sec); slowMoScale = scale; }
+  function bigBanner(title, sub, color, dur) {
+    var el = document.createElement('div');
+    el.className = 'big-banner';
+    el.innerHTML = '<div class="bb-t" style="color:' + (color || '#fff') + '">' + title + '</div>' + (sub ? '<div class="bb-s">' + sub + '</div>' : '');
+    document.body.appendChild(el);
+    setTimeout(function () { el.remove(); }, dur || 2600);
+  }
+  var BOSS_LABELS = {
+    boss_colossus: 'КОЛОСС', boss_dread: 'УЖАС', boss_titan: 'ТИТАН', boss_nemesis: 'НЕМИСИС',
+    boss_aurora: 'АВРОРА', boss_swarm: 'РОЙ', boss_reaper: 'ЖНЕЦ', boss_medusa: 'МЕДУЗА',
+    boss_overlord: 'ПОВЕЛИТЕЛЬ', boss_thanos: 'ТАНОС'
+  };
+  function enemyLabel(e) {
+    if (e.final) return '★ ТАНОС ★';
+    if (e.overlord) return 'ПОВЕЛИТЕЛЬ';
+    if (e.boss) return BOSS_LABELS[e.type] || 'БОСС';
+    if (e.elite) return AURA_NAMES[e.aura] || 'ЭЛИТА';
+    return '';
   }
 
   /* ============ PARTICLES / FX ============ */
@@ -1922,16 +1913,13 @@ var text = t('top10');
       gems.push({ x: e.x, y: e.y, vx: (Math.random() - 0.5) * 60, vy: (Math.random() - 0.5) * 60, val: 0, r: 9, c: '#fd0', bonus: true });
     }
     if (e.boss) {
-      var puN = 1 + Math.floor(Math.random() * 2);
+      var puN = 2 + Math.floor(Math.random() * 2);
       for (var pui = 0; pui < puN; pui++) dropPowerUp(e.x + (Math.random() - 0.5) * e.r, e.y + (Math.random() - 0.5) * e.r);
-      var chN = 1 + (Math.random() < 0.5 ? 1 : 0);
-      for (var chi = 0; chi < chN; chi++) dropChest(e.x + (Math.random() - 0.5) * e.r, e.y + (Math.random() - 0.5) * e.r);
-    } else if (!e.elite && Math.random() < 0.05) {
-      dropPowerUp(e.x, e.y);
+    } else if (!e.elite) {
+      if (Math.random() < 0.05 * (waveMod && waveMod.pu ? waveMod.pu : 1)) dropPowerUp(e.x, e.y);
     }
     if (e.elite) {
-      var chestChance = 0.14 * (waveMod && waveMod.chest ? waveMod.chest : 1);
-      if (Math.random() < chestChance) dropChest(e.x, e.y);
+      if (Math.random() < 0.35 * (waveMod && waveMod.pu ? waveMod.pu : 1)) dropPowerUp(e.x, e.y);
     }
     // аура «взрыв»: элита сносит всё вокруг при смерти
     if (e.aura === 'explosive') {
@@ -2025,6 +2013,7 @@ var text = t('top10');
         txt = '💎 +5 GEMS';
     }
     hud(txt, '#fd0');
+    soundBonus();
     for (var bi = 0; bi < 26; bi++) {
       var bAng = Math.random() * Math.PI * 2;
       parts.push({ x: p.x, y: p.y, vx: Math.cos(bAng) * 220, vy: Math.sin(bAng) * 220, life: 0.9, maxLife: 0.9, r: 3, c: '#fd0' });
@@ -2099,11 +2088,14 @@ var text = t('top10');
     var options = pickUpgrades(3);
     var scr = document.createElement('div');
     scr.className = 'levelup-screen';
-    scr.innerHTML = '<h2>' + t('levelT') + player.lvl + '!</h2>';
-    options.forEach(function (u) {
+    scr.innerHTML = '<h2>' + t('levelT') + player.lvl + '!</h2><div class="lu-sub">ВЫБЕРИ УЛУЧШЕНИЕ — ИГРА НА ПАУЗЕ</div>';
+    var cards = [];
+    options.forEach(function (u, oi) {
       var b = document.createElement('button');
+      var curLvl = weaponLvl(u.id.replace('evo_', '')) || 0;
       b.className = 'upgrade-choice' + (u.evo ? ' evo' : '');
-      b.innerHTML = '<div class="uname">' + (u.icon || '⭐') + ' ' + t('u_' + u.id) + '</div><div class="udesc">' + t('u_' + u.id + '_d') + '</div>';
+      b.innerHTML = '<div class="ukey">' + (oi + 1) + '</div><div class="uname">' + (u.icon || '⭐') + ' ' + t('u_' + u.id) + '</div><div class="udesc">' + t('u_' + u.id + '_d') + '</div>' + (curLvl > 0 ? '<div class="ulvl">УР. ' + curLvl + ' → ' + (curLvl + 1) + '</div>' : '');
+      cards.push(b);
       b.onclick = function () {
         applyUpgrade(u.id);
         scr.remove();
@@ -2128,6 +2120,7 @@ var text = t('top10');
         b.appendChild(ban);
       }
     });
+    window.__lvlCards = cards;
     var foot = document.createElement('div');
     foot.className = 'levelup-foot';
     var rr = document.createElement('button');
@@ -2233,7 +2226,7 @@ var text = t('top10');
   function soundBigBoom() { soundBoom(); soundBoom(); soundBoom(); }
   function soundLevel() { blip(440, 0.08, 'triangle', 0.045); setTimeout(function () { blip(660, 0.08, 'triangle', 0.045); }, 90); setTimeout(function () { blip(880, 0.12, 'triangle', 0.05); }, 180); }
   function soundDash() { try { var a = audio(); if (!a) return; var o = a.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(320, a.currentTime); o.frequency.exponentialRampToValueAtTime(1500, a.currentTime + 0.13); var g = a.createGain(); g.gain.setValueAtTime(0.05, a.currentTime); g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.15); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + 0.15); } catch (e) {} }
-  function soundChest() { blip(523, 0.1, 'triangle', 0.05); setTimeout(function () { blip(784, 0.1, 'triangle', 0.05); }, 100); setTimeout(function () { blip(1046, 0.22, 'sine', 0.06); }, 200); }
+  function soundBonus() { blip(660, 0.09, 'triangle', 0.05); setTimeout(function () { blip(990, 0.16, 'sine', 0.055); }, 90); }
 
   /* ============ INPUT ============ */
   document.addEventListener('keydown', function (e) {
@@ -2241,6 +2234,10 @@ var text = t('top10');
     var tag = e.target ? e.target.tagName : '';
     if (tag === 'INPUT' || tag === 'TEXTAREA') { return; }
     keys[e.code] = true;
+    if (state === 'levelup' && window.__lvlCards) {
+      var di = { Digit1: 0, Digit2: 1, Digit3: 2, Numpad1: 0, Numpad2: 1, Numpad3: 2 }[e.code];
+      if (di !== undefined && window.__lvlCards[di]) { e.preventDefault(); window.__lvlCards[di].click(); return; }
+    }
     if (e.code === 'KeyP' || e.code === 'Escape') { togglePause(); }
     if (e.code === 'Space' && state === 'playing') {
       if (player.freezeUnlocked) { doFreeze(); }
@@ -2326,12 +2323,19 @@ var text = t('top10');
     var scr = document.createElement('div');
     scr.className = 'menu-screen'; scr.id = 'p1';
     scr.innerHTML = '<h1>ПАУЗА</h1><div class="subtitle">Урон: ' + Math.round(kills) + ' | Очки: ' + Math.round(score) + '</div>' +
+      '<div class="pause-tips">WASD / стрелки — движение · SHIFT или ⚡ — рывок · ПРОБЕЛ — заморозка · P — пауза</div>' +
+      '<button class="btn-play" id="shakeToggle" onclick="window.__toggleShake()">' + (shakeOn ? 'Тряска: ВКЛ' : 'Тряска: ВЫКЛ') + '</button>' +
       '<button class="btn-play" onclick="window.__resume()">Продолжить</button>' +
       '<button class="btn-shop" onclick="window.__quit()">Выйти в меню</button>';
     document.body.appendChild(scr);
     window.__resume = function () { state = 'playing'; document.getElementById('p1').remove(); };
     window.__quit = function () { quitToMenu(); };
   }
+  window.__toggleShake = function () {
+    shakeOn = !shakeOn;
+    var b = document.getElementById('shakeToggle');
+    if (b) b.textContent = shakeOn ? 'Тряска: ВКЛ' : 'Тряска: ВЫКЛ';
+  };
   function hidePaused() { var el = document.getElementById('p1'); if (el) el.remove(); }
 
   function quitToMenu() {
@@ -2372,11 +2376,20 @@ var text = t('top10');
     addHUD();
     if (!progress.dashHinted) {
       progress.dashHinted = true; saveProgress();
-      var hintEl = document.createElement('div');
-      hintEl.className = 'dash-hint';
-      hintEl.textContent = (CUR_LANG === 'en' ? 'SHIFT / ⚡ — DASH' : 'SHIFT / ⚡ — РЫВОК');
-      (document.getElementById('hud') || document.body).appendChild(hintEl);
-      setTimeout(function () { hintEl.remove(); }, 5000);
+      var en = CUR_LANG === 'en';
+      var steps = en
+        ? ['MOVE with WASD / arrows', 'SHOOT is automatic — aim with the mouse', 'Collect blue gems for XP', 'LEVEL UP — pick 1 of 3 (keys 1 / 2 / 3)', 'SHIFT or the lightning button = DASH']
+        : ['ДВИЖЕНИЕ: WASD или стрелки', 'СТРЕЛЬБА автоматическая — прицел мышью', 'СОБИРАЙ синие кристаллы — это опыт', 'НОВЫЙ УРОВЕНЬ — выбери 1 из 3 (клавиши 1 / 2 / 3)', 'SHIFT или кнопка ⚡ — РЫВОК'];
+      var step = 0;
+      (function showStep() {
+        if (step >= steps.length) return;
+        var hintEl = document.createElement('div');
+        hintEl.className = 'dash-hint';
+        hintEl.innerHTML = '<b>' + (step + 1) + '/' + steps.length + '</b> ' + steps[step];
+        document.body.appendChild(hintEl);
+        step++;
+        setTimeout(function () { hintEl.remove(); showStep(); }, 3400);
+      })();
     }
 
     gameMode = progress.mode || 'normal';
@@ -2416,7 +2429,6 @@ var text = t('top10');
     var isBest = score > bestScore;
     if (isBest) { bestScore = score; try { localStorage.setItem('gs_best', bestScore); } catch (e) {} }
     achMax('dashes', player.dashes || 0);
-    achMax('chests', player.chests || 0);
     achMax('evos', Object.keys(player.evolved || {}).length);
     achMax('mods', modsSeen || 0);
     var kindsEnd = {};
@@ -2436,7 +2448,7 @@ var text = t('top10');
       '<div class="stats">' + t('statCombo') + '<b>x' + maxCombo + '</b></div>' +
       '<div class="stats">DPS<b>' + Math.round(dmgDealt / Math.max(1, gameTime)) + '</b></div>' +
       '<div class="stats">⚡ Рывков<b>' + (player.dashes || 0) + '</b></div>' +
-      '<div class="stats">🎁 Сундуков<b>' + (player.chests || 0) + '</b></div>' +
+      '<div class="stats">🔧 Оружия<b>' + player.weapons.length + '</b></div>' +
       '<div class="stats" style="color:#ffd24d">★ Эволюций<b>' + (Object.keys(player.evolved || {}).length) + '</b></div>' +
       '<div class="stats">' + t('statAcc') + '<b>' + (shotsFired > 0 ? Math.round(shotsHit / Math.max(1, shotsFired) * 100) + '%' : '—') + '</b></div>' +
       '<div class="stats">' + t('scoreFinal') + '<b>' + Math.round(score) + '</b></div>' +
@@ -2682,8 +2694,6 @@ var text = t('top10');
   window.__test.evo = function (k) { applyEvolution(k); return { evolved: JSON.stringify(player.evolved), autoDmg: WEAPONS.auto.dmg, autoRate: WEAPONS.auto.rate, mineRate: WEAPONS.mine.rate, novaDmg: WEAPONS.nova.dmg, novaRadius: WEAPONS.nova.radius }; };
   window.__test.mod = function () { waveNum = 4; var out = []; for (var mi = 0; mi < 12; mi++) { waveMod = null; rollWaveMod(); if (waveMod) out.push(waveMod.id); } return out.join(','); };
   window.__test.aura = function () { for (var i = 0; i < 60; i++) spawnEnemy('chaser'); var found = {}; for (var j = 0; j < enemies.length; j++) if (enemies[j].aura) found[enemies[j].aura] = (found[enemies[j].aura] || 0) + 1; return found; };
-  window.__test.chest = function (x, y) { var before = player.chests; dropChest(x === undefined ? player.x + 40 : x, y === undefined ? player.y : y); return { onField: gems.filter(function (g) { return g.chest; }).length, chests: player.chests - before }; };
-  window.__test.openChests = function () { var n = 0; for (var i = 0; i < 3; i++) { openChest(); n++; } return { opened: n, chests: player.chests, hp: Math.round(player.hp), lives: player.lives || 0, shield: player.shield || 0, coinT: Math.round(player.coinT) }; };
   window.__test.levelUp = function () { gainXp(player.xpNeed + 5); return { state: state, btns: window.__test.lvlBtns() }; };
   window.__test.auraOn = function (kind) {
     spawnEnemy('chaser');
@@ -2704,7 +2714,7 @@ var text = t('top10');
     e.elite = true; e.aura = kind; e.hp = 5; e.maxHp = 5; e.dmg = 10;
     var hpBefore = player.hp;
     damageEnemy(idx, 9999);
-    return { killed: enemies.indexOf(e) < 0, hpBefore: Math.round(hpBefore), hpAfter: Math.round(player.hp), chests: gems.filter(function (g) { return g.chest; }).length };
+    return { killed: enemies.indexOf(e) < 0, hpBefore: Math.round(hpBefore), hpAfter: Math.round(player.hp) };
   };
   window.__test.poolIds = function () { var o = pickUpgrades(99); var ids = []; for (var i = 0; i < o.length; i++) ids.push(o[i].id); return ids; };
   window.__test.sawTest = function () {
@@ -2721,13 +2731,18 @@ var text = t('top10');
     return { saws: live, lvl: weaponLvl('saw'), enemyHpDrop: Math.round(hp0 - e.hp) };
   };
   window.__test.sawBounce = function () {
+    var oldDt = dt;
+    dt = 1 / 30;
     sawShots = [];
     spawnEnemy('chaser');
     var e2 = enemies[enemies.length - 1];
     e2.x = player.x + 120; e2.y = player.y;
+    e2.speed = 0;
     sawShots.push({ x: player.x + 40, y: player.y, vx: 500, vy: 0, dmg: 20, r: 16, life: 2, spin: 0, hits: {}, bounces: 0 });
-    updateSaws();
-    return { bounces: sawShots.length ? sawShots[0].bounces : -1, vx: sawShots.length ? Math.round(sawShots[0].vx) : 0 };
+    for (var sb = 0; sb < 30; sb++) updateSaws();
+    var out = { bounces: sawShots.length ? sawShots[0].bounces : -1, vx: sawShots.length ? Math.round(sawShots[0].vx) : 0, scale: timeScale() };
+    dt = oldDt;
+    return out;
   };
   window.__test.chainTest = function () {
     addChain(); addChain();
@@ -2747,7 +2762,49 @@ var text = t('top10');
     puddles.push({ x: player.x, y: player.y, r: 80, t: 3, c: '#f60' });
     return { puddles: puddles.length };
   };
-  window.__test.chestClose = function () { dropChest(player.x + 10, player.y); return gems.filter(function (g) { return g.chest; }).length; };
+  window.__test.puTest = function () {
+    var oldMod = waveMod;
+    waveMod = waveModsById().treasure;
+    var pu0 = 0;
+    for (var i = 0; i < gems.length; i++) { if (gems[i].pu) pu0++; }
+    for (var d = 0; d < 40; d++) { spawnEnemy('chaser'); killEnemy(enemies.length - 1); }
+    spawnEnemy('boss_colossus');
+    var boss = enemies[enemies.length - 1];
+    boss.hp = 1; boss.maxHp = 1;
+    killEnemy(enemies.length - 1);
+    var pu = 0, ch = 0;
+    for (var j = 0; j < gems.length; j++) { if (gems[j].pu) pu++; if (gems[j].chest) ch++; }
+    waveMod = oldMod;
+    return { puGems: pu - pu0, chestGems: ch, chestFns: [typeof dropChest, typeof openChest, typeof drawChest, typeof soundChest].join(','), treasurePu: (waveModsById().treasure.pu || 0) };
+  };
+  window.__test.clarity = function () {
+    var base = timeScale();
+    slowFor(1, 0.25);
+    var slowed = timeScale();
+    slowMo = 0;
+    hurtSlow = 0.5;
+    var hurt = timeScale();
+    slowMo = 0; hurtSlow = 0;
+    var e1 = { type: 'boss_thanos', boss: true, final: true };
+    var e2 = { type: 'boss_colossus', boss: true };
+    var e3 = { type: 'chaser', elite: true, aura: 'armored' };
+    var e4 = { type: 'chaser' };
+    var wh = document.getElementById('weaphud');
+    window.__toggleShake(); window.__toggleShake();
+    return {
+      base: base, slowed: slowed, hurt: hurt,
+      labels: [enemyLabel(e1), enemyLabel(e2), enemyLabel(e3), enemyLabel(e4)],
+      shake: shakeOn, wchips: wh ? wh.querySelectorAll('.wchip').length : -1,
+      weapons: player ? player.weapons.length : -1,
+      bannerFn: typeof bigBanner === 'function', soundBonus: typeof soundBonus === 'function'
+    };
+  };
+  window.__test.lvlKeys = function () {
+    gainXp(player.xpNeed + 5);
+    var cards = document.querySelectorAll('.levelup-screen .upgrade-choice');
+    var keys = document.querySelectorAll('.levelup-screen .ukey').length;
+    return { state: state, cards: cards.length, keys: keys };
+  };
     window.__test.stuck = function () {
       var far = 0, out = 0, minD = 1e9, maxD = 0, slow = 0;
       for (var i = 0; i < enemies.length; i++) {
@@ -2802,13 +2859,32 @@ var text = t('top10');
     hudEl.className = 'hud';
     hudEl.innerHTML = '<div class="hp-bar"><div class="hp-fill" id="hpfill"></div></div>' +
       '<div class="xp-bar"><div class="xp-fill" id="xpfill"></div></div>' +
-      '<div id="hudinfo" style="font-size:12px;color:#ccc"></div>';
+      '<div id="hudinfo" style="font-size:13px;color:#e8f4ff"></div>';
     document.body.appendChild(hudEl);
+    var wEl = document.createElement('div');
+    wEl.className = 'weapon-hud';
+    wEl.id = 'weaphud';
+    document.body.appendChild(wEl);
     var pb = document.createElement('button');
     pb.className = 'pause-btn';
     pb.textContent = '⏸';
     pb.onclick = function () { togglePause(); };
     document.body.appendChild(pb);
+  }
+
+  var WEP_LABEL = { auto: '🔫', orbit: '🌀', nova: '💥', mine: '💣', saw: '🪚', chain: '⚡' };
+  function updateWeaponHUD() {
+    var wEl = document.getElementById('weaphud');
+    if (!wEl || !player) return;
+    var html = '';
+    for (var wi = 0; wi < player.weapons.length; wi++) {
+      var w = player.weapons[wi];
+      html += '<div class="wchip"><span class="wi">' + (WEP_LABEL[w.id] || '⭐') + '</span><span class="wn">' + t('u_' + w.id) + '</span><span class="wl">' + (w.lvl || 1) + '</span></div>';
+    }
+    var evoN = 0;
+    for (var ek in player.evolved) { if (player.evolved[ek]) evoN++; }
+    if (evoN) html += '<div class="wchip star">★ ' + evoN + '</div>';
+    wEl.innerHTML = html;
   }
 
   function updateHUD() {
@@ -2818,7 +2894,7 @@ var text = t('top10');
     if (xpEl) xpEl.style.width = Math.min(100, player.xp / player.xpNeed * 100) + '%';
     if (infoEl) {
       var xpField = 0;
-      for (var hI = 0; hI < gems.length; hI++) { if (!gems[hI].d && !gems[hI].pu && !gems[hI].chest && !gems[hI].bonus) xpField++; }
+      for (var hI = 0; hI < gems.length; hI++) { if (!gems[hI].d && !gems[hI].pu && !!gems[hI].bonus) xpField++; }
       var combHtml = '';
       if (combo >= 4) {
         var cm = 1 + Math.floor(combo / 8);
@@ -2830,24 +2906,29 @@ var text = t('top10');
       if (evoCount) evoHtml = '  <span style="color:#ffd24d;font-weight:700">★' + evoCount + '</span>';
       var dashHtml = player.dashCd > 0 ? '<span style="color:#888">⚡' + player.dashCd.toFixed(1) + '</span>' : '<span style="color:#6ff;font-weight:700">⚡</span>';
       var modHtml = waveMod ? '  <b style="color:' + waveMod.c + '">' + waveMod.name + '</b>' : '';
-      infoEl.innerHTML = t('waveLbl') + waveNum + '  |  ' + t('lvlLbl') + player.lvl + '  |  ' + t('ptsLbl') + Math.round(score) + '  |  ' + dashHtml + evoHtml + '  |  <span style="color:#4ff">??' + progress.diamonds + '</span>' + (xpField > 0 ? '  <span style="color:#0f6">?' + xpField + '</span>' : '') + (gameMode !== 'normal' ? '  <b style="color:' + (gameMode === 'hardcore' ? '#f44' : (gameMode === 'timer' ? '#f80' : '#6ff')) + '">' + t('mode' + (gameMode === 'hardcore' ? 'Hard' : (gameMode === 'endless' ? 'Endless' : 'Timer'))) + '</b>' : '') + (gameMode === 'timer' ? '  <b style="color:#f80">?' + fmtTime(Math.max(0, timerTime)) + '</b>' : '') + modHtml + combHtml + (player.freezeUnlocked && player.freezeCd > 0 ? t('frozen') + Math.ceil(player.freezeCd) : '');
+      var nextIn = '<span style="color:#9cf">→ ' + Math.max(0, spawnTimer).toFixed(0) + 's</span>';
+      infoEl.innerHTML = t('waveLbl') + waveNum + '  |  ' + t('lvlLbl') + player.lvl + '  |  ' + t('ptsLbl') + Math.round(score) + '  |  ' + dashHtml + evoHtml + nextIn + '  |  <span style="color:#4ff">&#128142;</span>' + progress.diamonds + (xpField > 0 ? '  <span style="color:#0f6">&#11088;</span>' + xpField : '') + (gameMode !== 'normal' ? '  <b style="color:' + (gameMode === 'hardcore' ? '#f44' : (gameMode === 'timer' ? '#f80' : '#6ff')) + '">' + t('mode' + (gameMode === 'hardcore' ? 'Hard' : (gameMode === 'endless' ? 'Endless' : 'Timer'))) + '</b>' : '') + (gameMode === 'timer' ? '  <b style="color:#f80">&#9200; ' + fmtTime(Math.max(0, timerTime)) + '</b>' : '') + modHtml + combHtml + (player.freezeUnlocked && player.freezeCd > 0 ? t('frozen') + Math.ceil(player.freezeCd) : '');
     }
     var db = window.__dashBtn;
     if (db && player) {
       db.style.opacity = player.dashCd > 0 ? '0.3' : '0.85';
       db.textContent = player.dashCd > 0 ? Math.ceil(player.dashCd) : '⚡';
     }
+    updateWeaponHUD();
   }
 
   /* ============ MAIN LOOP ============ */
   var dt = 0.016;
   var __errs = [];
   function loop(ts) {
-    dt = Math.min((ts - lastTime) / 1000, 0.05);
+    var rawDt = Math.min((ts - lastTime) / 1000, 0.05);
     lastTime = ts;
+    if (slowMo > 0) slowMo -= rawDt;
+    if (hurtSlow > 0) hurtSlow -= rawDt;
+    dt = state === 'playing' ? rawDt * timeScale() : rawDt;
     try {
       if (state === 'playing') {
-        if (hitStop > 0) { hitStop -= dt; }
+        if (hitStop > 0) { hitStop -= rawDt; }
         else { update(); updateHUD(); }
       }
       render();
@@ -2873,6 +2954,7 @@ var text = t('top10');
     combo = 0; comboTimer = 0;
     p.iframes = 0.8;
     hurtFx = 0.5;
+    hurtSlow = 0.55;
     shake = Math.min(shake + 6, 15);
     fx.push({ type: 'boom', x: p.x, y: p.y, r: 40, life: 0.3, maxLife: 0.3, c: '#f55' });
     boom(p.x, p.y, '#f44', 10);
@@ -3546,9 +3628,7 @@ var text = t('top10');
               parts.push({ x: p.x, y: p.y, vx: Math.cos(gsa) * gss, vy: Math.sin(gsa) * gss, life: 0.3 + Math.random() * 0.2, maxLife: 0.5, r: 1.5 + Math.random() * 1.5, c: gem.c || '#0f6' });
             }
           }
-          if (gem.chest) {
-            openChest();
-          } else if (gem.pu) {
+          if (gem.pu) {
             applyPowerUp(gem.pu);
           } else if (gem.bonus) {
             doBonusPickup();
@@ -3716,7 +3796,8 @@ var text = t('top10');
     }
 
     // camera
-    var shX = (Math.random() - 0.5) * shake, shY = (Math.random() - 0.5) * shake;
+    var shakeAmt = shakeOn ? shake * 0.45 : 0;
+    var shX = (Math.random() - 0.5) * shakeAmt, shY = (Math.random() - 0.5) * shakeAmt;
     var focus = player;
     if (player) {
       camX += (player.x - camX) * Math.min(1, dt * 6);
@@ -3981,7 +4062,22 @@ var text = t('top10');
     // gems
     for (var gi = 0; gi < gems.length; gi++) {
       var gm = gems[gi];
-      if (gm.chest) { drawChest(gm); continue; }
+      if (gm.pu) {
+        ctx.save();
+        ctx.shadowColor = '#fff';
+        ctx.shadowBlur = 18;
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(gm.x, gm.y, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#f0f';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('⬆', gm.x, gm.y + 5);
+        ctx.restore();
+        continue;
+      }
       ctx.save();
       ctx.shadowColor = gm.c;
       ctx.shadowBlur = gm.d ? 16 : 8;
@@ -4441,8 +4537,25 @@ var text = t('top10');
       ctx.beginPath();
       ctx.arc(en2.x + Math.cos(eang) * en2.r * 0.4, en2.y + Math.sin(eang) * en2.r * 0.4, en2.r * 0.15, 0, Math.PI * 2);
       ctx.fill();
-      // hp bar
-      if (en2.hp < en2.maxHp) {
+      // hp bar + подпись
+      var lbl = enemyLabel(en2);
+      if (en2.elite || en2.boss) {
+        var bw = Math.max(48, en2.r * 1.6);
+        var by = en2.y - en2.r - 12;
+        ctx.fillStyle = 'rgba(0,0,0,0.75)';
+        ctx.fillRect(en2.x - bw / 2 - 1, by - 1, bw + 2, 8);
+        ctx.fillStyle = en2.boss ? '#ff3b3b' : '#ffb03b';
+        ctx.fillRect(en2.x - bw / 2, by, bw * Math.max(0, en2.hp / en2.maxHp), 6);
+        if (lbl) {
+          ctx.font = 'bold 12px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = 'rgba(0,0,0,0.95)';
+          ctx.strokeText(lbl, en2.x, by - 5);
+          ctx.fillStyle = en2.boss ? '#ffd7d7' : '#ffe9b8';
+          ctx.fillText(lbl, en2.x, by - 5);
+        }
+      } else if (en2.hp < en2.maxHp) {
         ctx.fillStyle = 'rgba(0,0,0,0.6)';
         ctx.fillRect(en2.x - en2.r, en2.y - en2.r - 8, en2.r * 2, 4);
         ctx.fillStyle = '#f44';
@@ -4969,7 +5082,11 @@ var text = t('top10');
     }
     // красная вспышка при получении урона
     if (hurtFx > 0) {
-      ctx.fillStyle = 'rgba(255,30,30,' + (hurtFx * 0.28) + ')';
+      var hv = Math.max(hurtFx, Math.min(0.45, hurtSlow));
+      var hgr = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.22, W / 2, H / 2, Math.max(W, H) * 0.62);
+      hgr.addColorStop(0, 'rgba(255,30,30,0)');
+      hgr.addColorStop(1, 'rgba(255,30,30,' + (hv * 0.5) + ')');
+      ctx.fillStyle = hgr;
       ctx.fillRect(0, 0, W, H);
     }
     // пульс при критически низком HP

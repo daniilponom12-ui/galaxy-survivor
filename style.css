@@ -66,7 +66,8 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 .booster-chip.sale{border-color:#f60;box-shadow:0 0 14px rgba(255,120,0,.45);animation:salePulse 1.4s ease-in-out infinite}
 .sale-tag{display:block;color:#0f0;font-weight:800;font-size:11px;margin-bottom:2px;letter-spacing:.5px}
 @keyframes salePulse{0%,100%{box-shadow:0 0 10px rgba(255,120,0,.35)}50%{box-shadow:0 0 20px rgba(255,180,0,.6)}}
-.dash-hint{position:absolute;left:50%;top:14%;transform:translateX(-50%);padding:9px 16px;border-radius:999px;background:rgba(0,0,0,.65);border:2px solid #4ff;color:#fff;font-size:15px;font-weight:700;letter-spacing:.5px;z-index:40;pointer-events:none;animation:hintFade 4.5s ease forwards}
+.dash-hint{position:fixed;left:50%;top:13%;transform:translateX(-50%);padding:11px 20px;border-radius:999px;background:rgba(0,0,0,.75);border:2px solid #4ff;color:#fff;font-size:17px;font-weight:700;letter-spacing:.5px;z-index:49;pointer-events:none;animation:hintFade 3.4s ease forwards;max-width:90vw;text-align:center}
+.dash-hint b{color:#4ff;margin-right:6px}
 @keyframes hintFade{0%{opacity:0;transform:translate(-50%,-8px)}12%{opacity:1;transform:translate(-50%,0)}75%{opacity:1}100%{opacity:0}}
 .levelup-screen{position:fixed;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.8);z-index:50;color:#fff}
 .levelup-screen h2{font-size:32px;margin-bottom:20px;color:#ff0}
@@ -95,7 +96,22 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 .mini-map{position:fixed;bottom:10px;right:10px;width:120px;height:120px;border:2px solid rgba(255,255,255,.3);border-radius:8px;background:rgba(0,0,0,.5);z-index:20;overflow:hidden}
 .wave-announce{position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);font-size:36px;color:#ff0;font-weight:700;text-shadow:0 0 20px rgba(255,255,0,.5);z-index:40;pointer-events:none;animation:fadeUp 2s forwards}
 @keyframes fadeUp{0%{opacity:1;transform:translate(-50%,-50%)}100%{opacity:0;transform:translate(-50%,-80%)}}
-.weapon-hud{position:fixed;bottom:10px;left:10px;display:flex;gap:6px;z-index:20}
+.weapon-hud{position:fixed;bottom:10px;left:10px;display:flex;gap:6px;z-index:20;flex-wrap:wrap;max-width:62vw}
+.wchip{display:flex;align-items:center;gap:5px;padding:5px 9px;border-radius:8px;background:rgba(0,0,0,.55);border:2px solid rgba(120,190,255,.55);color:#fff;font-size:12px;font-weight:700;text-shadow:1px 1px 2px #000}
+.wchip .wi{font-size:15px}
+.wchip .wn{opacity:.9}
+.wchip .wl{background:#4af;color:#06121f;border-radius:5px;padding:0 5px;font-size:11px}
+.wchip.star{border-color:#ffd24d;color:#ffd24d}
+.big-banner{position:fixed;top:38%;left:50%;transform:translate(-50%,-50%);text-align:center;z-index:48;pointer-events:none;padding:14px 30px;border-radius:14px;background:rgba(0,0,0,.55);border:2px solid rgba(255,255,255,.18);animation:bannerIn 2.6s ease forwards;max-width:86vw}
+.big-banner .bb-t{font-size:44px;font-weight:800;letter-spacing:2px;text-shadow:0 3px 12px rgba(0,0,0,.95),0 0 26px currentColor}
+.big-banner .bb-s{margin-top:6px;font-size:17px;font-weight:600;color:#e8f4ff;text-shadow:0 2px 8px rgba(0,0,0,.95)}
+@keyframes bannerIn{0%{opacity:0;transform:translate(-50%,-50%) scale(.85)}10%{opacity:1;transform:translate(-50%,-50%) scale(1)}78%{opacity:1}100%{opacity:0;transform:translate(-50%,-64%) scale(1)}}
+.hud-msg{position:fixed;top:20%;left:50%;transform:translateX(-50%);font-size:26px;font-weight:800;text-shadow:0 0 12px rgba(0,0,0,.95),0 2px 4px #000;z-index:40;pointer-events:none;animation:fadeUp 1.7s forwards;white-space:nowrap}
+.pause-tips{font-size:13px;color:#9cf;margin:6px 0 10px;line-height:1.6}
+.lu-sub{font-size:14px;color:#9cf;margin:-12px 0 10px;letter-spacing:1px}
+.upgrade-choice{padding:16px 22px;min-width:300px;position:relative}
+.upgrade-choice .ukey{position:absolute;top:10px;left:12px;width:24px;height:24px;border-radius:6px;background:#4af;color:#06121f;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center}
+.upgrade-choice .ulvl{margin-top:6px;font-size:12px;color:#ffd24d;font-weight:700}
 .weapon-icon{width:44px;height:44px;border-radius:8px;background:rgba(255,255,255,.1);border:2px solid #555;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff}
 .weapon-icon.active{border-color:#4af;box-shadow:0 0 10px rgba(74,170,255,.4)}
 @media(max-width:600px){
