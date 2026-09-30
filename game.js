@@ -607,25 +607,25 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
 
   var SKINS = {
     s1: { name: 'Классик', color: '#4af', price: 0, desc: 'Стандартный истребитель', icon: '▲' },
-    s2: { name: 'Неон-Фантом', color: '#f4f', price: 1, gcost: 100, desc: 'Фиолетовый с неоном', icon: '◆' },
-    s3: { name: 'Золотой Герой', color: '#fd0', price: 2, gcost: 180, desc: 'Сверхзвуковой золотой', icon: '⭐' },
-    s4: { name: 'Изумруд', color: '#0f6', price: 2, gcost: 180, desc: 'Смертоносный изумруд', icon: '❖' },
-    s5: { name: 'Ледяной Страж', color: '#7ef', price: 3, gcost: 240, desc: 'Холодная сталь', icon: '✚' },
-    s6: { name: 'Кобальт', color: '#38f', price: 4, gcost: 360, desc: 'Атомная мощь кобальта', icon: '♠' },
-    s7: { name: 'Некрон', color: '#f26', price: 5, gcost: 480, desc: 'Повелитель самоцветов', icon: 'ꙮ' },
-    s8: { name: 'Истребитель', color: '#9f3', price: 6, gcost: 720, desc: 'Реактивный и со следом', icon: '✈', model: 'jet', trail: '#dfd' },
-    s9: { name: 'Феникс', color: '#f80', price: 7, gcost: 900, desc: 'Пламя вместо двигателя', icon: '🦅', model: 'jet', trail: '#fd0' },
-    s10: { name: 'Космический Рыцарь', color: '#7af', price: 8, gcost: 1080, desc: 'Благородный неоновый страж', icon: '⚔', model: 'jet', trail: '#7af' },
-    s11: { name: 'Тёмная Материя', color: '#4a2a7a', price: 9, gcost: 1200, desc: 'Поглощает свет и искривляет его', icon: '🕳', model: 'jet', trail: '#a4f' },
-    s12: { name: 'Солнечный Вихрь', color: '#fc2', price: 10, gcost: 1400, desc: 'Ярче самых ярких звёзд', icon: '☀', model: 'jet', trail: '#fc2' },
-    s13: { name: 'Гипер-Дракон', color: '#c2f', price: 12, gcost: 1800, desc: 'Древний космический дракон', icon: '🐉', model: 'jet', trail: '#c2f' },
-    s14: { name: 'Чёрный Призрак', color: '#37414d', price: 13, gcost: 2200, desc: 'Невидимый в тени', icon: '👻', model: 'jet', trail: '#7ef' },
-    s15: { name: 'Неоновый Шторм', color: '#8cf', price: 14, gcost: 2600, desc: 'Буря в чистом небе', icon: '⚡', model: 'jet', trail: '#8cf' },
-    s16: { name: 'Алый Демон', color: '#f33', price: 15, gcost: 3000, desc: 'Молниеносный красный', icon: '😈', model: 'jet', trail: '#f33' },
-    s17: { name: 'Золотое Пламя', color: '#fd4', price: 16, gcost: 3400, desc: 'Горит как звезда', icon: '🔥', model: 'jet', trail: '#fd4' },
-    s18: { name: 'Кибер-Самурай', color: '#6ff', price: 17, gcost: 3600, desc: 'Скорость и сталь', icon: '⚔', model: 'jet', trail: '#6ff' },
-    s19: { name: 'Ледяной Лорд', color: '#9df', price: 18, gcost: 4000, desc: 'Морозный гигант неба', icon: '❄', model: 'jet', trail: '#9df' },
-    s20: { name: 'Неоновая Пантера', color: '#f9f', price: 20, gcost: 4600, desc: 'Молниеносная и дерзкая', icon: '🐆', model: 'jet', trail: '#f9f' }
+    s2: { name: 'Неон-Фантом', color: '#f4f', price: 1, gcost: 200, desc: 'Фиолетовый с неоном', icon: '◆' },
+    s3: { name: 'Золотой Герой', color: '#fd0', price: 2, gcost: 360, desc: 'Сверхзвуковой золотой', icon: '⭐' },
+    s4: { name: 'Изумруд', color: '#0f6', price: 2, gcost: 360, desc: 'Смертоносный изумруд', icon: '❖' },
+    s5: { name: 'Ледяной Страж', color: '#7ef', price: 3, gcost: 480, desc: 'Холодная сталь', icon: '✚' },
+    s6: { name: 'Кобальт', color: '#38f', price: 4, gcost: 720, desc: 'Атомная мощь кобальта', icon: '♠' },
+    s7: { name: 'Некрон', color: '#f26', price: 5, gcost: 960, desc: 'Повелитель самоцветов', icon: 'ꙮ' },
+    s8: { name: 'Истребитель', color: '#9f3', price: 6, gcost: 1440, desc: 'Реактивный и со следом', icon: '✈', model: 'jet', trail: '#dfd' },
+    s9: { name: 'Феникс', color: '#f80', price: 7, gcost: 1800, desc: 'Пламя вместо двигателя', icon: '🦅', model: 'jet', trail: '#fd0' },
+    s10: { name: 'Космический Рыцарь', color: '#7af', price: 8, gcost: 2160, desc: 'Благородный неоновый страж', icon: '⚔', model: 'jet', trail: '#7af' },
+    s11: { name: 'Тёмная Материя', color: '#4a2a7a', price: 9, gcost: 2400, desc: 'Поглощает свет и искривляет его', icon: '🕳', model: 'jet', trail: '#a4f' },
+    s12: { name: 'Солнечный Вихрь', color: '#fc2', price: 10, gcost: 2800, desc: 'Ярче самых ярких звёзд', icon: '☀', model: 'jet', trail: '#fc2' },
+    s13: { name: 'Гипер-Дракон', color: '#c2f', price: 12, gcost: 3600, desc: 'Древний космический дракон', icon: '🐉', model: 'jet', trail: '#c2f' },
+    s14: { name: 'Чёрный Призрак', color: '#37414d', price: 13, gcost: 4400, desc: 'Невидимый в тени', icon: '👻', model: 'jet', trail: '#7ef' },
+    s15: { name: 'Неоновый Шторм', color: '#8cf', price: 14, gcost: 5200, desc: 'Буря в чистом небе', icon: '⚡', model: 'jet', trail: '#8cf' },
+    s16: { name: 'Алый Демон', color: '#f33', price: 15, gcost: 6000, desc: 'Молниеносный красный', icon: '😈', model: 'jet', trail: '#f33' },
+    s17: { name: 'Золотое Пламя', color: '#fd4', price: 16, gcost: 6800, desc: 'Горит как звезда', icon: '🔥', model: 'jet', trail: '#fd4' },
+    s18: { name: 'Кибер-Самурай', color: '#6ff', price: 17, gcost: 7200, desc: 'Скорость и сталь', icon: '⚔', model: 'jet', trail: '#6ff' },
+    s19: { name: 'Ледяной Лорд', color: '#9df', price: 18, gcost: 8000, desc: 'Морозный гигант неба', icon: '❄', model: 'jet', trail: '#9df' },
+    s20: { name: 'Неоновая Пантера', color: '#f9f', price: 20, gcost: 9200, desc: 'Молниеносная и дерзкая', icon: '🐆', model: 'jet', trail: '#f9f' }
   };
   var MUSIC = {
     m1: { name: 'Космический драйв', price: 0 },
@@ -636,21 +636,21 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
 
   var AMMO_TYPES = {
     a1: { name: 'Бластер', desc: 'Уверенный средний урон', price: 0, dmgMult: 1, rate: 0.55, speed: 520, color: '#4af', count: 1, spread: 8, r: 5 },
-    a2: { name: 'Лазер', desc: 'Пронзает врагов насквозь', price: 1, gcost: 120, dmgMult: 1.3, rate: 0.85, speed: 680, color: '#f0f', count: 1, spread: 6, r: 4, pierce: true },
-    a3: { name: 'Дробовик', desc: 'Веер из осколков', price: 2, gcost: 200, dmgMult: 0.55, rate: 0.9, speed: 470, color: '#fa0', count: 5, spread: 30, r: 5 },
-    a4: { name: 'Ракеты', desc: 'Взрываются при попадании', price: 3, gcost: 280, dmgMult: 2.6, rate: 1.35, speed: 380, color: '#f80', count: 1, spread: 10, r: 7, rocket: true },
-    a5: { name: 'Плазма', desc: 'Быстрая и мощная', price: 4, gcost: 360, dmgMult: 1.9, rate: 0.45, speed: 720, color: '#0ff', count: 1, spread: 8, r: 6 },
-    a6: { name: 'Цепная молния', desc: 'Бьёт по врагам и перекидывается', price: 5, gcost: 520, dmgMult: 1.1, rate: 0.7, speed: 560, color: '#e8f', count: 1, spread: 7, r: 6, chain: true, chainTargets: 4, chainRange: 180 },
-    a7: { name: 'Крио', desc: 'Замораживает врагов при попадании', price: 6, gcost: 600, dmgMult: 1.0, rate: 0.5, speed: 600, color: '#8ef', count: 1, spread: 7, r: 5, cryo: true, cryoDur: 2.2 },
-    a8: { name: 'Фантом', desc: 'Рой частых слабых лучей', price: 7, gcost: 700, dmgMult: 0.7, rate: 0.3, speed: 640, color: '#0ff', count: 3, spread: 12, r: 4 },
-    a9: { name: 'Рейлган', desc: 'Мощная молния пронзает всё', price: 7, gcost: 760, dmgMult: 3.2, rate: 1.6, speed: 980, color: '#8fa', count: 1, spread: 0, r: 4, pierce: true },
-    a10: { name: 'Шрапнель', desc: 'Шквал осколков', price: 7, gcost: 800, dmgMult: 0.45, rate: 1.1, speed: 500, color: '#fb0', count: 7, spread: 42, r: 5 },
-    a11: { name: 'Мини-ракеты', desc: 'Три ракеты за залп', price: 8, gcost: 900, dmgMult: 1.3, rate: 1.35, speed: 430, color: '#f60', count: 3, spread: 24, r: 6, rocket: true },
-    a12: { name: 'Цепной шторм', desc: 'Молния с шестью перескоками', price: 8, gcost: 960, dmgMult: 1.0, rate: 0.6, speed: 600, color: '#e8f', count: 1, spread: 7, r: 6, chain: true, chainTargets: 6, chainRange: 220 },
-    a13: { name: 'Кристальный удар', desc: 'Пронзает и замораживает', price: 9, gcost: 1100, dmgMult: 1.35, rate: 0.8, speed: 660, color: '#cf6', count: 1, spread: 7, r: 5, pierce: true, cryo: true, cryoDur: 3 },
-    a14: { name: 'Вампир', desc: 'Лучи лечат тебя при попадании', price: 10, gcost: 1300, dmgMult: 0.9, rate: 0.5, speed: 620, color: '#f66', count: 1, spread: 6, r: 5, pierce: true, heal: 2 },
-    a15: { name: 'Мини-бомбы', desc: 'Две ракеты с большим взрывом', price: 10, gcost: 1450, dmgMult: 1.1, rate: 1.3, speed: 460, color: '#f80', count: 2, spread: 22, r: 6, rocket: true },
-    a16: { name: 'Радиант', desc: 'Пронзающий веер из 4 лучей', price: 11, gcost: 1600, dmgMult: 0.9, rate: 0.7, speed: 700, color: '#ff5', count: 4, spread: 18, r: 4, pierce: true }
+    a2: { name: 'Лазер', desc: 'Пронзает врагов насквозь', price: 1, gcost: 240, dmgMult: 1.3, rate: 0.85, speed: 680, color: '#f0f', count: 1, spread: 6, r: 4, pierce: true },
+    a3: { name: 'Дробовик', desc: 'Веер из осколков', price: 2, gcost: 400, dmgMult: 0.55, rate: 0.9, speed: 470, color: '#fa0', count: 5, spread: 30, r: 5 },
+    a4: { name: 'Ракеты', desc: 'Взрываются при попадании', price: 3, gcost: 560, dmgMult: 2.6, rate: 1.35, speed: 380, color: '#f80', count: 1, spread: 10, r: 7, rocket: true },
+    a5: { name: 'Плазма', desc: 'Быстрая и мощная', price: 4, gcost: 720, dmgMult: 1.9, rate: 0.45, speed: 720, color: '#0ff', count: 1, spread: 8, r: 6 },
+    a6: { name: 'Цепная молния', desc: 'Бьёт по врагам и перекидывается', price: 5, gcost: 1040, dmgMult: 1.1, rate: 0.7, speed: 560, color: '#e8f', count: 1, spread: 7, r: 6, chain: true, chainTargets: 4, chainRange: 180 },
+    a7: { name: 'Крио', desc: 'Замораживает врагов при попадании', price: 6, gcost: 1200, dmgMult: 1.0, rate: 0.5, speed: 600, color: '#8ef', count: 1, spread: 7, r: 5, cryo: true, cryoDur: 2.2 },
+    a8: { name: 'Фантом', desc: 'Рой частых слабых лучей', price: 7, gcost: 1400, dmgMult: 0.7, rate: 0.3, speed: 640, color: '#0ff', count: 3, spread: 12, r: 4 },
+    a9: { name: 'Рейлган', desc: 'Мощная молния пронзает всё', price: 7, gcost: 1520, dmgMult: 3.2, rate: 1.6, speed: 980, color: '#8fa', count: 1, spread: 0, r: 4, pierce: true },
+    a10: { name: 'Шрапнель', desc: 'Шквал осколков', price: 7, gcost: 1600, dmgMult: 0.45, rate: 1.1, speed: 500, color: '#fb0', count: 7, spread: 42, r: 5 },
+    a11: { name: 'Мини-ракеты', desc: 'Три ракеты за залп', price: 8, gcost: 1800, dmgMult: 1.3, rate: 1.35, speed: 430, color: '#f60', count: 3, spread: 24, r: 6, rocket: true },
+    a12: { name: 'Цепной шторм', desc: 'Молния с шестью перескоками', price: 8, gcost: 1920, dmgMult: 1.0, rate: 0.6, speed: 600, color: '#e8f', count: 1, spread: 7, r: 6, chain: true, chainTargets: 6, chainRange: 220 },
+    a13: { name: 'Кристальный удар', desc: 'Пронзает и замораживает', price: 9, gcost: 2200, dmgMult: 1.35, rate: 0.8, speed: 660, color: '#cf6', count: 1, spread: 7, r: 5, pierce: true, cryo: true, cryoDur: 3 },
+    a14: { name: 'Вампир', desc: 'Лучи лечат тебя при попадании', price: 10, gcost: 2600, dmgMult: 0.9, rate: 0.5, speed: 620, color: '#f66', count: 1, spread: 6, r: 5, pierce: true, heal: 2 },
+    a15: { name: 'Мини-бомбы', desc: 'Две ракеты с большим взрывом', price: 10, gcost: 2900, dmgMult: 1.1, rate: 1.3, speed: 460, color: '#f80', count: 2, spread: 22, r: 6, rocket: true },
+    a16: { name: 'Радиант', desc: 'Пронзающий веер из 4 лучей', price: 11, gcost: 3200, dmgMult: 0.9, rate: 0.7, speed: 700, color: '#ff5', count: 4, spread: 18, r: 4, pierce: true }
   };
 
   var MAX_AMMO_COUNT = 3;
@@ -708,7 +708,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     }
   }
 
-  var UPG_COSTS = { dmg: [160, 400, 800, 1400, 2200], hp: [200, 480, 1000, 1800, 3200], magnet: [120, 320, 720], rate: [120, 280, 560, 960, 1600], speed: [160, 360, 720], shield: [240, 600], crit: [200, 480, 880, 1440, 2200], xp: [160, 400, 800] };
+  var UPG_COSTS = { dmg: [320, 800, 1600, 2800, 4400], hp: [400, 960, 2000, 3600, 6400], magnet: [240, 640, 1440], rate: [240, 560, 1120, 1920, 3200], speed: [320, 720, 1440], shield: [480, 1200], crit: [400, 960, 1760, 2880, 4400], xp: [320, 800, 1600] };
   var UPG_ICONS = { dmg: '🔥', hp: '❤', magnet: '🧲', rate: '🔁', speed: '💨', shield: '🛡', crit: '🎯', xp: '⭐' };
 
   function buyWithGems(type, id) {
@@ -742,7 +742,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   function buyPet() {
     var lvl = progress.petLvl || 0;
     if (lvl >= 3) { hud(t('petMax'), '#f80'); return; }
-    var cost = [1200, 2200, 3800][lvl];
+    var cost = [2400, 4400, 7600][lvl];
     if ((progress.diamonds || 0) < cost) { hud(t('diamNo'), '#f44'); return; }
     progress.diamonds -= cost;
     progress.petLvl = lvl + 1;
@@ -956,9 +956,9 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       petCard.className = 'booster-chip' + (plvl > 0 ? ' active' : '');
       var petBody = '🤝 ' + t('petName') + '<br><b>LVL ' + plvl + ' / 3</b><br><span style="font-size:12px;opacity:.8">' + t('petDesc') + '</span>';
       if (plvl === 0) {
-        petBody += '<br><span style="color:#4ff">💎1200</span>';
+        petBody += '<br><span style="color:#4ff">💎2400</span>';
       } else if (plvl < 3) {
-        var petCost = [0, 2200, 3800][plvl];
+        var petCost = [0, 4400, 7600][plvl];
         petBody += '<br><span style="color:#4ff">' + t('petLvl') + ' ' + (plvl + 1) + ': 💎' + petCost + '</span>';
       } else {
         petBody += '<br><span style="color:#0f6">' + t('petMax') + '</span>';
@@ -987,32 +987,47 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     window.__closeShop = function () { showMenu(); };
   }
 
+  var MUSIC_CHORDS = [
+    { pad: [220.00, 261.63, 329.63, 440.00], bass: 110.00 },
+    { pad: [174.61, 220.00, 261.63, 349.23], bass: 87.31 },
+    { pad: [261.63, 329.63, 392.00, 523.25], bass: 130.81 },
+    { pad: [196.00, 246.94, 293.66, 392.00], bass: 98.00 }
+  ];
+  var MUSIC_LEAD = [523.25, 587.33, 659.25, 783.99, 880.00, 659.25, 587.33];
   function startMusic() {
     if (!sndOn) return null;
     var a = audio(); if (!a) return null;
     if (musicTimer) return;
     try {
       var g = a.createGain();
-      g.gain.value = 0.04;
+      g.gain.value = 0.05;
       g.connect(a.destination);
-      var scale = [220, 261.6, 293.7, 329.6, 392, 440, 523.3, 587.3];
-      var i = 0, beat = 0;
+      var step = 0;
       musicTimer = setInterval(function () {
         if (!sndOn || a.state === 'suspended') return;
         try {
-          beat++;
-          var o = a.createOscillator();
-          o.type = beat % 8 === 0 ? 'triangle' : 'sine';
-          var note = scale[(i++) % scale.length];
-          o.frequency.value = note * (beat % 8 < 4 ? 1 : 0.5);
-          var og = a.createGain();
-          var vol = beat % 8 === 0 ? 0.07 : 0.035;
-          og.gain.setValueAtTime(vol, a.currentTime);
-          og.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.6);
-          o.connect(og); og.connect(g);
-          o.start(); o.stop(a.currentTime + 0.6);
+          var chord = MUSIC_CHORDS[Math.floor(step / 8) % MUSIC_CHORDS.length];
+          var pos = step % 8;
+          if (pos === 0) {
+            var bo = a.createOscillator(); bo.type = 'sine'; bo.frequency.value = chord.bass;
+            var bg = a.createGain(); bg.gain.setValueAtTime(0.09, a.currentTime); bg.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 1.0);
+            bo.connect(bg); bg.connect(g); bo.start(); bo.stop(a.currentTime + 1.0);
+          }
+          if (pos % 2 === 0) {
+            var note = chord.pad[(pos / 2) % chord.pad.length];
+            var po = a.createOscillator(); po.type = 'triangle'; po.frequency.value = note;
+            var pg = a.createGain(); pg.gain.setValueAtTime(0.022, a.currentTime); pg.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 1.6);
+            po.connect(pg); pg.connect(g); po.start(); po.stop(a.currentTime + 1.6);
+          }
+          if (pos === 4) {
+            var lead = MUSIC_LEAD[Math.floor(Math.random() * MUSIC_LEAD.length)];
+            var lo = a.createOscillator(); lo.type = 'sine'; lo.frequency.value = lead;
+            var lg = a.createGain(); lg.gain.setValueAtTime(0.05, a.currentTime); lg.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.5);
+            lo.connect(lg); lg.connect(g); lo.start(); lo.stop(a.currentTime + 0.5);
+          }
+          step++;
         } catch (e) {}
-      }, 260);
+      }, 150);
     } catch (e) {}
   }
 
@@ -1770,7 +1785,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   function toggleSound() {
     sndOn = !sndOn;
     try { localStorage.setItem('gs_snd', sndOn ? '1' : '0'); } catch (e) {}
-    if (sndOn) { audio(); blip(700, 0.08, 'sine', 0.05); }
+    if (sndOn) { audio(); startMusic(); blip(700, 0.08, 'sine', 0.05); }
     return sndOn;
   }
   function blip(f, d, type, vol) {
@@ -1784,13 +1799,13 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       o.start(); o.stop(a.currentTime + d);
     } catch (e) {}
   }
-  function soundShoot() { blip(880, 0.05, 'square', 0.02); }
-  function soundPop(e) { blip(e ? 200 : 320, 0.08, 'sawtooth', 0.04); }
-  function soundPowerup() { blip(660, 0.09, 'triangle', 0.06); setTimeout(function () { blip(990, 0.12, 'triangle', 0.06); }, 90); }
-  function soundHurt() { blip(160, 0.12, 'sawtooth', 0.07); blip(120, 0.16, 'square', 0.05); }
-  function soundBoom() { try { var a = audio(); if (!a) return; var o = a.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(200, a.currentTime); o.frequency.exponentialRampToValueAtTime(40, a.currentTime + 0.3); var g = a.createGain(); g.gain.setValueAtTime(0.08, a.currentTime); g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.3); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + 0.3); } catch (e) {} }
+  function soundShoot() { blip(1240, 0.035, 'sine', 0.012); }
+  function soundPop(e) { blip(e ? 620 : 250, 0.07, e ? 'triangle' : 'sine', 0.045); }
+  function soundPowerup() { blip(740, 0.07, 'triangle', 0.055); setTimeout(function () { blip(1109.4, 0.09, 'triangle', 0.05); }, 70); setTimeout(function () { blip(1480, 0.14, 'sine', 0.06); }, 150); }
+  function soundHurt() { blip(140, 0.14, 'sawtooth', 0.05); setTimeout(function () { blip(92, 0.18, 'square', 0.04); }, 90); }
+  function soundBoom() { try { var a = audio(); if (!a) return; var o = a.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(240, a.currentTime); o.frequency.exponentialRampToValueAtTime(38, a.currentTime + 0.32); var g = a.createGain(); g.gain.setValueAtTime(0.07, a.currentTime); g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.32); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + 0.32); } catch (e) {} }
   function soundBigBoom() { soundBoom(); soundBoom(); soundBoom(); }
-  function soundLevel() { blip(520, 0.1, 'triangle', 0.05); setTimeout(function(){ blip(780, 0.1, 'triangle', 0.05); }, 80); }
+  function soundLevel() { blip(440, 0.08, 'triangle', 0.045); setTimeout(function () { blip(660, 0.08, 'triangle', 0.045); }, 90); setTimeout(function () { blip(880, 0.12, 'triangle', 0.05); }, 180); }
 
   /* ============ INPUT ============ */
   document.addEventListener('keydown', function (e) {
@@ -2104,6 +2119,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       '<button class="btn-leaderboard" onclick="window.__showLB()">' + t('top') + '</button>' +
       '<div class="subtitle" style="font-size:13px;color:#666;margin-top:20px">' + t('controls') + '</div>';
     document.body.appendChild(scr);
+    startMusic();
     var nickEl = document.getElementById('nick-input');
     if (nickEl) {
       nickEl.setAttribute('autocomplete', 'off');
@@ -2173,7 +2189,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     window.__test.giveBoost = function (id) { progress.boosters[id] = (progress.boosters[id] || 0) + 1; return progress.boosters[id]; };
     window.__test.petLvl = function () { return progress.petLvl; };
     window.__test.petActive = function () { return pet ? 1 : 0; };
-    window.__test.buyPet = function () { progress.diamonds = Math.max(progress.diamonds || 0, 12000); buyPet(); return progress.petLvl; };
+    window.__test.buyPet = function () { progress.diamonds = Math.max(progress.diamonds || 0, 24000); buyPet(); return progress.petLvl; };
     window.__test.achInc = function (k, v) { achInc(k, v); return achStats(); };
     window.__test.spawnT = function (t) { spawnEnemy(t); return window.__test(); };
     window.__test.enemyFlag = function (t) {
