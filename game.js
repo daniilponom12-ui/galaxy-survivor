@@ -540,7 +540,7 @@ var text = t('top10');
       upRateMul: Math.pow(0.92, upg.rate || 0), shield: upg.shield || 0, critChance: 0.08 * (upg.crit || 0), xpMul: 1 + 0.1 * (upg.xp || 0), slowT: 0, rapidT: 0, rapidMul: 1, magnetT: 0, coinT: 0, coinMul: 1, baseMagnet: !!(upg.magnet > 0),
       weapons: [{ id: 'auto', lvl: 1 }],
       orbitWeps: [], aoeWeps: [], specials: [],
-      dashT: 0, dashCd: 0, dashAng: 0, dashes: 0, rerolls: 1, bans: 1, evolved: {}
+      dashT: 0, dashCd: 0, dashAng: 0, dashes: 0, rerolls: 1, bans: 1, evolved: {}, chests: 0
     };
   }
 
@@ -598,10 +598,9 @@ var text = t('top10');
     { id: 'blood', name: 'КРОВАВАЯ ЛУНА', desc: 'Враги быстрее и злее', c: '#f44', espeed: 1.4, edmg: 1.3 },
     { id: 'swarm', name: 'ЧУМА', desc: 'Врагов в 1.7 раза больше', c: '#8f6', count: 1.7 },
     { id: 'armor', name: 'ЖЕЛЕЗНЫЙ ДОЖДЬ', desc: 'Враги в броне', c: '#9cf', armor: 0.3 },
-    { id: 'treasure', name: 'ОХОТА ЗА УСИЛЕНИЯМИ', desc: 'Усиления падают чаще, враги злее', c: '#f8f', pu: 3, espeed: 1.15, edmg: 1.15 }
+    { id: 'treasure', name: 'ОХОТА ЗА СУНДУКАМИ', desc: 'Сундуки чаще, враги злее', c: '#f8f', chest: 3, espeed: 1.15, edmg: 1.15 }
   ];
   var waveMod = null, lastModId = '';
-  function waveModsById() { var o = {}; for (var mi = 0; mi < WAVE_MODS.length; mi++) o[WAVE_MODS[mi].id] = WAVE_MODS[mi]; return o; }
   var DASH_SPEED = 940, DASH_TIME = 0.16, DASH_CD = 1.9;
   var lvlBans = {};
 
@@ -618,6 +617,56 @@ var text = t('top10');
       if (w && w.id === id) return w.lvl || 0;
     }
     return 0;
+  }
+  function dropChest(x, y) {
+    gems.push({ x: x, y: y, vx: 0, vy: 0, val: 0, r: 12, c: '#ffd24d', chest: true });
+  }
+  function openChest() {
+    var p = player;
+    p.chests = (p.chests || 0) + 1;
+    achInc('chests', 1);
+    var roll = Math.random(), label = '', color = '#ffd24d';
+    if (roll < 0.28) { p.hp = Math.min(p.maxHp, p.hp + p.maxHp * 0.5); label = '❤ +50% HP'; color = '#f66'; }
+    else if (roll < 0.44) { p.hp = p.maxHp; label = '✚ ПОЛНОЕ ЛЕЧЕНИЕ'; color = '#f88'; }
+    else if (roll < 0.60) { p.chestUp = 1; label = '🎁 СЛЕДУЮЩИЙ СУНДУК = АПГРЕЙД'; color = '#4ff'; applyUpgrade(['auto', 'orbit', 'nova', 'mines', 'saw', 'chain'][Math.floor(Math.random() * 6)]); }
+    else if (roll < 0.72) { p.coinT = 12; p.coinMul = 3; label = '⭐ 3x ОЧКИ (12с)'; color = '#ff0'; }
+    else if (roll < 0.82) { nukeAll(); label = '💥 ЯДЕРНЫЙ ЗАЛП!'; color = '#f80'; }
+    else if (roll < 0.9) { p.shield = (p.shield || 0) + 1; label = '🛡 +1 ЩИТ'; color = '#4ff'; }
+    else if (roll < 0.96) { progress.diamonds += 3; achInc('diamEarned', 3); saveProgress(); label = '💎 +3 АЛМАЗА'; color = '#b9f'; }
+    else { p.lives = (p.lives || 0) + 1; label = '❤ +1 ЖИЗНЬ'; color = '#ff8'; }
+    hud('🎁 ' + label, color);
+    fx.push({ type: 'ring', x: p.x, y: p.y, r: 10, maxR: 150, life: 0.5, maxLife: 0.5, c: color });
+    fx.push({ type: 'boom', x: p.x, y: p.y, r: 120, life: 0.4, maxLife: 0.4, c: color });
+    for (var cpi = 0; cpi < 24; cpi++) {
+      var cpa = Math.random() * Math.PI * 2;
+      parts.push({ x: p.x, y: p.y, vx: Math.cos(cpa) * 240, vy: Math.sin(cpa) * 240, life: 0.7, maxLife: 0.9, r: 2.5, c: color });
+    }
+    shake = Math.min(shake + 5, 14);
+    soundChest();
+  }
+  function drawChest(ch) {
+    var pl = 0.5 + 0.5 * Math.sin(gameTime * 4);
+    ctx.save();
+    ctx.shadowColor = '#ffd24d';
+    ctx.shadowBlur = 18 + pl * 14;
+    ctx.fillStyle = '#8a5a1e';
+    ctx.fillRect(ch.x - 13, ch.y - 9, 26, 19);
+    ctx.fillStyle = '#ffd24d';
+    ctx.fillRect(ch.x - 13, ch.y - 9, 26, 6);
+    ctx.fillRect(ch.x - 3, ch.y - 9, 6, 19);
+    ctx.strokeStyle = 'rgba(255,210,77,' + (0.7 + pl * 0.3) + ')';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(ch.x - 13, ch.y - 9, 26, 19);
+    ctx.globalAlpha = 0.25 + pl * 0.35;
+    ctx.beginPath();
+    ctx.arc(ch.x, ch.y, 24 + pl * 6, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#fff6c8';
+    ctx.font = 'bold 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('★', ch.x, ch.y + 4);
+    ctx.restore();
   }
   function doDash(dx, dy) {
     var p = player;
@@ -937,6 +986,7 @@ var text = t('top10');
     { id: 'nem_1', t: 'Победи НЕМЕЗИСА', stat: 'nemesisKills', need: 1, rew: 250 },
     { id: 'time_300', t: 'Выживи 5 минут', stat: 'timeSurv', need: 300, rew: 200 },
     { id: 'dash_100', t: 'Рывок 100 раз', stat: 'dashes', need: 100, rew: 200 },
+    { id: 'chest_25', t: 'Открой 25 сундуков', stat: 'chests', need: 25, rew: 300 },
     { id: 'evo_3', t: 'Открой 3 эволюции', stat: 'evos', need: 3, rew: 400 },
     { id: 'mod_25', t: 'Переживи 25 модификаторов волн', stat: 'mods', need: 25, rew: 250 },
     { id: 'saw_10', t: 'Убей 10 врагов пилой', stat: 'sawKills', need: 10, rew: 200 },
@@ -1302,8 +1352,6 @@ var text = t('top10');
     if (!endlessRun && waveNum > 12) { waveNum = 12; return; }
     announceWave();
     rollWaveMod();
-    if (waveMod) {
-    }
     if (!endlessRun && waveNum === 10) {
       helper = makeHelper();
       hud('GIANT HELPER ASSEMBLED!', '#0ff');
@@ -1349,8 +1397,7 @@ var text = t('top10');
     if (bossCount > maxLive - liveBoss) bossCount = Math.max(0, maxLive - liveBoss);
     for (var bi = 0; bi < bossCount; bi++) {
       var pool = pickBossPool(waveNum);
-      var bt = pool[Math.min(bi, pool.length - 1)];
-      spawnEnemy(bt);
+      spawnEnemy(pool[Math.min(bi, pool.length - 1)]);
     }
     if (bossCount > 0) hud(t('bossAlert'), '#f44');
     if (SDK.showInterstitial && waveNum % 3 === 0) {
@@ -1424,11 +1471,10 @@ var text = t('top10');
 
   function hud(msg, color) {
     var el = document.createElement('div');
-    el.className = 'hud-msg';
-    el.style.color = color || '#fff';
+    el.style.cssText = 'position:fixed;top:20%;left:50%;transform:translateX(-50%);font-size:22px;color:' + (color || '#fff') + ';z-index:40;text-shadow:0 0 10px rgba(0,0,0,.8);animation:fadeUp 1.5s forwards;pointer-events:none';
     el.textContent = msg;
     document.body.appendChild(el);
-    setTimeout(function () { el.remove(); }, 1700);
+    setTimeout(function () { el.remove(); }, 1500);
   }
 
   /* ============ PARTICLES / FX ============ */
@@ -1876,13 +1922,16 @@ var text = t('top10');
       gems.push({ x: e.x, y: e.y, vx: (Math.random() - 0.5) * 60, vy: (Math.random() - 0.5) * 60, val: 0, r: 9, c: '#fd0', bonus: true });
     }
     if (e.boss) {
-      var puN = 2 + Math.floor(Math.random() * 2);
+      var puN = 1 + Math.floor(Math.random() * 2);
       for (var pui = 0; pui < puN; pui++) dropPowerUp(e.x + (Math.random() - 0.5) * e.r, e.y + (Math.random() - 0.5) * e.r);
-    } else if (!e.elite) {
-      if (Math.random() < 0.05 * (waveMod && waveMod.pu ? waveMod.pu : 1)) dropPowerUp(e.x, e.y);
+      var chN = 1 + (Math.random() < 0.5 ? 1 : 0);
+      for (var chi = 0; chi < chN; chi++) dropChest(e.x + (Math.random() - 0.5) * e.r, e.y + (Math.random() - 0.5) * e.r);
+    } else if (!e.elite && Math.random() < 0.05) {
+      dropPowerUp(e.x, e.y);
     }
     if (e.elite) {
-      if (Math.random() < 0.35 * (waveMod && waveMod.pu ? waveMod.pu : 1)) dropPowerUp(e.x, e.y);
+      var chestChance = 0.14 * (waveMod && waveMod.chest ? waveMod.chest : 1);
+      if (Math.random() < chestChance) dropChest(e.x, e.y);
     }
     // аура «взрыв»: элита сносит всё вокруг при смерти
     if (e.aura === 'explosive') {
@@ -1976,7 +2025,6 @@ var text = t('top10');
         txt = '💎 +5 GEMS';
     }
     hud(txt, '#fd0');
-    soundBonus();
     for (var bi = 0; bi < 26; bi++) {
       var bAng = Math.random() * Math.PI * 2;
       parts.push({ x: p.x, y: p.y, vx: Math.cos(bAng) * 220, vy: Math.sin(bAng) * 220, life: 0.9, maxLife: 0.9, r: 3, c: '#fd0' });
@@ -2185,7 +2233,7 @@ var text = t('top10');
   function soundBigBoom() { soundBoom(); soundBoom(); soundBoom(); }
   function soundLevel() { blip(440, 0.08, 'triangle', 0.045); setTimeout(function () { blip(660, 0.08, 'triangle', 0.045); }, 90); setTimeout(function () { blip(880, 0.12, 'triangle', 0.05); }, 180); }
   function soundDash() { try { var a = audio(); if (!a) return; var o = a.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(320, a.currentTime); o.frequency.exponentialRampToValueAtTime(1500, a.currentTime + 0.13); var g = a.createGain(); g.gain.setValueAtTime(0.05, a.currentTime); g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.15); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + 0.15); } catch (e) {} }
-  function soundBonus() { blip(660, 0.09, 'triangle', 0.05); setTimeout(function () { blip(990, 0.16, 'sine', 0.055); }, 90); }
+  function soundChest() { blip(523, 0.1, 'triangle', 0.05); setTimeout(function () { blip(784, 0.1, 'triangle', 0.05); }, 100); setTimeout(function () { blip(1046, 0.22, 'sine', 0.06); }, 200); }
 
   /* ============ INPUT ============ */
   document.addEventListener('keydown', function (e) {
@@ -2368,6 +2416,7 @@ var text = t('top10');
     var isBest = score > bestScore;
     if (isBest) { bestScore = score; try { localStorage.setItem('gs_best', bestScore); } catch (e) {} }
     achMax('dashes', player.dashes || 0);
+    achMax('chests', player.chests || 0);
     achMax('evos', Object.keys(player.evolved || {}).length);
     achMax('mods', modsSeen || 0);
     var kindsEnd = {};
@@ -2387,7 +2436,7 @@ var text = t('top10');
       '<div class="stats">' + t('statCombo') + '<b>x' + maxCombo + '</b></div>' +
       '<div class="stats">DPS<b>' + Math.round(dmgDealt / Math.max(1, gameTime)) + '</b></div>' +
       '<div class="stats">⚡ Рывков<b>' + (player.dashes || 0) + '</b></div>' +
-      '<div class="stats">🔧 Оружия<b>' + player.weapons.length + '</b></div>' +
+      '<div class="stats">🎁 Сундуков<b>' + (player.chests || 0) + '</b></div>' +
       '<div class="stats" style="color:#ffd24d">★ Эволюций<b>' + (Object.keys(player.evolved || {}).length) + '</b></div>' +
       '<div class="stats">' + t('statAcc') + '<b>' + (shotsFired > 0 ? Math.round(shotsHit / Math.max(1, shotsFired) * 100) + '%' : '—') + '</b></div>' +
       '<div class="stats">' + t('scoreFinal') + '<b>' + Math.round(score) + '</b></div>' +
@@ -2633,6 +2682,8 @@ var text = t('top10');
   window.__test.evo = function (k) { applyEvolution(k); return { evolved: JSON.stringify(player.evolved), autoDmg: WEAPONS.auto.dmg, autoRate: WEAPONS.auto.rate, mineRate: WEAPONS.mine.rate, novaDmg: WEAPONS.nova.dmg, novaRadius: WEAPONS.nova.radius }; };
   window.__test.mod = function () { waveNum = 4; var out = []; for (var mi = 0; mi < 12; mi++) { waveMod = null; rollWaveMod(); if (waveMod) out.push(waveMod.id); } return out.join(','); };
   window.__test.aura = function () { for (var i = 0; i < 60; i++) spawnEnemy('chaser'); var found = {}; for (var j = 0; j < enemies.length; j++) if (enemies[j].aura) found[enemies[j].aura] = (found[enemies[j].aura] || 0) + 1; return found; };
+  window.__test.chest = function (x, y) { var before = player.chests; dropChest(x === undefined ? player.x + 40 : x, y === undefined ? player.y : y); return { onField: gems.filter(function (g) { return g.chest; }).length, chests: player.chests - before }; };
+  window.__test.openChests = function () { var n = 0; for (var i = 0; i < 3; i++) { openChest(); n++; } return { opened: n, chests: player.chests, hp: Math.round(player.hp), lives: player.lives || 0, shield: player.shield || 0, coinT: Math.round(player.coinT) }; };
   window.__test.levelUp = function () { gainXp(player.xpNeed + 5); return { state: state, btns: window.__test.lvlBtns() }; };
   window.__test.auraOn = function (kind) {
     spawnEnemy('chaser');
@@ -2653,7 +2704,7 @@ var text = t('top10');
     e.elite = true; e.aura = kind; e.hp = 5; e.maxHp = 5; e.dmg = 10;
     var hpBefore = player.hp;
     damageEnemy(idx, 9999);
-    return { killed: enemies.indexOf(e) < 0, hpBefore: Math.round(hpBefore), hpAfter: Math.round(player.hp) };
+    return { killed: enemies.indexOf(e) < 0, hpBefore: Math.round(hpBefore), hpAfter: Math.round(player.hp), chests: gems.filter(function (g) { return g.chest; }).length };
   };
   window.__test.poolIds = function () { var o = pickUpgrades(99); var ids = []; for (var i = 0; i < o.length; i++) ids.push(o[i].id); return ids; };
   window.__test.sawTest = function () {
@@ -2663,87 +2714,34 @@ var text = t('top10');
     e.x = player.x + 60; e.y = player.y;
     var hp0 = e.hp;
     fireSaws(player.weapons); fireSaws(player.weapons);
-    var live = sawShots.length;
-    sawShots.length = 0;
-    sawShots.push({ x: player.x, y: player.y, vx: WEAPONS.saw.speed, vy: 0, dmg: WEAPONS.saw.dmg * weaponLvl('saw'), r: 16, life: 3, spin: 0, hits: {}, bounces: 0 });
-    for (var k = 0; k < 14; k++) { updateSaws(); }
-    return { saws: live, lvl: weaponLvl('saw'), enemyHpDrop: Math.round(hp0 - e.hp) };
+    for (var k = 0; k < 12; k++) { updateSaws(); }
+    return { saws: sawShots.length, lvl: weaponLvl('saw'), enemyHpDrop: Math.round(hp0 - e.hp) };
   };
   window.__test.sawBounce = function () {
-    var oldDt = dt;
-    dt = 1 / 30;
     sawShots = [];
     spawnEnemy('chaser');
     var e2 = enemies[enemies.length - 1];
     e2.x = player.x + 120; e2.y = player.y;
-    e2.speed = 0;
     sawShots.push({ x: player.x + 40, y: player.y, vx: 500, vy: 0, dmg: 20, r: 16, life: 2, spin: 0, hits: {}, bounces: 0 });
-    for (var sb = 0; sb < 30; sb++) updateSaws();
-    var out = { bounces: sawShots.length ? sawShots[0].bounces : -1, vx: sawShots.length ? Math.round(sawShots[0].vx) : 0 };
-    dt = oldDt;
-    return out;
+    updateSaws();
+    return { bounces: sawShots.length ? sawShots[0].bounces : -1, vx: sawShots.length ? Math.round(sawShots[0].vx) : 0 };
   };
   window.__test.chainTest = function () {
     addChain(); addChain();
-    for (var cwr = 0; cwr < player.weapons.length; cwr++) { if (player.weapons[cwr].id === 'chain') { player.weapons[cwr].t = 0; } }
     for (var ci = 0; ci < 5; ci++) { spawnEnemy('chaser'); enemies[enemies.length - 1].x = player.x + 90 + ci * 55; enemies[enemies.length - 1].y = player.y; }
     var before = 0;
     for (var cj = 0; cj < enemies.length; cj++) before += enemies[cj].hp;
     fireChain(player.weapons);
-    var zaps = chainFx.length;
-    for (var ck = 0; ck < 8; ck++) { for (var cfe = chainFx.length - 1; cfe >= 0; cfe--) { chainFx[cfe].life -= 0.05; if (chainFx[cfe].life <= 0) { chainFx.splice(cfe, 1); } } }
     var after = 0;
-    for (var cn = 0; cn < enemies.length; cn++) after += enemies[cn].hp;
-    return { lvl: weaponLvl('chain'), dmgDone: Math.round(before - after), zaps: zaps, left: chainFx.length };
+    for (var ck = 0; ck < enemies.length; ck++) after += enemies[ck].hp;
+    return { lvl: weaponLvl('chain'), dmgDone: Math.round(before - after), zaps: chainFx.length };
   };
   window.__test.evoNew = function (k) { applyEvolution(k); return { evolved: JSON.stringify(player.evolved), sawRate: WEAPONS.saw.rate, sawDmg: WEAPONS.saw.dmg, chainRate: WEAPONS.chain.rate, chainDmg: WEAPONS.chain.dmg, novaRadius: WEAPONS.nova.radius }; };
   window.__test.puddleTest = function () {
     puddles.push({ x: player.x, y: player.y, r: 80, t: 3, c: '#f60' });
     return { puddles: puddles.length };
   };
-  window.__test.puTest = function () {
-    var oldMod = waveMod;
-    waveMod = waveModsById().treasure;
-    var pu0 = 0;
-    for (var i = 0; i < gems.length; i++) { if (gems[i].pu) pu0++; }
-    for (var d = 0; d < 40; d++) { spawnEnemy('chaser'); killEnemy(enemies.length - 1); }
-    spawnEnemy('boss_colossus');
-    var boss = enemies[enemies.length - 1];
-    boss.hp = 1; boss.maxHp = 1;
-    killEnemy(enemies.length - 1);
-    var pu = 0, ch = 0;
-    for (var j = 0; j < gems.length; j++) { if (gems[j].pu) pu++; if (gems[j].chest) ch++; }
-    waveMod = oldMod;
-    return { puGems: pu - pu0, chestGems: ch, chestFns: [typeof dropChest, typeof openChest, typeof drawChest, typeof soundChest].join(','), treasurePu: (waveModsById().treasure.pu || 0) };
-  };
-  window.__test.noSlow = function () {
-    var mhp = player.maxHp, php = player.hp, ifr = player.iframes;
-    player.maxHp = 99999; player.hp = 99999; player.slowT = 0;
-    spawnEnemy('frost');
-    var fe = enemies[enemies.length - 1];
-    fe.x = player.x + 6; fe.y = player.y; fe.speed = 0;
-    projectiles.push({ x: player.x, y: player.y, vx: 0, vy: 0, dmg: 1, r: 8, c: '#8ff', life: 1, enemy: true, slow: true });
-    puddles.push({ x: player.x, y: player.y, r: 90, t: 3, c: '#f60' });
-    var minSpd = 999;
-    for (var nf = 0; nf < 10; nf++) { player.hp = 99999; player.iframes = 0; update(); minSpd = Math.min(minSpd, player.slowT || 0); }
-    var out = { slowT: player.slowT || 0, minSlowT: minSpd, frozen: !!player.frozen, iframes: player.iframes };
-    player.maxHp = mhp; player.hp = php; player.iframes = ifr; player.slowT = 0;
-    return out;
-  };
-  window.__test.clarity = function () {
-    return {
-      reverted: [typeof bigBanner, typeof BOSS_LABELS, typeof enemyLabel, typeof updateWeaponHUD, typeof shakeOn, typeof timeScale].join(','),
-      hudinfo: (document.getElementById('hudinfo') || {}).textContent || '',
-      bannerEls: document.querySelectorAll('.big-banner').length,
-      wchips: document.querySelectorAll('.wchip').length,
-      ukeys: document.querySelectorAll('.ukey').length
-    };
-  };
-  window.__test.lvlKeys = function () {
-    gainXp(player.xpNeed + 5);
-    var cards = document.querySelectorAll('.levelup-screen .upgrade-choice');
-    return { state: state, cards: cards.length };
-  };
+  window.__test.chestClose = function () { dropChest(player.x + 10, player.y); return gems.filter(function (g) { return g.chest; }).length; };
     window.__test.stuck = function () {
       var far = 0, out = 0, minD = 1e9, maxD = 0, slow = 0;
       for (var i = 0; i < enemies.length; i++) {
@@ -2793,12 +2791,12 @@ var text = t('top10');
   /* ============ HUD ============ */
   var hudEl = null;
   function addHUD() {
-    document.querySelectorAll('.hud,.pause-btn').forEach(function (el) { el.remove(); });
+    document.querySelectorAll('.hud,.pause-btn,.weapon-hud').forEach(function (el) { el.remove(); });
     hudEl = document.createElement('div');
     hudEl.className = 'hud';
     hudEl.innerHTML = '<div class="hp-bar"><div class="hp-fill" id="hpfill"></div></div>' +
       '<div class="xp-bar"><div class="xp-fill" id="xpfill"></div></div>' +
-      '<div id="hudinfo" style="font-size:13px;color:#e8f4ff"></div>';
+      '<div id="hudinfo" style="font-size:12px;color:#ccc"></div>';
     document.body.appendChild(hudEl);
     var pb = document.createElement('button');
     pb.className = 'pause-btn';
@@ -2814,7 +2812,7 @@ var text = t('top10');
     if (xpEl) xpEl.style.width = Math.min(100, player.xp / player.xpNeed * 100) + '%';
     if (infoEl) {
       var xpField = 0;
-      for (var hI = 0; hI < gems.length; hI++) { if (!gems[hI].d && !gems[hI].pu && !!gems[hI].bonus) xpField++; }
+      for (var hI = 0; hI < gems.length; hI++) { if (!gems[hI].d && !gems[hI].pu && !gems[hI].chest && !gems[hI].bonus) xpField++; }
       var combHtml = '';
       if (combo >= 4) {
         var cm = 1 + Math.floor(combo / 8);
@@ -2826,7 +2824,7 @@ var text = t('top10');
       if (evoCount) evoHtml = '  <span style="color:#ffd24d;font-weight:700">★' + evoCount + '</span>';
       var dashHtml = player.dashCd > 0 ? '<span style="color:#888">⚡' + player.dashCd.toFixed(1) + '</span>' : '<span style="color:#6ff;font-weight:700">⚡</span>';
       var modHtml = waveMod ? '  <b style="color:' + waveMod.c + '">' + waveMod.name + '</b>' : '';
-      infoEl.innerHTML = t('waveLbl') + waveNum + '  |  ' + t('lvlLbl') + player.lvl + '  |  ' + t('ptsLbl') + Math.round(score) + '  |  ' + dashHtml + evoHtml + '  |  <span style="color:#4ff">&#128142;</span>' + progress.diamonds + (xpField > 0 ? '  <span style="color:#0f6">&#10024;</span>' + xpField : '') + (gameMode !== 'normal' ? '  <b style="color:' + (gameMode === 'hardcore' ? '#f44' : (gameMode === 'timer' ? '#f80' : '#6ff')) + '">' + t('mode' + (gameMode === 'hardcore' ? 'Hard' : (gameMode === 'endless' ? 'Endless' : 'Timer'))) + '</b>' : '') + (gameMode === 'timer' ? '  <b style="color:#f80">&#9200; ' + fmtTime(Math.max(0, timerTime)) + '</b>' : '') + modHtml + combHtml + (player.freezeUnlocked && player.freezeCd > 0 ? t('frozen') + Math.ceil(player.freezeCd) : '');
+      infoEl.innerHTML = t('waveLbl') + waveNum + '  |  ' + t('lvlLbl') + player.lvl + '  |  ' + t('ptsLbl') + Math.round(score) + '  |  ' + dashHtml + evoHtml + '  |  <span style="color:#4ff">??' + progress.diamonds + '</span>' + (xpField > 0 ? '  <span style="color:#0f6">?' + xpField + '</span>' : '') + (gameMode !== 'normal' ? '  <b style="color:' + (gameMode === 'hardcore' ? '#f44' : (gameMode === 'timer' ? '#f80' : '#6ff')) + '">' + t('mode' + (gameMode === 'hardcore' ? 'Hard' : (gameMode === 'endless' ? 'Endless' : 'Timer'))) + '</b>' : '') + (gameMode === 'timer' ? '  <b style="color:#f80">?' + fmtTime(Math.max(0, timerTime)) + '</b>' : '') + modHtml + combHtml + (player.freezeUnlocked && player.freezeCd > 0 ? t('frozen') + Math.ceil(player.freezeCd) : '');
     }
     var db = window.__dashBtn;
     if (db && player) {
@@ -3013,10 +3011,6 @@ var text = t('top10');
     fireSaws(p.weapons);
     fireChain(p.weapons);
     updateSaws();
-    for (var cfu = chainFx.length - 1; cfu >= 0; cfu--) {
-      chainFx[cfu].life -= dt;
-      if (chainFx[cfu].life <= 0) { chainFx.splice(cfu, 1); }
-    }
     updateOrbits();
     updateHelper();
     updatePet();
@@ -3111,6 +3105,7 @@ var text = t('top10');
       var pdl = puddles[pdi];
       pdl.t -= dt;
       if (pdl.t <= 0) { puddles.splice(pdi, 1); continue; }
+      if (dist(pdl, p) < pdl.r) { p.slowT = Math.max(p.slowT || 0, 0.35); }
     }
 
     // enemies
@@ -3389,6 +3384,7 @@ var text = t('top10');
       }
       if (dist(en, p) < en.r + p.r) {
         if (p.iframes <= 0) {
+          if (en.frost && p.slowT <= 0) p.slowT = 1.5;
           if (hitPlayer(en.dmg)) return;
         }
       }
@@ -3509,6 +3505,7 @@ var text = t('top10');
       var ep = projectiles[ei];
       if (!ep.enemy) continue;
       if (dist(ep, p) < ep.r + p.r && p.iframes <= 0) {
+        if (ep.slow && gameMode !== 'hardcore') p.slowT = 1.6;
         if (!ep.pierce) projectiles.splice(ei, 1);
         if (hitPlayer(ep.dmg)) return;
       }
@@ -3539,7 +3536,9 @@ var text = t('top10');
               parts.push({ x: p.x, y: p.y, vx: Math.cos(gsa) * gss, vy: Math.sin(gsa) * gss, life: 0.3 + Math.random() * 0.2, maxLife: 0.5, r: 1.5 + Math.random() * 1.5, c: gem.c || '#0f6' });
             }
           }
-          if (gem.pu) {
+          if (gem.chest) {
+            openChest();
+          } else if (gem.pu) {
             applyPowerUp(gem.pu);
           } else if (gem.bonus) {
             doBonusPickup();
@@ -3972,22 +3971,7 @@ var text = t('top10');
     // gems
     for (var gi = 0; gi < gems.length; gi++) {
       var gm = gems[gi];
-      if (gm.pu) {
-        ctx.save();
-        ctx.shadowColor = '#fff';
-        ctx.shadowBlur = 18;
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(gm.x, gm.y, 12, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = '#f0f';
-        ctx.font = 'bold 13px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('⬆', gm.x, gm.y + 5);
-        ctx.restore();
-        continue;
-      }
+      if (gm.chest) { drawChest(gm); continue; }
       ctx.save();
       ctx.shadowColor = gm.c;
       ctx.shadowBlur = gm.d ? 16 : 8;
@@ -4070,7 +4054,8 @@ var text = t('top10');
     // цепная молния
     for (var chi2 = chainFx.length - 1; chi2 >= 0; chi2--) {
       var chf = chainFx[chi2];
-      if (chf.life <= 0) { continue; }
+      chf.life -= dt;
+      if (chf.life <= 0) { chainFx.splice(chi2, 1); continue; }
       ctx.save();
       ctx.globalAlpha = Math.max(0, chf.life / chf.maxLife);
       ctx.strokeStyle = '#bfe6ff';
