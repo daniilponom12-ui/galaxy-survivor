@@ -1800,8 +1800,6 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     } catch (e) {}
   }
   function soundShoot() { try { var a = audio(); if (!a) return; var o = a.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(1700, a.currentTime); o.frequency.exponentialRampToValueAtTime(340, a.currentTime + 0.07); var g = a.createGain(); g.gain.setValueAtTime(0.018, a.currentTime); g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.07); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + 0.07); } catch (e) {} }
-  var hitSndT = 0;
-  function soundHit() { var t2 = Date.now(); if (hitSndT > t2) return; hitSndT = t2 + 55; blip(760 + Math.random() * 520, 0.045, 'square', 0.02); }
   function soundPop(e) { blip(e ? 620 : 250, 0.07, e ? 'triangle' : 'sine', 0.045); }
   function soundPowerup() { blip(740, 0.07, 'triangle', 0.055); setTimeout(function () { blip(1109.4, 0.09, 'triangle', 0.05); }, 70); setTimeout(function () { blip(1480, 0.14, 'sine', 0.06); }, 150); }
   function soundHurt() { blip(140, 0.14, 'sawtooth', 0.05); setTimeout(function () { blip(92, 0.18, 'square', 0.04); }, 90); }
@@ -2424,7 +2422,6 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
           if (e.ghostOn) continue;
           shotsHit++;
           damageEnemy(j, pr.dmg);
-          soundHit();
           if (pr.cryo) e.slowT = pr.cryoDur;
           if (pr.heal && player.hp < player.maxHp) {
             player.hp = Math.min(player.maxHp, player.hp + pr.heal);
