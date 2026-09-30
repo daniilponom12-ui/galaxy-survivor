@@ -1069,6 +1069,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   var musTimer = null, musCtx = null, musMaster = null, musComp = null, musDelay = null, musNoise = null;
   var musLayers = null, musStep = 0, musBar = 0, musNext = 0, musTrack = 'm1';
   var musIntensity = 0, musBoss = false, musStarted = 0, musFade = 0, musStingerAt = 0;
+  var musLiveTrack = '', musSavedStep = 0, musSavedBar = 0, musPaused = false;
 
   function musTheme() { return MUSIC_THEMES[musTrack] || MUSIC_THEMES.m1; }
 
@@ -1360,12 +1361,14 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     } catch (e) {}
   }
 
-  function startMusic(trackId) {
+  function startMusic(trackId, resume) {
     if (!sndOn) return null;
     var a = audio(); if (!a) return null;
     if (trackId) musTrack = MUSIC_THEMES[trackId] ? trackId : musTrack;
     else musTrack = MUSIC[progress.selectedMusic] ? progress.selectedMusic : musTrack;
-    // всегда ровно одна цепочка: старую глушим мгновенно, иначе две музыки одновременно
+    // та же тема уже играет - не перезапускаем, иначе звучит "вторая мелодия"
+    if (musTimer && musTrack === musLiveTrack) return musCtx;
+    // сменили тему - глушим старую цепочку мгновенно, иначе две музыки одновременно
     if (musTimer || musMaster) stopMusic(90);
     try {
       musCtx = a;
@@ -1386,6 +1389,8 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         var g = a.createGain(); g.gain.value = 0; g.connect(musMaster); musLayers[n] = g;
       });
       musStep = 0; musBar = 0; musStarted = 0; musFade = 0;
+      if (resume) { musStep = musSavedStep || 0; musBar = musSavedBar || 0; }
+      musLiveTrack = musTrack;
       musIntensity = 0.2;
       musNext = a.currentTime + 0.08;
       musMaster.gain.setValueAtTime(0.0001, a.currentTime);
@@ -1398,6 +1403,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
 
   function stopMusic(fade) {
     if (musTimer) { clearInterval(musTimer); musTimer = null; }
+    musSavedStep = musStep; musSavedBar = musBar; musLiveTrack = '';
     var m = musMaster, c = musComp;
     var ms = (fade === true) ? 700 : (typeof fade === 'number' ? fade : 0);
     if (m) {
@@ -1417,6 +1423,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     if (!MUSIC[id] || !isMusicOwned(id)) return false;
     progress.selectedMusic = id; saveProgress();
     musTrack = id;
+    musPaused = false;
     var was = !!musTimer;
     if (was) { stopMusic(); startMusic(id); }
     return true;
@@ -2173,8 +2180,16 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   function toggleSound() {
     sndOn = !sndOn;
     try { localStorage.setItem('gs_snd', sndOn ? '1' : '0'); } catch (e) {}
-    if (sndOn) { audio(); startMusic(); blip(700, 0.08, 'sine', 0.05); }
-    else stopMusic(true);
+    if (sndOn) {
+      audio();
+      // музыка продолжается с того же места, а не начинается заново поверх старой
+      if (musPaused) { musPaused = false; startMusic(null, true); }
+      else startMusic();
+      blip(700, 0.08, 'sine', 0.05);
+    } else {
+      musPaused = true;
+      stopMusic(true);
+    }
     return sndOn;
   }
   function blip(f, d, type, vol) {
@@ -2263,9 +2278,10 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   }
   function hidePaused() { var el = document.getElementById('p1'); if (el) el.remove(); }
 
-  function quitToMenu() {
-    state = 'menu';
-    stopMusic();
+function quitToMenu() {
+  state = 'menu';
+  musPaused = false;
+  stopMusic();
     enemies = []; gems = []; projectiles = []; parts = []; fx = []; magnet = [];
     showMenu();
     if (SDK.inited) SDK.showInterstitial(function () {});
