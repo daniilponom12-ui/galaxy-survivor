@@ -78,7 +78,6 @@
       u_life: '+1 жизнь', u_life_d: 'Одно воскрешение за бой',
       u_greed: 'Алчность +25%', u_greed_d: 'Больше очков за убийства',
       u_regen: 'Регенерация', u_regen_d: 'Восстанавливает 1.5 HP в секунду',
-      u_vamp: 'Вампиризм', u_vamp_d: 'Каждые 8 убийств лечат на 5 HP',
       u_evo_pulsar: '★ ПУЛЬСАР', u_evo_pulsar_d: 'Бластер + мины: урон x2.2, стрельба x1.8, всё пробивает',
       u_evo_eclipse: '★ ЗАТМЕНИЕ', u_evo_eclipse_d: 'Диски + волна: волна x2 урона и x1.6 радиуса, диски шире',
       u_evo_swarm: '★ РОЙ', u_evo_swarm_d: 'Мины + волна: мины сыплятся вдвое чаще и поджигают',
@@ -172,7 +171,6 @@
       u_life: '+1 life', u_life_d: 'One revive per run',
       u_greed: 'Greed +25%', u_greed_d: 'More score from kills',
       u_regen: 'Regeneration', u_regen_d: 'Heals 1.5 HP per second',
-      u_vamp: 'Vampirism', u_vamp_d: 'Every 8 kills heal 5 HP',
       u_evo_pulsar: '★ PULSAR', u_evo_pulsar_d: 'Blaster + mines: x2.2 damage, x1.8 fire rate, pierces all',
       u_evo_eclipse: '★ ECLIPSE', u_evo_eclipse_d: 'Discs + wave: wave x2 damage, x1.6 radius, wider discs',
       u_evo_swarm: '★ SWARM', u_evo_swarm_d: 'Mines + wave: twice as many mines, they burn enemies',
@@ -570,7 +568,6 @@ var text = t('top10');
     { id: 'pierce', name: 'Пронзание', desc: 'Все выстрелы пробивают врагов насквозь', icon: '🏹' },
     { id: 'greed', name: 'Алчность +25%', desc: 'Больше очков за убийства', icon: '💰' },
     { id: 'regen', name: 'Регенерация', desc: 'Восстанавливает 1.5 HP в секунду', icon: '💚' },
-    { id: 'vamp', name: 'Вампиризм', desc: 'Каждые 8 убийств лечат на 5 HP', icon: '🧛' },
     { id: 'life', name: '+1 жизнь', desc: 'Одно воскрешение за бой', icon: '❤' }
   ];
 
@@ -698,7 +695,6 @@ var text = t('top10');
 else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     else if (id === 'greed') { p.greed = (p.greed || 0) + 0.25; }
     else if (id === 'regen') { p.regenRate = (p.regenRate || 0) + 1.5; }
-    else if (id === 'vamp') { p.vamp = (p.vamp || 0) + 1; }
     else if (id.indexOf('evo_') === 0) { applyEvolution(id.slice(4)); }
     }
 
@@ -1757,14 +1753,6 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     var combMult = 1 + Math.floor(combo / 8);
     if (combMult > 10) combMult = 10;
     score += (e.score || 10) * combMult * (player.coinMul || 1) * (1 + (player.greed || 0));
-    if (player.vamp) {
-      player.killTick = (player.killTick || 0) + 1;
-      var vampEvery = Math.max(3, 8 - (player.vamp - 1) * 3);
-      if (player.killTick % vampEvery === 0 && player.hp < player.maxHp) {
-        player.hp = Math.min(player.maxHp, player.hp + 5);
-        fx.push({ type: 'ring', x: player.x, y: player.y, r: 6, maxR: 40, life: 0.3, maxLife: 0.3, c: '#c4f' });
-      }
-    }
     if (combo > 0 && combo % 8 === 0) {
       hud('COMBO x' + combMult, '#ff8');
       comboFlash = Math.min(comboFlash + 0.35, 1);
@@ -2539,6 +2527,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     damageEnemy(idx, 9999);
     return { killed: enemies.indexOf(e) < 0, hpBefore: Math.round(hpBefore), hpAfter: Math.round(player.hp), chests: gems.filter(function (g) { return g.chest; }).length };
   };
+  window.__test.poolIds = function () { var o = pickUpgrades(99); var ids = []; for (var i = 0; i < o.length; i++) ids.push(o[i].id); return ids; };
   window.__test.chestClose = function () { dropChest(player.x + 10, player.y); return gems.filter(function (g) { return g.chest; }).length; };
     window.__test.stuck = function () {
       var far = 0, out = 0, minD = 1e9, maxD = 0, slow = 0;
