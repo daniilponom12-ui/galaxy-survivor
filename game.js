@@ -2546,7 +2546,8 @@ function quitToMenu() {
       '<button class="btn-leaderboard" onclick="window.__snd()">' + (sndOn ? t('sndOn') : t('sndOff')) + '</button>' +
       '<button class="btn-leaderboard" onclick="window.__showLB()">' + t('top') + '</button>' +
       '<div class="subtitle" style="font-size:13px;color:#666;margin-top:20px">' + t('controls') + '</div>' +
-      '<div id="build-tag" style="font:11px monospace;color:#4a5;opacity:.55;margin-top:8px;letter-spacing:1px">build ' + BUILD_ID + '</div>';
+      '<div id="build-tag" style="font:11px monospace;color:#4a5;opacity:.55;margin-top:8px;letter-spacing:1px">build ' + BUILD_ID + '</div>' +
+      '<pre id="music-diag" style="font:bold 15px/1.5 monospace;color:#0a0;background:#000;padding:8px 10px;border-radius:6px;margin-top:8px;white-space:pre-wrap;display:' + (musicDebugOn() ? 'block' : 'none') + '"></pre>';
     document.body.appendChild(scr);
     startMusic();
     var nickEl = document.getElementById('nick-input');
@@ -4669,11 +4670,10 @@ function quitToMenu() {
   }
 
 /* ============ MUSIC DEBUG (?dbg=1) ============ */
-var BUILD_ID = 'm66';
+var BUILD_ID = 'm67';
+function musicDebugOn() { try { return /(\?|&)dbg=1/.test(location.search); } catch (e) { return false; } }
 function initMusicDebug() {
-  var on = false;
-  try { on = /(\?|&)dbg=1/.test(location.search); } catch (e) {}
-  if (!on) return;
+  if (!musicDebugOn()) return;
   var osc = 0, prev = 0;
   try {
     var AC = window.AudioContext || window.webkitAudioContext;
@@ -4683,26 +4683,27 @@ function initMusicDebug() {
     }
   } catch (e) {}
   var el = document.createElement('div');
-  el.style.cssText = 'position:fixed;left:6px;top:6px;z-index:99999;background:rgba(0,0,0,.82);color:#0f0;'
-    + 'font:12px/1.45 monospace;padding:6px 9px;border-radius:6px;pointer-events:none;white-space:pre;';
+  el.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;background:#000;color:#0f0;'
+    + 'font:bold 17px/1.5 monospace;padding:10px 14px;white-space:pre;'
+    + 'user-select:text;-webkit-user-select:text;-moz-user-select:text;cursor:text;';
   document.body.appendChild(el);
-  setInterval(function () {
+  function paint() {
     var now = Date.now(), rate = prev ? Math.round(osc * 1000 / (now - prev)) : 0;
     prev = now; osc = 0;
     var g = 0;
-    try { g = musMaster ? Math.round(musMaster.gain.value * 1000) / 1000 : -1; } catch (e) {}
-    el.textContent =
-      'DBG ' + BUILD_ID
-      + '  snd=' + (sndOn ? 'ON' : 'off')
-      + '  chain=' + (musChainId || 'none')
-      + '  actx=' + actxCount
-      + '  track=' + musTrack
-      + '  bpm=' + Math.round(musTempo())
-      + '  bar=' + musBar + ':' + musStep
-      + '  gain=' + g
-      + '  osc/s=' + rate
-      + '  state=' + (typeof state === 'string' ? state : '?');
-  }, 300);
+    try { g = musMaster ? Math.round(musMaster.gain.value * 100) / 100 : -1; } catch (e) {}
+    var txt =
+      'ЗВУК: ' + (sndOn ? 'ВКЛ' : 'ВЫКЛ')
+      + '\nЦЕПЕЙ: ' + (musChainId || 0)
+      + '\nТЕМП: ' + Math.round(musTempo())
+      + '\nГРОМКОСТЬ: ' + g
+      + '\nНОТ/СЕК: ' + rate;
+    el.textContent = BUILD_ID + '\n' + txt;
+    var mb = document.getElementById('music-diag');
+    if (mb) mb.textContent = BUILD_ID + '\n' + txt;
+  }
+  setInterval(paint, 300);
+  paint();
 }
 
 /* ============ INIT ============ */
