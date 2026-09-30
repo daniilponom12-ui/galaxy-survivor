@@ -1303,7 +1303,6 @@ var text = t('top10');
     announceWave();
     rollWaveMod();
     if (waveMod) {
-      bigBanner('⚠ ' + waveMod.name, waveMod.desc, waveMod.c, 3000);
     }
     if (!endlessRun && waveNum === 10) {
       helper = makeHelper();
@@ -1334,7 +1333,6 @@ var text = t('top10');
       }
       projectiles = [];
       spawnEnemy('boss_thanos', player.x, player.y - 400);
-      bigBanner('★ ТАНОС ★', 'ФИНАЛЬНЫЙ БОСС — УКЛОНЯЙСЯ ОТ КАМНЕЙ', '#ff5544', 3400);
       hud('★ THANOS AWAKENS ★', '#e33');
       soundBigBoom();
       shake = Math.min(shake + 15, 24);
@@ -1353,8 +1351,8 @@ var text = t('top10');
       var pool = pickBossPool(waveNum);
       var bt = pool[Math.min(bi, pool.length - 1)];
       spawnEnemy(bt);
-      bigBanner('⚠ ' + (BOSS_LABELS[bt] || 'БОСС') + ' ⚠', t('bossAlert'), '#ff5566', 2600);
     }
+    if (bossCount > 0) hud(t('bossAlert'), '#f44');
     if (SDK.showInterstitial && waveNum % 3 === 0) {
       if (SDK.inited) { SDK.showInterstitial(function () {}); }
     }
@@ -1366,8 +1364,7 @@ var text = t('top10');
     el.className = 'wave-announce';
     el.textContent = t('waveTitle') + waveNum;
     document.body.appendChild(el);
-    setTimeout(function () { el.remove(); }, 2400);
-    bigBanner(t('waveTitle') + waveNum, 'СЛЕДУЮЩАЯ ВОЛНА', '#9cf', 2400);
+    setTimeout(function () { el.remove(); }, 2200);
   }
 
   function rollWaveMod() {
@@ -1432,27 +1429,6 @@ var text = t('top10');
     el.textContent = msg;
     document.body.appendChild(el);
     setTimeout(function () { el.remove(); }, 1700);
-  }
-
-  /* ============ ЧИТАЕМОСТЬ: БАННЕРЫ, ПОДПИСИ ============ */
-  function bigBanner(title, sub, color, dur) {
-    var el = document.createElement('div');
-    el.className = 'big-banner';
-    el.innerHTML = '<div class="bb-t" style="color:' + (color || '#fff') + '">' + title + '</div>' + (sub ? '<div class="bb-s">' + sub + '</div>' : '');
-    document.body.appendChild(el);
-    setTimeout(function () { el.remove(); }, dur || 2600);
-  }
-  var BOSS_LABELS = {
-    boss_colossus: 'КОЛОСС', boss_dread: 'УЖАС', boss_titan: 'ТИТАН', boss_nemesis: 'НЕМИСИС',
-    boss_aurora: 'АВРОРА', boss_swarm: 'РОЙ', boss_reaper: 'ЖНЕЦ', boss_medusa: 'МЕДУЗА',
-    boss_overlord: 'ПОВЕЛИТЕЛЬ', boss_thanos: 'ТАНОС'
-  };
-  function enemyLabel(e) {
-    if (e.final) return '★ ТАНОС ★';
-    if (e.overlord) return 'ПОВЕЛИТЕЛЬ';
-    if (e.boss) return BOSS_LABELS[e.type] || 'БОСС';
-    if (e.elite) return AURA_NAMES[e.aura] || 'ЭЛИТА';
-    return '';
   }
 
   /* ============ PARTICLES / FX ============ */
@@ -2075,14 +2051,11 @@ var text = t('top10');
     var options = pickUpgrades(3);
     var scr = document.createElement('div');
     scr.className = 'levelup-screen';
-    scr.innerHTML = '<h2>' + t('levelT') + player.lvl + '!</h2><div class="lu-sub">ВЫБЕРИ УЛУЧШЕНИЕ — ИГРА НА ПАУЗЕ</div>';
-    var cards = [];
-    options.forEach(function (u, oi) {
+    scr.innerHTML = '<h2>' + t('levelT') + player.lvl + '!</h2>';
+    options.forEach(function (u) {
       var b = document.createElement('button');
-      var curLvl = weaponLvl(u.id.replace('evo_', '')) || 0;
       b.className = 'upgrade-choice' + (u.evo ? ' evo' : '');
-      b.innerHTML = '<div class="ukey">' + (oi + 1) + '</div><div class="uname">' + (u.icon || '⭐') + ' ' + t('u_' + u.id) + '</div><div class="udesc">' + t('u_' + u.id + '_d') + '</div>' + (curLvl > 0 ? '<div class="ulvl">УР. ' + curLvl + ' → ' + (curLvl + 1) + '</div>' : '');
-      cards.push(b);
+      b.innerHTML = '<div class="uname">' + (u.icon || '⭐') + ' ' + t('u_' + u.id) + '</div><div class="udesc">' + t('u_' + u.id + '_d') + '</div>';
       b.onclick = function () {
         applyUpgrade(u.id);
         scr.remove();
@@ -2107,7 +2080,6 @@ var text = t('top10');
         b.appendChild(ban);
       }
     });
-    window.__lvlCards = cards;
     var foot = document.createElement('div');
     foot.className = 'levelup-foot';
     var rr = document.createElement('button');
@@ -2221,10 +2193,6 @@ var text = t('top10');
     var tag = e.target ? e.target.tagName : '';
     if (tag === 'INPUT' || tag === 'TEXTAREA') { return; }
     keys[e.code] = true;
-    if (state === 'levelup' && window.__lvlCards) {
-      var di = { Digit1: 0, Digit2: 1, Digit3: 2, Numpad1: 0, Numpad2: 1, Numpad3: 2 }[e.code];
-      if (di !== undefined && window.__lvlCards[di]) { e.preventDefault(); window.__lvlCards[di].click(); return; }
-    }
     if (e.code === 'KeyP' || e.code === 'Escape') { togglePause(); }
     if (e.code === 'Space' && state === 'playing') {
       if (player.freezeUnlocked) { doFreeze(); }
@@ -2356,20 +2324,11 @@ var text = t('top10');
     addHUD();
     if (!progress.dashHinted) {
       progress.dashHinted = true; saveProgress();
-      var en = CUR_LANG === 'en';
-      var steps = en
-        ? ['MOVE with WASD / arrows', 'SHOOT is automatic — aim with the mouse', 'Collect blue gems for XP', 'LEVEL UP — pick 1 of 3 (keys 1 / 2 / 3)', 'SHIFT or the lightning button = DASH']
-        : ['ДВИЖЕНИЕ: WASD или стрелки', 'СТРЕЛЬБА автоматическая — прицел мышью', 'СОБИРАЙ синие кристаллы — это опыт', 'НОВЫЙ УРОВЕНЬ — выбери 1 из 3 (клавиши 1 / 2 / 3)', 'SHIFT или кнопка ⚡ — РЫВОК'];
-      var step = 0;
-      (function showStep() {
-        if (step >= steps.length) return;
-        var hintEl = document.createElement('div');
-        hintEl.className = 'dash-hint';
-        hintEl.innerHTML = '<b>' + (step + 1) + '/' + steps.length + '</b> ' + steps[step];
-        document.body.appendChild(hintEl);
-        step++;
-        setTimeout(function () { hintEl.remove(); showStep(); }, 3400);
-      })();
+      var hintEl = document.createElement('div');
+      hintEl.className = 'dash-hint';
+      hintEl.textContent = (CUR_LANG === 'en' ? 'SHIFT / ⚡ — DASH' : 'SHIFT / ⚡ — РЫВОК');
+      (document.getElementById('hud') || document.body).appendChild(hintEl);
+      setTimeout(function () { hintEl.remove(); }, 5000);
     }
 
     gameMode = progress.mode || 'normal';
@@ -2758,24 +2717,18 @@ var text = t('top10');
     return { puGems: pu - pu0, chestGems: ch, chestFns: [typeof dropChest, typeof openChest, typeof drawChest, typeof soundChest].join(','), treasurePu: (waveModsById().treasure.pu || 0) };
   };
   window.__test.clarity = function () {
-    var e1 = { type: 'boss_thanos', boss: true, final: true };
-    var e2 = { type: 'boss_colossus', boss: true };
-    var e3 = { type: 'chaser', elite: true, aura: 'armored' };
-    var e4 = { type: 'chaser' };
-    var wh = document.getElementById('weaphud');
     return {
-      labels: [enemyLabel(e1), enemyLabel(e2), enemyLabel(e3), enemyLabel(e4)],
-      wchips: wh ? wh.querySelectorAll('.wchip').length : -1,
-      weapons: player ? player.weapons.length : -1,
-      bannerFn: typeof bigBanner === 'function', soundBonus: typeof soundBonus === 'function',
-      slowmoGone: [typeof timeScale, typeof slowFor, typeof hurtSlow, typeof slowMo, typeof shakeOn].join(',')
+      reverted: [typeof bigBanner, typeof BOSS_LABELS, typeof enemyLabel, typeof updateWeaponHUD, typeof shakeOn, typeof timeScale].join(','),
+      hudinfo: (document.getElementById('hudinfo') || {}).textContent || '',
+      bannerEls: document.querySelectorAll('.big-banner').length,
+      wchips: document.querySelectorAll('.wchip').length,
+      ukeys: document.querySelectorAll('.ukey').length
     };
   };
   window.__test.lvlKeys = function () {
     gainXp(player.xpNeed + 5);
     var cards = document.querySelectorAll('.levelup-screen .upgrade-choice');
-    var keys = document.querySelectorAll('.levelup-screen .ukey').length;
-    return { state: state, cards: cards.length, keys: keys };
+    return { state: state, cards: cards.length };
   };
     window.__test.stuck = function () {
       var far = 0, out = 0, minD = 1e9, maxD = 0, slow = 0;
@@ -2826,37 +2779,18 @@ var text = t('top10');
   /* ============ HUD ============ */
   var hudEl = null;
   function addHUD() {
-    document.querySelectorAll('.hud,.pause-btn,.weapon-hud').forEach(function (el) { el.remove(); });
+    document.querySelectorAll('.hud,.pause-btn').forEach(function (el) { el.remove(); });
     hudEl = document.createElement('div');
     hudEl.className = 'hud';
     hudEl.innerHTML = '<div class="hp-bar"><div class="hp-fill" id="hpfill"></div></div>' +
       '<div class="xp-bar"><div class="xp-fill" id="xpfill"></div></div>' +
       '<div id="hudinfo" style="font-size:13px;color:#e8f4ff"></div>';
     document.body.appendChild(hudEl);
-    var wEl = document.createElement('div');
-    wEl.className = 'weapon-hud';
-    wEl.id = 'weaphud';
-    document.body.appendChild(wEl);
     var pb = document.createElement('button');
     pb.className = 'pause-btn';
     pb.textContent = '⏸';
     pb.onclick = function () { togglePause(); };
     document.body.appendChild(pb);
-  }
-
-  var WEP_LABEL = { auto: '🔫', orbit: '🌀', nova: '💥', mine: '💣', saw: '🪚', chain: '⚡' };
-  function updateWeaponHUD() {
-    var wEl = document.getElementById('weaphud');
-    if (!wEl || !player) return;
-    var html = '';
-    for (var wi = 0; wi < player.weapons.length; wi++) {
-      var w = player.weapons[wi];
-      html += '<div class="wchip"><span class="wi">' + (WEP_LABEL[w.id] || '⭐') + '</span><span class="wn">' + t('u_' + w.id) + '</span><span class="wl">' + (w.lvl || 1) + '</span></div>';
-    }
-    var evoN = 0;
-    for (var ek in player.evolved) { if (player.evolved[ek]) evoN++; }
-    if (evoN) html += '<div class="wchip star">★ ' + evoN + '</div>';
-    wEl.innerHTML = html;
   }
 
   function updateHUD() {
@@ -2885,7 +2819,6 @@ var text = t('top10');
       db.style.opacity = player.dashCd > 0 ? '0.3' : '0.85';
       db.textContent = player.dashCd > 0 ? Math.ceil(player.dashCd) : '⚡';
     }
-    updateWeaponHUD();
   }
 
   /* ============ MAIN LOOP ============ */
@@ -4503,25 +4436,8 @@ var text = t('top10');
       ctx.beginPath();
       ctx.arc(en2.x + Math.cos(eang) * en2.r * 0.4, en2.y + Math.sin(eang) * en2.r * 0.4, en2.r * 0.15, 0, Math.PI * 2);
       ctx.fill();
-      // hp bar + подпись
-      var lbl = enemyLabel(en2);
-      if (en2.elite || en2.boss) {
-        var bw = Math.max(48, en2.r * 1.6);
-        var by = en2.y - en2.r - 12;
-        ctx.fillStyle = 'rgba(0,0,0,0.75)';
-        ctx.fillRect(en2.x - bw / 2 - 1, by - 1, bw + 2, 8);
-        ctx.fillStyle = en2.boss ? '#ff3b3b' : '#ffb03b';
-        ctx.fillRect(en2.x - bw / 2, by, bw * Math.max(0, en2.hp / en2.maxHp), 6);
-        if (lbl) {
-          ctx.font = 'bold 12px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.lineWidth = 3;
-          ctx.strokeStyle = 'rgba(0,0,0,0.95)';
-          ctx.strokeText(lbl, en2.x, by - 5);
-          ctx.fillStyle = en2.boss ? '#ffd7d7' : '#ffe9b8';
-          ctx.fillText(lbl, en2.x, by - 5);
-        }
-      } else if (en2.hp < en2.maxHp) {
+      // hp bar
+      if (en2.hp < en2.maxHp) {
         ctx.fillStyle = 'rgba(0,0,0,0.6)';
         ctx.fillRect(en2.x - en2.r, en2.y - en2.r - 8, en2.r * 2, 4);
         ctx.fillStyle = '#f44';
