@@ -2716,6 +2716,20 @@ var text = t('top10');
     waveMod = oldMod;
     return { puGems: pu - pu0, chestGems: ch, chestFns: [typeof dropChest, typeof openChest, typeof drawChest, typeof soundChest].join(','), treasurePu: (waveModsById().treasure.pu || 0) };
   };
+  window.__test.noSlow = function () {
+    var mhp = player.maxHp, php = player.hp, ifr = player.iframes;
+    player.maxHp = 99999; player.hp = 99999; player.slowT = 0;
+    spawnEnemy('frost');
+    var fe = enemies[enemies.length - 1];
+    fe.x = player.x + 6; fe.y = player.y; fe.speed = 0;
+    projectiles.push({ x: player.x, y: player.y, vx: 0, vy: 0, dmg: 1, r: 8, c: '#8ff', life: 1, enemy: true, slow: true });
+    puddles.push({ x: player.x, y: player.y, r: 90, t: 3, c: '#f60' });
+    var minSpd = 999;
+    for (var nf = 0; nf < 10; nf++) { player.hp = 99999; player.iframes = 0; update(); minSpd = Math.min(minSpd, player.slowT || 0); }
+    var out = { slowT: player.slowT || 0, minSlowT: minSpd, frozen: !!player.frozen, iframes: player.iframes };
+    player.maxHp = mhp; player.hp = php; player.iframes = ifr; player.slowT = 0;
+    return out;
+  };
   window.__test.clarity = function () {
     return {
       reverted: [typeof bigBanner, typeof BOSS_LABELS, typeof enemyLabel, typeof updateWeaponHUD, typeof shakeOn, typeof timeScale].join(','),
@@ -3097,7 +3111,6 @@ var text = t('top10');
       var pdl = puddles[pdi];
       pdl.t -= dt;
       if (pdl.t <= 0) { puddles.splice(pdi, 1); continue; }
-      if (dist(pdl, p) < pdl.r) { p.slowT = Math.max(p.slowT || 0, 0.35); }
     }
 
     // enemies
@@ -3376,7 +3389,6 @@ var text = t('top10');
       }
       if (dist(en, p) < en.r + p.r) {
         if (p.iframes <= 0) {
-          if (en.frost && p.slowT <= 0) p.slowT = 1.5;
           if (hitPlayer(en.dmg)) return;
         }
       }
@@ -3497,7 +3509,6 @@ var text = t('top10');
       var ep = projectiles[ei];
       if (!ep.enemy) continue;
       if (dist(ep, p) < ep.r + p.r && p.iframes <= 0) {
-        if (ep.slow && gameMode !== 'hardcore') p.slowT = 1.6;
         if (!ep.pierce) projectiles.splice(ei, 1);
         if (hitPlayer(ep.dmg)) return;
       }
