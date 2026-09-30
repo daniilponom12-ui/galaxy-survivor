@@ -1194,7 +1194,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
 
   // насколько сейчас «жарко»: 0 — меню, 1 — крупный босс
   function musTarget() {
-    if (typeof state === 'string' && state !== 'playing') return 0.22;
+    if (typeof state === 'string' && state !== 'playing') { musBoss = false; return 0.22; }
     var boss = 0, big = 0, n = 0;
     try {
       n = enemies.length;
@@ -1301,9 +1301,10 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         var tgt = musTarget();
         musIntensity += (tgt - musIntensity) * 0.12;
         var now = a.currentTime;
+        var st = typeof state === 'string' ? state : 'playing';
         musLayerGain(a, musLayers.pad, 0.9, now);
-        musLayerGain(a, musLayers.bass, state === 'menu' ? 0.45 : 1, now);
-        musLayerGain(a, musLayers.arp, musIntensity > 0.14 ? 1 : 0, now);
+        musLayerGain(a, musLayers.bass, st === 'menu' ? 0.45 : 1, now);
+        musLayerGain(a, musLayers.arp, (musIntensity > 0.14 && st !== 'gameover') ? 1 : 0, now);
         musLayerGain(a, musLayers.drums, musIntensity > 0.3 ? 1 : 0, now);
         musLayerGain(a, musLayers.lead, musBoss ? 1 : 0, now);
         if (musNext < now) musNext = now + 0.02;
@@ -2078,7 +2079,6 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       case 'nuke': nukeAll(); label = '💥 NUKE!'; break;
     }
     hud(label, PU_COLORS[pu] || '#fff');
-    soundPowerup();
     fx.push({ type: 'ring', x: p.x, y: p.y, r: 6, maxR: 70, life: 0.45, maxLife: 0.45, c: PU_COLORS[pu] || '#fff' });
     for (var pa2 = 0; pa2 < 14; pa2++) {
       var paA = Math.random() * Math.PI * 2;
@@ -2307,7 +2307,6 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     if (victory) { state = 'victory'; showVictory(); return; }
     state = 'gameover';
     musicStinger('lose');
-    stopMusic(true);
     if (gameMode === 'hardcore') { score *= 2; xpEarned *= 2; }
     if (gameMode === 'endless') score = Math.round(score * (1 + Math.floor(waveNum / 20) * 0.25));
     achMax('bestWave', waveNum);
