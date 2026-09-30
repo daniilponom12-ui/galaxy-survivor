@@ -1304,7 +1304,6 @@ var text = t('top10');
     rollWaveMod();
     if (waveMod) {
       bigBanner('⚠ ' + waveMod.name, waveMod.desc, waveMod.c, 3000);
-      slowFor(1, 0.5);
     }
     if (!endlessRun && waveNum === 10) {
       helper = makeHelper();
@@ -1318,7 +1317,6 @@ var text = t('top10');
     for (var lb = 0; lb < enemies.length; lb++) { if (enemies[lb].boss) liveBoss++; }
     if (!endlessRun && waveNum === 10) {
       // три повелителя: сложно убить, огромное хп
-      slowFor(1.6, 0.25);
       for (var ovc = 0; ovc < 3; ovc++) {
         var ovAng = ovc / 3 * Math.PI * 2 + Math.PI / 6;
         var ovR = 550;
@@ -1335,7 +1333,6 @@ var text = t('top10');
         enemies.splice(ci, 1);
       }
       projectiles = [];
-      slowFor(2, 0.22);
       spawnEnemy('boss_thanos', player.x, player.y - 400);
       bigBanner('★ ТАНОС ★', 'ФИНАЛЬНЫЙ БОСС — УКЛОНЯЙСЯ ОТ КАМНЕЙ', '#ff5544', 3400);
       hud('★ THANOS AWAKENS ★', '#e33');
@@ -1356,7 +1353,6 @@ var text = t('top10');
       var pool = pickBossPool(waveNum);
       var bt = pool[Math.min(bi, pool.length - 1)];
       spawnEnemy(bt);
-      slowFor(1.4, 0.3);
       bigBanner('⚠ ' + (BOSS_LABELS[bt] || 'БОСС') + ' ⚠', t('bossAlert'), '#ff5566', 2600);
     }
     if (SDK.showInterstitial && waveNum % 3 === 0) {
@@ -1438,16 +1434,7 @@ var text = t('top10');
     setTimeout(function () { el.remove(); }, 1700);
   }
 
-  /* ============ ЧИТАЕМОСТЬ: SLOW-MO, БАННЕРЫ, ПОДПИСИ ============ */
-  var slowMo = 0, slowMoScale = 1, hurtSlow = 0;
-  var shakeOn = true;
-  function timeScale() {
-    var s = 1;
-    if (slowMo > 0) s = Math.min(s, slowMoScale);
-    if (hurtSlow > 0) s = Math.min(s, 0.35);
-    return s;
-  }
-  function slowFor(sec, scale) { slowMo = Math.max(slowMo, sec); slowMoScale = scale; }
+  /* ============ ЧИТАЕМОСТЬ: БАННЕРЫ, ПОДПИСИ ============ */
   function bigBanner(title, sub, color, dur) {
     var el = document.createElement('div');
     el.className = 'big-banner';
@@ -2323,19 +2310,12 @@ var text = t('top10');
     var scr = document.createElement('div');
     scr.className = 'menu-screen'; scr.id = 'p1';
     scr.innerHTML = '<h1>ПАУЗА</h1><div class="subtitle">Урон: ' + Math.round(kills) + ' | Очки: ' + Math.round(score) + '</div>' +
-      '<div class="pause-tips">WASD / стрелки — движение · SHIFT или ⚡ — рывок · ПРОБЕЛ — заморозка · P — пауза</div>' +
-      '<button class="btn-play" id="shakeToggle" onclick="window.__toggleShake()">' + (shakeOn ? 'Тряска: ВКЛ' : 'Тряска: ВЫКЛ') + '</button>' +
       '<button class="btn-play" onclick="window.__resume()">Продолжить</button>' +
       '<button class="btn-shop" onclick="window.__quit()">Выйти в меню</button>';
     document.body.appendChild(scr);
     window.__resume = function () { state = 'playing'; document.getElementById('p1').remove(); };
     window.__quit = function () { quitToMenu(); };
   }
-  window.__toggleShake = function () {
-    shakeOn = !shakeOn;
-    var b = document.getElementById('shakeToggle');
-    if (b) b.textContent = shakeOn ? 'Тряска: ВКЛ' : 'Тряска: ВЫКЛ';
-  };
   function hidePaused() { var el = document.getElementById('p1'); if (el) el.remove(); }
 
   function quitToMenu() {
@@ -2740,7 +2720,7 @@ var text = t('top10');
     e2.speed = 0;
     sawShots.push({ x: player.x + 40, y: player.y, vx: 500, vy: 0, dmg: 20, r: 16, life: 2, spin: 0, hits: {}, bounces: 0 });
     for (var sb = 0; sb < 30; sb++) updateSaws();
-    var out = { bounces: sawShots.length ? sawShots[0].bounces : -1, vx: sawShots.length ? Math.round(sawShots[0].vx) : 0, scale: timeScale() };
+    var out = { bounces: sawShots.length ? sawShots[0].bounces : -1, vx: sawShots.length ? Math.round(sawShots[0].vx) : 0 };
     dt = oldDt;
     return out;
   };
@@ -2778,25 +2758,17 @@ var text = t('top10');
     return { puGems: pu - pu0, chestGems: ch, chestFns: [typeof dropChest, typeof openChest, typeof drawChest, typeof soundChest].join(','), treasurePu: (waveModsById().treasure.pu || 0) };
   };
   window.__test.clarity = function () {
-    var base = timeScale();
-    slowFor(1, 0.25);
-    var slowed = timeScale();
-    slowMo = 0;
-    hurtSlow = 0.5;
-    var hurt = timeScale();
-    slowMo = 0; hurtSlow = 0;
     var e1 = { type: 'boss_thanos', boss: true, final: true };
     var e2 = { type: 'boss_colossus', boss: true };
     var e3 = { type: 'chaser', elite: true, aura: 'armored' };
     var e4 = { type: 'chaser' };
     var wh = document.getElementById('weaphud');
-    window.__toggleShake(); window.__toggleShake();
     return {
-      base: base, slowed: slowed, hurt: hurt,
       labels: [enemyLabel(e1), enemyLabel(e2), enemyLabel(e3), enemyLabel(e4)],
-      shake: shakeOn, wchips: wh ? wh.querySelectorAll('.wchip').length : -1,
+      wchips: wh ? wh.querySelectorAll('.wchip').length : -1,
       weapons: player ? player.weapons.length : -1,
-      bannerFn: typeof bigBanner === 'function', soundBonus: typeof soundBonus === 'function'
+      bannerFn: typeof bigBanner === 'function', soundBonus: typeof soundBonus === 'function',
+      slowmoGone: [typeof timeScale, typeof slowFor, typeof hurtSlow, typeof slowMo, typeof shakeOn].join(',')
     };
   };
   window.__test.lvlKeys = function () {
@@ -2906,8 +2878,7 @@ var text = t('top10');
       if (evoCount) evoHtml = '  <span style="color:#ffd24d;font-weight:700">★' + evoCount + '</span>';
       var dashHtml = player.dashCd > 0 ? '<span style="color:#888">⚡' + player.dashCd.toFixed(1) + '</span>' : '<span style="color:#6ff;font-weight:700">⚡</span>';
       var modHtml = waveMod ? '  <b style="color:' + waveMod.c + '">' + waveMod.name + '</b>' : '';
-      var nextIn = '<span style="color:#9cf">→ ' + Math.max(0, spawnTimer).toFixed(0) + 's</span>';
-      infoEl.innerHTML = t('waveLbl') + waveNum + '  |  ' + t('lvlLbl') + player.lvl + '  |  ' + t('ptsLbl') + Math.round(score) + '  |  ' + dashHtml + evoHtml + nextIn + '  |  <span style="color:#4ff">&#128142;</span>' + progress.diamonds + (xpField > 0 ? '  <span style="color:#0f6">&#11088;</span>' + xpField : '') + (gameMode !== 'normal' ? '  <b style="color:' + (gameMode === 'hardcore' ? '#f44' : (gameMode === 'timer' ? '#f80' : '#6ff')) + '">' + t('mode' + (gameMode === 'hardcore' ? 'Hard' : (gameMode === 'endless' ? 'Endless' : 'Timer'))) + '</b>' : '') + (gameMode === 'timer' ? '  <b style="color:#f80">&#9200; ' + fmtTime(Math.max(0, timerTime)) + '</b>' : '') + modHtml + combHtml + (player.freezeUnlocked && player.freezeCd > 0 ? t('frozen') + Math.ceil(player.freezeCd) : '');
+      infoEl.innerHTML = t('waveLbl') + waveNum + '  |  ' + t('lvlLbl') + player.lvl + '  |  ' + t('ptsLbl') + Math.round(score) + '  |  ' + dashHtml + evoHtml + '  |  <span style="color:#4ff">&#128142;</span>' + progress.diamonds + (xpField > 0 ? '  <span style="color:#0f6">&#10024;</span>' + xpField : '') + (gameMode !== 'normal' ? '  <b style="color:' + (gameMode === 'hardcore' ? '#f44' : (gameMode === 'timer' ? '#f80' : '#6ff')) + '">' + t('mode' + (gameMode === 'hardcore' ? 'Hard' : (gameMode === 'endless' ? 'Endless' : 'Timer'))) + '</b>' : '') + (gameMode === 'timer' ? '  <b style="color:#f80">&#9200; ' + fmtTime(Math.max(0, timerTime)) + '</b>' : '') + modHtml + combHtml + (player.freezeUnlocked && player.freezeCd > 0 ? t('frozen') + Math.ceil(player.freezeCd) : '');
     }
     var db = window.__dashBtn;
     if (db && player) {
@@ -2921,14 +2892,11 @@ var text = t('top10');
   var dt = 0.016;
   var __errs = [];
   function loop(ts) {
-    var rawDt = Math.min((ts - lastTime) / 1000, 0.05);
+    dt = Math.min((ts - lastTime) / 1000, 0.05);
     lastTime = ts;
-    if (slowMo > 0) slowMo -= rawDt;
-    if (hurtSlow > 0) hurtSlow -= rawDt;
-    dt = state === 'playing' ? rawDt * timeScale() : rawDt;
     try {
       if (state === 'playing') {
-        if (hitStop > 0) { hitStop -= rawDt; }
+        if (hitStop > 0) { hitStop -= dt; }
         else { update(); updateHUD(); }
       }
       render();
@@ -2954,7 +2922,6 @@ var text = t('top10');
     combo = 0; comboTimer = 0;
     p.iframes = 0.8;
     hurtFx = 0.5;
-    hurtSlow = 0.55;
     shake = Math.min(shake + 6, 15);
     fx.push({ type: 'boom', x: p.x, y: p.y, r: 40, life: 0.3, maxLife: 0.3, c: '#f55' });
     boom(p.x, p.y, '#f44', 10);
@@ -3796,8 +3763,7 @@ var text = t('top10');
     }
 
     // camera
-    var shakeAmt = shakeOn ? shake * 0.45 : 0;
-    var shX = (Math.random() - 0.5) * shakeAmt, shY = (Math.random() - 0.5) * shakeAmt;
+    var shX = (Math.random() - 0.5) * shake, shY = (Math.random() - 0.5) * shake;
     var focus = player;
     if (player) {
       camX += (player.x - camX) * Math.min(1, dt * 6);
@@ -5082,11 +5048,7 @@ var text = t('top10');
     }
     // красная вспышка при получении урона
     if (hurtFx > 0) {
-      var hv = Math.max(hurtFx, Math.min(0.45, hurtSlow));
-      var hgr = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.22, W / 2, H / 2, Math.max(W, H) * 0.62);
-      hgr.addColorStop(0, 'rgba(255,30,30,0)');
-      hgr.addColorStop(1, 'rgba(255,30,30,' + (hv * 0.5) + ')');
-      ctx.fillStyle = hgr;
+      ctx.fillStyle = 'rgba(255,30,30,' + (hurtFx * 0.28) + ')';
       ctx.fillRect(0, 0, W, H);
     }
     // пульс при критически низком HP
