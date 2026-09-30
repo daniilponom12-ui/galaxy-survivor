@@ -1069,7 +1069,8 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   var musTimer = null, musCtx = null, musMaster = null, musComp = null, musDelay = null, musNoise = null;
   var musLayers = null, musStep = 0, musBar = 0, musNext = 0, musTrack = 'm1';
   var musIntensity = 0, musBoss = false, musStarted = 0, musFade = 0, musStingerAt = 0;
-  var musLiveTrack = '', musSavedStep = 0, musSavedBar = 0, musPaused = false;
+  var musLiveTrack = '', musSavedStep = 0, musSavedBar = 0, musPaused = false, musMuted = false;
+  function musicTargetVol() { return Math.max(0.02, musicVol * 0.55); }
 
   function musTheme() { return MUSIC_THEMES[musTrack] || MUSIC_THEMES.m1; }
 
@@ -1394,7 +1395,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       musIntensity = 0.2;
       musNext = a.currentTime + 0.08;
       musMaster.gain.setValueAtTime(0.0001, a.currentTime);
-      musMaster.gain.exponentialRampToValueAtTime(Math.max(0.02, musicVol * 0.55), a.currentTime + 1.1);
+      musMaster.gain.exponentialRampToValueAtTime(musMuted ? 0.0001 : musicTargetVol(), a.currentTime + 1.1);
       musTimer = setInterval(musTick, 25);
       if (a.state === 'suspended') { try { a.resume(); } catch (e) {} }
     } catch (e) { musTimer = null; }
@@ -1436,7 +1437,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       try {
         var now = musCtx ? musCtx.currentTime : 0;
         musMaster.gain.cancelScheduledValues(now);
-        musMaster.gain.setTargetAtTime(Math.max(0.02, musicVol * 0.55), now, 0.08);
+        musMaster.gain.setTargetAtTime(musMuted ? 0.0001 : musicTargetVol(), now, 0.08);
       } catch (e) {}
     }
   }
@@ -2181,14 +2182,32 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     sndOn = !sndOn;
     try { localStorage.setItem('gs_snd', sndOn ? '1' : '0'); } catch (e) {}
     if (sndOn) {
+      musMuted = false;
       audio();
-      // музыка продолжается с того же места, а не начинается заново поверх старой
-      if (musPaused) { musPaused = false; startMusic(null, true); }
-      else startMusic();
+      // если музыкальная цепочка уже есть - просто возвращаем громкость, ничего не пересоздаём
+      if (musMaster && musCtx) {
+        try {
+          var nu = musCtx.currentTime;
+          musMaster.gain.cancelScheduledValues(nu);
+          musMaster.gain.setValueAtTime(Math.max(0.0001, musMaster.gain.value), nu);
+          musMaster.gain.exponentialRampToValueAtTime(musicTargetVol(), nu + 0.25);
+        } catch (e) {}
+      } else {
+        startMusic();
+      }
       blip(700, 0.08, 'sine', 0.05);
     } else {
+      musMuted = true;
+      // не глушим трек кнопкой, а уводим громкость в ноль: цепочка остаётся ОДНА
+      if (musMaster && musCtx) {
+        try {
+          var nm = musCtx.currentTime;
+          musMaster.gain.cancelScheduledValues(nm);
+          musMaster.gain.setValueAtTime(Math.max(0.0001, musMaster.gain.value), nm);
+          musMaster.gain.exponentialRampToValueAtTime(0.0001, nm + 0.18);
+        } catch (e) {}
+      }
       musPaused = true;
-      stopMusic(true);
     }
     return sndOn;
   }
