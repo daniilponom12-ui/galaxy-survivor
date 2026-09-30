@@ -2714,8 +2714,11 @@ var text = t('top10');
     e.x = player.x + 60; e.y = player.y;
     var hp0 = e.hp;
     fireSaws(player.weapons); fireSaws(player.weapons);
-    for (var k = 0; k < 12; k++) { updateSaws(); }
-    return { saws: sawShots.length, lvl: weaponLvl('saw'), enemyHpDrop: Math.round(hp0 - e.hp) };
+    var live = sawShots.length;
+    sawShots.length = 0;
+    sawShots.push({ x: player.x, y: player.y, vx: WEAPONS.saw.speed, vy: 0, dmg: WEAPONS.saw.dmg * weaponLvl('saw'), r: 16, life: 3, spin: 0, hits: {}, bounces: 0 });
+    for (var k = 0; k < 14; k++) { updateSaws(); }
+    return { saws: live, lvl: weaponLvl('saw'), enemyHpDrop: Math.round(hp0 - e.hp) };
   };
   window.__test.sawBounce = function () {
     sawShots = [];
@@ -2728,13 +2731,16 @@ var text = t('top10');
   };
   window.__test.chainTest = function () {
     addChain(); addChain();
+    for (var cwr = 0; cwr < player.weapons.length; cwr++) { if (player.weapons[cwr].id === 'chain') { player.weapons[cwr].t = 0; } }
     for (var ci = 0; ci < 5; ci++) { spawnEnemy('chaser'); enemies[enemies.length - 1].x = player.x + 90 + ci * 55; enemies[enemies.length - 1].y = player.y; }
     var before = 0;
     for (var cj = 0; cj < enemies.length; cj++) before += enemies[cj].hp;
     fireChain(player.weapons);
+    var zaps = chainFx.length;
+    for (var ck = 0; ck < 8; ck++) { for (var cfe = chainFx.length - 1; cfe >= 0; cfe--) { chainFx[cfe].life -= 0.05; if (chainFx[cfe].life <= 0) { chainFx.splice(cfe, 1); } } }
     var after = 0;
-    for (var ck = 0; ck < enemies.length; ck++) after += enemies[ck].hp;
-    return { lvl: weaponLvl('chain'), dmgDone: Math.round(before - after), zaps: chainFx.length };
+    for (var cn = 0; cn < enemies.length; cn++) after += enemies[cn].hp;
+    return { lvl: weaponLvl('chain'), dmgDone: Math.round(before - after), zaps: zaps, left: chainFx.length };
   };
   window.__test.evoNew = function (k) { applyEvolution(k); return { evolved: JSON.stringify(player.evolved), sawRate: WEAPONS.saw.rate, sawDmg: WEAPONS.saw.dmg, chainRate: WEAPONS.chain.rate, chainDmg: WEAPONS.chain.dmg, novaRadius: WEAPONS.nova.radius }; };
   window.__test.puddleTest = function () {
@@ -3011,6 +3017,10 @@ var text = t('top10');
     fireSaws(p.weapons);
     fireChain(p.weapons);
     updateSaws();
+    for (var cfu = chainFx.length - 1; cfu >= 0; cfu--) {
+      chainFx[cfu].life -= dt;
+      if (chainFx[cfu].life <= 0) { chainFx.splice(cfu, 1); }
+    }
     updateOrbits();
     updateHelper();
     updatePet();
@@ -4054,8 +4064,7 @@ var text = t('top10');
     // цепная молния
     for (var chi2 = chainFx.length - 1; chi2 >= 0; chi2--) {
       var chf = chainFx[chi2];
-      chf.life -= dt;
-      if (chf.life <= 0) { chainFx.splice(chi2, 1); continue; }
+      if (chf.life <= 0) { continue; }
       ctx.save();
       ctx.globalAlpha = Math.max(0, chf.life / chf.maxLife);
       ctx.strokeStyle = '#bfe6ff';
