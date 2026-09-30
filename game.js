@@ -77,10 +77,6 @@
       u_pierce: 'Пронзание', u_pierce_d: 'Все выстрелы пробивают врагов насквозь',
       u_life: '+1 жизнь', u_life_d: 'Одно воскрешение за бой',
       u_greed: 'Алчность +25%', u_greed_d: 'Больше очков за убийства',
-      u_saw: 'Бросающая пила', u_saw_d: 'Пила летит вперёд и рикошетит от врагов',
-      u_chain: 'Цепная молния', u_chain_d: 'Молния бьёт по цепочке врагов',
-      u_evo_blizzard: '★ БУРАН', u_evo_blizzard_d: 'Пила + волна: пила чаще и шире, волна замедляет',
-      u_evo_tempest: '★ ГРОЗА', u_evo_tempest_d: 'Молния + бластер: цепь бьёт дольше и критует',
       u_regen: 'Регенерация', u_regen_d: 'Восстанавливает 1.5 HP в секунду',
       u_evo_pulsar: '★ ПУЛЬСАР', u_evo_pulsar_d: 'Бластер + мины: урон x2.2, стрельба x1.8, всё пробивает',
       u_evo_eclipse: '★ ЗАТМЕНИЕ', u_evo_eclipse_d: 'Диски + волна: волна x2 урона и x1.6 радиуса, диски шире',
@@ -174,10 +170,6 @@
       u_pierce: 'Piercing', u_pierce_d: 'All shots pierce through enemies',
       u_life: '+1 life', u_life_d: 'One revive per run',
       u_greed: 'Greed +25%', u_greed_d: 'More score from kills',
-      u_saw: 'Chainsaw', u_saw_d: 'Saw flies forward and ricochets off enemies',
-      u_chain: 'Chain lightning', u_chain_d: 'Lightning arcs between enemies',
-      u_evo_blizzard: '★ BLIZZARD', u_evo_blizzard_d: 'Saw + wave: faster, wider saw, wave slows',
-      u_evo_tempest: '★ TEMPEST', u_evo_tempest_d: 'Lightning + blaster: longer chain, crits',
       u_regen: 'Regeneration', u_regen_d: 'Heals 1.5 HP per second',
       u_evo_pulsar: '★ PULSAR', u_evo_pulsar_d: 'Blaster + mines: x2.2 damage, x1.8 fire rate, pierces all',
       u_evo_eclipse: '★ ECLIPSE', u_evo_eclipse_d: 'Discs + wave: wave x2 damage, x1.6 radius, wider discs',
@@ -556,9 +548,7 @@ var text = t('top10');
     auto: { name: 'Автоматический бластер', desc: 'Автоматически стреляет по ближайшему врагу', dmg: 8, rate: 0.55, speed: 520, color: '#4af' },
     orbit: { name: 'Орбитальный диск', desc: 'Вращающиеся лезвия вокруг героя', dmg: 12, count: 2, radius: 70, speedR: 3.2, color: '#f4f' },
     nova: { name: 'Энергетическая волна', desc: 'Периодически испускает волну урона', dmg: 15, rate: 2.4, radius: 150, color: '#ff0' },
-    mine: { name: 'Разбрасыватель мин', desc: 'Ставит мины, взрывающиеся при касании', dmg: 30, rate: 1.5, color: '#f80' },
-    saw: { name: 'Бросающая пила', desc: 'Пила летит, рикошетит от врагов и режет всех на пути', dmg: 18, rate: 1.9, speed: 620, color: '#cfd8e3' },
-    chain: { name: 'Цепная молния', desc: 'Молния бьёт по цепочке врагов, перескакивая между ними', dmg: 26, rate: 2.6, range: 420, color: '#9df' }
+    mine: { name: 'Разбрасыватель мин', desc: 'Ставит мины, взрывающиеся при касании', dmg: 30, rate: 1.5, color: '#f80' }
   };
 
   var UPGRADES_POOL = [
@@ -573,8 +563,6 @@ var text = t('top10');
     { id: 'magnet', name: 'Магнит опыта', desc: 'XP-кристаллы сами летят к тебе', icon: '🧲' },
     { id: 'freeze', name: 'Замедление', desc: 'Враги замедляются на 5 сек (абилка)', icon: '❄' },
     { id: 'mines', name: 'Минное поле', desc: 'Разбрасывает мины вокруг', icon: '💣' },
-    { id: 'saw', name: 'Бросающая пила', desc: 'Пила рикошетит от врагов и режет всех', icon: '🪚' },
-    { id: 'chain', name: 'Цепная молния', desc: 'Молния перескакивает между врагами', icon: '⚡' },
     { id: 'multishot', name: 'Доп. снаряд', desc: 'Стреляет на один снаряд больше', icon: '🎇' },
     { id: 'crit', name: 'Крит 20% (урон x2)', desc: 'Каждый 5-й выстрел наносит двойной урон', icon: '🎯' },
     { id: 'pierce', name: 'Пронзание', desc: 'Все выстрелы пробивают врагов насквозь', icon: '🏹' },
@@ -587,9 +575,7 @@ var text = t('top10');
   var EVOLUTIONS = {
     pulsar: { name: '★ ПУЛЬСАР', desc: 'Бластер + мины: урон x2.2, стрельба x1.8, всё пробивает', icon: '🌟', req: { auto: 4, mine: 1 } },
     eclipse: { name: '★ ЗАТМЕНИЕ', desc: 'Диски + волна: волна x2 урона и x1.6 радиуса, диски шире', icon: '🌑', req: { orbit: 2, nova: 1 } },
-    swarm: { name: '★ РОЙ', desc: 'Мины + волна: мины сыплятся вдвое чаще и поджигают', icon: '☄', req: { mine: 1, nova: 1 } },
-    blizzard: { name: '★ БУРАН', desc: 'Пила + волна: пила летит чаще и шире, волна замедляет', icon: '🌪', req: { saw: 2, nova: 1 } },
-    tempest: { name: '★ ГРОЗА', desc: 'Молния + бластер: цепь бьёт на 3 врага чаще и критует', icon: '🌩', req: { chain: 2, auto: 3 } }
+    swarm: { name: '★ РОЙ', desc: 'Мины + волна: мины сыплятся вдвое чаще и поджигают', icon: '☄', req: { mine: 1, nova: 1 } }
   };
   var AURA_COLORS = { swift: '#ff5', armored: '#9cf', vampiric: '#c4f', explosive: '#f80' };
   var AURA_NAMES = { swift: 'СКОРОСТЬ', armored: 'БРОНЯ', vampiric: 'ВАМПИРИЗМ', explosive: 'ВЗРЫВ' };
@@ -628,7 +614,7 @@ var text = t('top10');
     var roll = Math.random(), label = '', color = '#ffd24d';
     if (roll < 0.28) { p.hp = Math.min(p.maxHp, p.hp + p.maxHp * 0.5); label = '❤ +50% HP'; color = '#f66'; }
     else if (roll < 0.44) { p.hp = p.maxHp; label = '✚ ПОЛНОЕ ЛЕЧЕНИЕ'; color = '#f88'; }
-    else if (roll < 0.60) { p.chestUp = 1; label = '🎁 СЛЕДУЮЩИЙ СУНДУК = АПГРЕЙД'; color = '#4ff'; applyUpgrade(['auto', 'orbit', 'nova', 'mines', 'saw', 'chain'][Math.floor(Math.random() * 6)]); }
+    else if (roll < 0.60) { var up = ['auto', 'auto', 'orbit', 'nova'][Math.floor(Math.random() * 4)]; applyUpgrade(up); label = '🎁 УЛУЧШЕНИЕ: ' + up; color = '#4ff'; }
     else if (roll < 0.72) { p.coinT = 12; p.coinMul = 3; label = '⭐ 3x ОЧКИ (12с)'; color = '#ff0'; }
     else if (roll < 0.82) { nukeAll(); label = '💥 ЯДЕРНЫЙ ЗАЛП!'; color = '#f80'; }
     else if (roll < 0.9) { p.shield = (p.shield || 0) + 1; label = '🛡 +1 ЩИТ'; color = '#4ff'; }
@@ -689,7 +675,6 @@ var text = t('top10');
 
   function applyUpgrade(id) {
     var p = player;
-    if (!p || !p.weapons) return;
     if (id === 'hp') { p.maxHp = Math.round(p.maxHp * 1.25); p.hp = p.maxHp; }
     else if (id === 'heal') { p.hp = p.maxHp; }
     else if (id === 'speed') { p.speed *= 1.15; }
@@ -704,18 +689,13 @@ var text = t('top10');
     else if (id === 'magnet') { p.magnet = true; }
     else if (id === 'freeze') { p.freezeUnlocked = true; }
     else if (id === 'mines') { addMines(); }
-    else if (id === 'saw') { addSaw(); }
-    else if (id === 'chain') { addChain(); }
     else if (id === 'multishot') { p.extraShots = (p.extraShots || 0) + 1; }
     else if (id === 'crit') { p.critChance = (p.critChance || 0) + 0.2; }
     else if (id === 'pierce') { p.pierceAll = true; }
-    else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
+else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     else if (id === 'greed') { p.greed = (p.greed || 0) + 0.25; }
     else if (id === 'regen') { p.regenRate = (p.regenRate || 0) + 1.5; }
     else if (id.indexOf('evo_') === 0) { applyEvolution(id.slice(4)); }
-    var kinds = {};
-    for (var wki = 0; wki < p.weapons.length; wki++) { if (p.weapons[wki] && p.weapons[wki].id) kinds[p.weapons[wki].id] = 1; }
-    achMax('weaponKinds', Object.keys(kinds).length);
     }
 
   function applyEvolution(key) {
@@ -736,15 +716,6 @@ var text = t('top10');
     } else if (key === 'swarm') {
       WEAPONS.mine.rate = Math.max(0.3, WEAPONS.mine.rate * 0.5);
       p.mineEvo = 1;
-    } else if (key === 'blizzard') {
-      WEAPONS.saw.rate = Math.max(0.5, WEAPONS.saw.rate * 0.55);
-      WEAPONS.saw.dmg = Math.round(WEAPONS.saw.dmg * 1.8);
-      WEAPONS.nova.radius = Math.round(WEAPONS.nova.radius * 1.25);
-      p.sawEvo = 1;
-    } else if (key === 'tempest') {
-      WEAPONS.chain.rate = Math.max(0.7, WEAPONS.chain.rate * 0.6);
-      WEAPONS.chain.dmg = Math.round(WEAPONS.chain.dmg * 1.7);
-      p.chainEvo = 1;
     }
     hud('★ ЭВОЛЮЦИЯ: ' + EVOLUTIONS[key].name.replace('★ ', '') + ' ★', '#ffd24d');
     fx.push({ type: 'boom', x: p.x, y: p.y, r: 300, life: 0.8, maxLife: 0.8, c: '#ffd24d' });
@@ -767,8 +738,6 @@ var text = t('top10');
   function addOrbit() { var o = getWeapon('orbit'); o.lvl++; player.orbitWeps.push({ ang: Math.random() * Math.PI * 2, hitTimer: 0, dmg: WEAPONS.orbit.dmg + o.lvl * 4 }); }
   function addNova() { var n = getWeapon('nova'); n.lvl++; player.aoeWeps.push({ timer: 1, dmg: WEAPONS.nova.dmg + n.lvl * 8 }); }
   function addMines() { var mw = getWeapon('mine'); mw.lvl = (mw.lvl || 0) + 1; }
-  function addSaw() { var sw = getWeapon('saw'); sw.lvl = (sw.lvl || 0) + 1; }
-  function addChain() { var ch = getWeapon('chain'); ch.lvl = (ch.lvl || 0) + 1; }
 
   /* ============ SHOP / SKINS / MUSIC / BOOSTERS (за рекламу) ============ */
   var SAVE_KEY = 'gs_progress_v2';
@@ -903,27 +872,12 @@ var text = t('top10');
     showShop();
   }
 
-  function dailySaleId() {
-    var keys = ['dmg', 'hp', 'magnet', 'rate', 'speed', 'shield', 'crit', 'xp'];
-    var d = new Date();
-    var day = Math.floor(d.getTime() / 86400000);
-    return keys[day % keys.length];
-  }
-  function upgCost(id) {
-    var upg = progress.upg || {};
-    var lvl = upg[id] || 0;
-    var costs = UPG_COSTS[id] || [];
-    if (lvl >= costs.length) return null;
-    var c = costs[lvl];
-    return dailySaleId() === id ? Math.round(c * 0.5) : c;
-  }
-
   function buyUpgrade(id) {
     var upg = progress.upg || {};
     var lvl = upg[id] || 0;
     var costs = UPG_COSTS[id] || [];
     if (lvl >= costs.length) { hud(t('puMax'), '#f80'); return; }
-    var cost = upgCost(id);
+    var cost = costs[lvl];
     if ((progress.diamonds || 0) < cost) { hud(t('diamNo'), '#f44'); return; }
     progress.diamonds -= cost;
     upg[id] = lvl + 1;
@@ -988,10 +942,7 @@ var text = t('top10');
     { id: 'dash_100', t: 'Рывок 100 раз', stat: 'dashes', need: 100, rew: 200 },
     { id: 'chest_25', t: 'Открой 25 сундуков', stat: 'chests', need: 25, rew: 300 },
     { id: 'evo_3', t: 'Открой 3 эволюции', stat: 'evos', need: 3, rew: 400 },
-    { id: 'mod_25', t: 'Переживи 25 модификаторов волн', stat: 'mods', need: 25, rew: 250 },
-    { id: 'saw_10', t: 'Убей 10 врагов пилой', stat: 'sawKills', need: 10, rew: 200 },
-    { id: 'zap_100', t: '100 попаданий молнией', stat: 'zaps', need: 100, rew: 250 },
-    { id: 'allw_5', t: 'Собери 5 видов оружия', stat: 'weaponKinds', need: 5, rew: 300 }
+    { id: 'mod_25', t: 'Переживи 25 модификаторов волн', stat: 'mods', need: 25, rew: 250 }
   ];
 
   function achStats() { return progress.stats || (progress.stats = {}); }
@@ -1172,17 +1123,15 @@ var text = t('top10');
     // gem upgrades
     var gd2 = document.getElementById('bb-diam');
     var upg = progress.upg || {};
-    var saleId = dailySaleId();
     ['dmg', 'hp', 'magnet', 'rate', 'speed', 'shield', 'crit', 'xp'].forEach(function (uid) {
       var b = document.createElement('div');
       var lvl = upg[uid] || 0;
       var costs = UPG_COSTS[uid] || [];
       var maxed = lvl >= costs.length;
-      var onSale = !maxed && uid === saleId;
-      var cost = maxed ? 0 : upgCost(uid);
-      b.className = 'booster-chip' + (lvl > 0 ? ' active' : '') + (onSale ? ' sale' : '');
-      b.innerHTML = (onSale ? '<span class="sale-tag">🔥 -50%</span>' : '') + UPG_ICONS[uid] + ' ' + t('pu_' + uid) + '<br><span style="font-size:12px;opacity:.7">' + t('pu_' + uid + '_d') + '</span><br><span style="color:' + (lvl > 0 ? '#4ff' : '#888') + '">' + t('puLvl') + lvl + (maxed ? '/' + costs.length : '') + '</span>' +
-        '<span class="b-cost">' + (maxed ? t('puMax') : (onSale ? '<s style="opacity:.5">' + costs[lvl] + '</s> ' : '') + cost + '💎') + '</span>';
+      var cost = maxed ? 0 : costs[lvl];
+      b.className = 'booster-chip' + (lvl > 0 ? ' active' : '');
+      b.innerHTML = UPG_ICONS[uid] + ' ' + t('pu_' + uid) + '<br><span style="font-size:12px;opacity:.7">' + t('pu_' + uid + '_d') + '</span><br><span style="color:' + (lvl > 0 ? '#4ff' : '#888') + '">' + t('puLvl') + lvl + (maxed ? '/' + costs.length : '') + '</span>' +
+        '<span class="b-cost">' + (maxed ? t('puMax') : cost + '💎') + '</span>';
       b.onclick = function () { buyUpgrade(uid); };
       gd2.appendChild(b);
     });
@@ -1426,7 +1375,6 @@ var text = t('top10');
     lastModId = pick.id;
     waveMod = pick;
     waveMod.t = 0;
-    modsSeen++;
     achInc('mods', 1);
     var el = document.createElement('div');
     el.className = 'wave-mod';
@@ -1507,11 +1455,6 @@ var text = t('top10');
   }
 
   var autoTimers = {};
-  var sawShots = [];
-  var chainFx = [];
-  var puddles = [];
-  var hitStop = 0;
-  var modsSeen = 0;
 
   function fireAuto(ws) {
     var ammo = AMMO_TYPES[progress.selectedAmmo] || AMMO_TYPES.a1;
@@ -1532,7 +1475,6 @@ var text = t('top10');
       shotsFired += total;
       var spreadStep = total <= 1 ? 0 : (ammo.spread * Math.PI / 180) / Math.max(total - 1, 1);
       var critType = (player.critChance || 0) > 0 && Math.random() < (player.critChance || 0);
-      if (critType && Math.random() < 0.4) hitStop = Math.max(hitStop, 0.05);
       for (var s = 0; s < total; s++) {
         var off = total <= 1 ? 0 : (s - (total - 1) / 2) * spreadStep;
         var ang = a + off;
@@ -1585,7 +1527,6 @@ var text = t('top10');
         if (player.mineEvo) { e.slowT = 2; }
       }
     }
-    if (puddles.length < 24) puddles.push({ x: m.x, y: m.y, r: mR * 0.9, t: 3, c: player.mineEvo ? '#ff0' : '#f80' });
   }
 
   function getOrbitLevel() { var o = getWeapon('orbit'); return o.lvl || 0; }
@@ -1747,106 +1688,14 @@ var text = t('top10');
       var n = player.aoeWeps[i];
       n.timer -= dt;
       if (n.timer > 0) continue;
-      n.timer = WEAPONS.nova.rate * (player.rapidMul || 1);
+      n.timer = WEAPONS.nova.rate;
       fx.push({ type: 'boom', x: player.x, y: player.y, r: WEAPONS.nova.radius * 1.8, life: 0.5, maxLife: 0.5 });
       shake = Math.min(shake + 3, 10);
-      var slowNova = player.sawEvo ? 1.1 : 0;
       for (var j = enemies.length - 1; j >= 0; j--) {
         var e = enemies[j];
-        if (dist(player, e) < WEAPONS.nova.radius) {
-          if (slowNova) { e.slowT = Math.max(e.slowT || 0, slowNova); e.slowMul = 0.55; }
-          damageEnemy(j, n.dmg);
-        }
+        if (dist(player, e) < WEAPONS.nova.radius) { damageEnemy(j, n.dmg); }
       }
       soundBoom();
-    }
-  }
-
-  /* ============ НОВОЕ ОРУЖИЕ: ПИЛА (рикошет) ============ */
-  function fireSaws(ws) {
-    for (var i = 0; i < ws.length; i++) {
-      var w = ws[i];
-      if (w.id !== 'saw') continue;
-      w.t = (w.t || 0) - dt;
-      if (w.t > 0) continue;
-      if (sawShots.length >= 4) continue;
-      w.t = WEAPONS.saw.rate * (player.upRateMul || 1) * (player.rapidMul || 1);
-      var tg = findNearest(900);
-      var ang = tg ? Math.atan2(tg.y - player.y, tg.x - player.x) : (player.aimAng || 0);
-      sawShots.push({
-        x: player.x, y: player.y, vx: Math.cos(ang) * WEAPONS.saw.speed, vy: Math.sin(ang) * WEAPONS.saw.speed,
-        dmg: WEAPONS.saw.dmg * (player.upDmg || 1) * (1 + 0.5 * (player.dmgBoost || 0)) * (w.lvl || 1),
-        r: 16, life: 3.2, spin: 0, hits: {}, bounces: 0
-      });
-      shotsFired++;
-      soundShoot();
-    }
-  }
-  function updateSaws() {
-    for (var i = sawShots.length - 1; i >= 0; i--) {
-      var s = sawShots[i];
-      s.life -= dt;
-      s.spin += dt * 26;
-      s.x += s.vx * dt; s.y += s.vy * dt;
-      if (s.x < 30 || s.x > WORLD_W - 30 || s.y < 30 || s.y > WORLD_H - 30) { s.vx *= -1; s.vy *= -1; s.bounces++; }
-      for (var j = enemies.length - 1; j >= 0; j--) {
-        var e = enemies[j];
-        if (e.ghostOn || s.hits[j]) continue;
-        if (dist(s, e) < s.r + e.r) {
-          s.hits[j] = 1;
-          damageEnemy(j, s.dmg);
-          achInc('sawKills', 1);
-          if (player.sawEvo) { e.slowT = Math.max(e.slowT || 0, 1.2); e.slowMul = 0.55; }
-          boom(e.x, e.y, '#f4f', 4);
-          s.vx *= -1.15; s.vy *= -1.15;
-          s.bounces++;
-          var sp = Math.sqrt(s.vx * s.vx + s.vy * s.vy);
-          if (sp > 0) { s.vx = s.vx / sp * WEAPONS.saw.speed; s.vy = s.vy / sp * WEAPONS.saw.speed; }
-          if (s.bounces > 8) s.life = 0;
-        }
-      }
-      if (s.life <= 0) sawShots.splice(i, 1);
-    }
-  }
-
-  /* ============ НОВОЕ ОРУЖИЕ: МОЛНИЯ (цепь) ============ */
-  function fireChain(ws) {
-    for (var i = 0; i < ws.length; i++) {
-      var w = ws[i];
-      if (w.id !== 'chain') continue;
-      w.t = (w.t || 0) - dt;
-      if (w.t > 0) continue;
-      var t1 = findNearest(760);
-      if (!t1) continue;
-      w.t = WEAPONS.chain.rate * (player.upRateMul || 1) * (player.rapidMul || 1);
-      shotsFired++;
-      var jumps = Math.max(2, (w.lvl || 1) + 1) + (player.chainEvo ? 3 : 0);
-      var from = { x: player.x, y: player.y - 26 };
-      var hitSet = {};
-      var dmg = WEAPONS.chain.dmg * (player.upDmg || 1) * (1 + 0.5 * (player.dmgBoost || 0)) * (player.chainEvo ? 1.25 : 1);
-      var critC = player.chainEvo ? 1 : (player.critChance || 0);
-      var alive = enemies.length;
-      for (var jj = 0; jj < jumps && alive > 0; jj++) {
-        var best = -1, bestD = 1e9;
-        for (var e2 = 0; e2 < enemies.length; e2++) {
-          if (hitSet[e2]) continue;
-          if (enemies[e2].ghostOn) continue;
-          var d2 = dist(from, enemies[e2]);
-          if (d2 < bestD) { bestD = d2; best = e2; }
-        }
-        if (best < 0 || bestD > (WEAPONS.chain.range * (1 + 0.25 * ((w.lvl || 1) - 1)))) break;
-        hitSet[best] = 1;
-        var tg2 = enemies[best];
-        chainFx.push({ x1: from.x, y1: from.y, x2: tg2.x, y2: tg2.y, life: 0.18, maxLife: 0.18 });
-        achInc('zaps', 1);
-        damageEnemy(best, dmg);
-        if (Math.random() < critC) { damageEnemy(best, dmg); }
-        boom(tg2.x, tg2.y, '#9df', 3);
-        from = { x: tg2.x, y: tg2.y };
-        alive--;
-      }
-      blip(1400, 0.06, 'sawtooth', 0.03);
-      setTimeout(function () { blip(900, 0.09, 'square', 0.025); }, 40);
     }
   }
 
@@ -1938,13 +1787,11 @@ var text = t('top10');
       boom(e.x, e.y, '#f80', 26);
       fx.push({ type: 'boom', x: e.x, y: e.y, r: 150, life: 0.4, maxLife: 0.4, c: '#f80' });
       shake = Math.min(shake + 4, 12);
-      if (puddles.length < 24) puddles.push({ x: e.x, y: e.y, r: 95, t: 3.4, c: '#f80' });
       soundBoom();
       if (dist(e, player) < 150 + player.r && player.iframes <= 0) { if (hitPlayer(Math.round(e.dmg * 1.1))) return; }
     }
     if (e.boss) {
       soundBigBoom();
-      hitStop = Math.max(hitStop, 0.22);
       shake = 20;
       hud(t('bossKilledLbl') + e.xp + ' XP', '#ff0');
       for (var i = 0; i < 40; i++) {
@@ -2160,8 +2007,6 @@ var text = t('top10');
       if (u.id === 'nova') return have.nova < 3;
       if (u.id === 'auto') return have.auto < 12;
       if (u.id === 'mines') return have.mine < 4;
-      if (u.id === 'saw') return have.saw < 5;
-      if (u.id === 'chain') return have.chain < 5;
       if (u.id === 'heal') return player.hp < player.maxHp;
       if (u.id === 'life') return (player.lives || 0) < 3;
       if (lvlBans[u.id]) return false;
@@ -2181,6 +2026,7 @@ var text = t('top10');
       var evoPickIdx = Math.floor(Math.random() * evoCards.length);
       out.push(evoCards.splice(evoPickIdx, 1)[0]);
     }
+    for (var pci = 0; pci < evoCards.length && out.length < n; pci++) { out.push(evoCards[pci]); }
     pool = pool.concat(evoCards);
     var evoSeen = out.length > 0;
     while (out.length < n && pool.length) {
@@ -2355,7 +2201,6 @@ var text = t('top10');
     victory = false; victoryTime = 0;
     xpEarned = 0; waves = []; gameTime = 0; waveNum = 0; spawnTimer = 0; kills = 0; score = 0; freezeTimer = 0; shake = 0;
     combo = 0; comboTimer = 0; revivesUsed = 0; shotsFired = 0; shotsHit = 0; dmgDealt = 0; hurtFx = 0; player.slowT = 0; player.rapidT = 0; player.magnetT = 0; player.coinT = 0;
-    sawShots = []; chainFx = []; puddles = []; hitStop = 0; modsSeen = 0;
     autoTimers = {}; hasSplash = false; hasFreezeFreeze = false; victory = false; victoryTime = 0;
 
     // apply boosters (потратить 1 за матч)
@@ -2370,14 +2215,6 @@ var text = t('top10');
 
     document.querySelectorAll('.menu-screen,.gameover-screen').forEach(function (el) { el.remove(); });
     addHUD();
-    if (!progress.dashHinted) {
-      progress.dashHinted = true; saveProgress();
-      var hintEl = document.createElement('div');
-      hintEl.className = 'dash-hint';
-      hintEl.textContent = (CUR_LANG === 'en' ? 'SHIFT / ⚡ — DASH' : 'SHIFT / ⚡ — РЫВОК');
-      (document.getElementById('hud') || document.body).appendChild(hintEl);
-      setTimeout(function () { hintEl.remove(); }, 5000);
-    }
 
     gameMode = progress.mode || 'normal';
     endlessRun = (gameMode === 'endless');
@@ -2415,13 +2252,6 @@ var text = t('top10');
     }
     var isBest = score > bestScore;
     if (isBest) { bestScore = score; try { localStorage.setItem('gs_best', bestScore); } catch (e) {} }
-    achMax('dashes', player.dashes || 0);
-    achMax('chests', player.chests || 0);
-    achMax('evos', Object.keys(player.evolved || {}).length);
-    achMax('mods', modsSeen || 0);
-    var kindsEnd = {};
-    for (var wke = 0; wke < player.weapons.length; wke++) { if (player.weapons[wke] && player.weapons[wke].id) kindsEnd[player.weapons[wke].id] = 1; }
-    achMax('weaponKinds', Object.keys(kindsEnd).length);
     addToLB(score, waveNum, gameTime, xpEarned);
     lbPush(score, waveNum, gameTime, xpEarned);
     if (SDK.inited) {
@@ -2434,10 +2264,6 @@ var text = t('top10');
       '<div class="stats">' + t('kills') + '<b>' + kills + '</b></div>' +
       '<div class="stats">' + t('statDmg') + '<b>' + Math.round(dmgDealt) + '</b></div>' +
       '<div class="stats">' + t('statCombo') + '<b>x' + maxCombo + '</b></div>' +
-      '<div class="stats">DPS<b>' + Math.round(dmgDealt / Math.max(1, gameTime)) + '</b></div>' +
-      '<div class="stats">⚡ Рывков<b>' + (player.dashes || 0) + '</b></div>' +
-      '<div class="stats">🎁 Сундуков<b>' + (player.chests || 0) + '</b></div>' +
-      '<div class="stats" style="color:#ffd24d">★ Эволюций<b>' + (Object.keys(player.evolved || {}).length) + '</b></div>' +
       '<div class="stats">' + t('statAcc') + '<b>' + (shotsFired > 0 ? Math.round(shotsHit / Math.max(1, shotsFired) * 100) + '%' : '—') + '</b></div>' +
       '<div class="stats">' + t('scoreFinal') + '<b>' + Math.round(score) + '</b></div>' +
       '<div class="stats">' + t('timeSurv') + '<b>' + fmtTime(gameTime) + '</b></div>' +
@@ -2672,12 +2498,7 @@ var text = t('top10');
   window.__test.ban = function () { var b = document.querySelector('.levelup-screen .ban-btn'); if (b) b.click(); return { bans: player.bans, banned: JSON.stringify(lvlBans) }; };
   window.__test.reroll = function () { var r = document.querySelectorAll('.levelup-screen .mini-btn')[0]; if (r) r.click(); return { rerolls: player.rerolls, cards: document.querySelectorAll('.levelup-screen .upgrade-choice').length }; };
   window.__test.giveWeapons = function (ids) { for (var i = 0; i < ids.length; i++) { for (var k = 0; k < 6; k++) applyUpgrade(ids[i]); } return window.__test.wlvl(); };
-  window.__test.wlvl = function () { return { auto: weaponLvl('auto'), orbit: weaponLvl('orbit'), nova: weaponLvl('nova'), mine: weaponLvl('mine'), saw: weaponLvl('saw'), chain: weaponLvl('chain') }; };
-  window.__test.sale = function () { var id = dailySaleId(); var upg = progress.upg || {}; var costs = UPG_COSTS[id] || []; var lvl = upg[id] || 0; return { id: id, base: costs[lvl] || 0, cost: upgCost(id), cheap: costs[lvl] ? upgCost(id) === Math.round(costs[lvl] * 0.5) : false }; };
-  window.__test.hint = function () { return !!progress.dashHinted; };
-  window.__test.state = function () { return state; };
-  window.__test.music = function () { return { on: !!musicTimer, chords: MUSIC_CHORDS.length }; };
-  window.__test.enemyPool = function () { try { return waveEnemyPool(); } catch (e) { return []; } };
+  window.__test.wlvl = function () { return { auto: weaponLvl('auto'), orbit: weaponLvl('orbit'), nova: weaponLvl('nova'), mine: weaponLvl('mine') }; };
   window.__test.evoPick = function () { var opts = pickUpgrades(6); var found = []; for (var i = 0; i < opts.length; i++) if (opts[i].evo) found.push(opts[i].id); return found; };
   window.__test.evo = function (k) { applyEvolution(k); return { evolved: JSON.stringify(player.evolved), autoDmg: WEAPONS.auto.dmg, autoRate: WEAPONS.auto.rate, mineRate: WEAPONS.mine.rate, novaDmg: WEAPONS.nova.dmg, novaRadius: WEAPONS.nova.radius }; };
   window.__test.mod = function () { waveNum = 4; var out = []; for (var mi = 0; mi < 12; mi++) { waveMod = null; rollWaveMod(); if (waveMod) out.push(waveMod.id); } return out.join(','); };
@@ -2707,40 +2528,6 @@ var text = t('top10');
     return { killed: enemies.indexOf(e) < 0, hpBefore: Math.round(hpBefore), hpAfter: Math.round(player.hp), chests: gems.filter(function (g) { return g.chest; }).length };
   };
   window.__test.poolIds = function () { var o = pickUpgrades(99); var ids = []; for (var i = 0; i < o.length; i++) ids.push(o[i].id); return ids; };
-  window.__test.sawTest = function () {
-    addSaw(); addSaw();
-    spawnEnemy('chaser');
-    var e = enemies[enemies.length - 1];
-    e.x = player.x + 60; e.y = player.y;
-    var hp0 = e.hp;
-    fireSaws(player.weapons); fireSaws(player.weapons);
-    for (var k = 0; k < 12; k++) { updateSaws(); }
-    return { saws: sawShots.length, lvl: weaponLvl('saw'), enemyHpDrop: Math.round(hp0 - e.hp) };
-  };
-  window.__test.sawBounce = function () {
-    sawShots = [];
-    spawnEnemy('chaser');
-    var e2 = enemies[enemies.length - 1];
-    e2.x = player.x + 120; e2.y = player.y;
-    sawShots.push({ x: player.x + 40, y: player.y, vx: 500, vy: 0, dmg: 20, r: 16, life: 2, spin: 0, hits: {}, bounces: 0 });
-    updateSaws();
-    return { bounces: sawShots.length ? sawShots[0].bounces : -1, vx: sawShots.length ? Math.round(sawShots[0].vx) : 0 };
-  };
-  window.__test.chainTest = function () {
-    addChain(); addChain();
-    for (var ci = 0; ci < 5; ci++) { spawnEnemy('chaser'); enemies[enemies.length - 1].x = player.x + 90 + ci * 55; enemies[enemies.length - 1].y = player.y; }
-    var before = 0;
-    for (var cj = 0; cj < enemies.length; cj++) before += enemies[cj].hp;
-    fireChain(player.weapons);
-    var after = 0;
-    for (var ck = 0; ck < enemies.length; ck++) after += enemies[ck].hp;
-    return { lvl: weaponLvl('chain'), dmgDone: Math.round(before - after), zaps: chainFx.length };
-  };
-  window.__test.evoNew = function (k) { applyEvolution(k); return { evolved: JSON.stringify(player.evolved), sawRate: WEAPONS.saw.rate, sawDmg: WEAPONS.saw.dmg, chainRate: WEAPONS.chain.rate, chainDmg: WEAPONS.chain.dmg, novaRadius: WEAPONS.nova.radius }; };
-  window.__test.puddleTest = function () {
-    puddles.push({ x: player.x, y: player.y, r: 80, t: 3, c: '#f60' });
-    return { puddles: puddles.length };
-  };
   window.__test.chestClose = function () { dropChest(player.x + 10, player.y); return gems.filter(function (g) { return g.chest; }).length; };
     window.__test.stuck = function () {
       var far = 0, out = 0, minD = 1e9, maxD = 0, slow = 0;
@@ -2840,10 +2627,7 @@ var text = t('top10');
     dt = Math.min((ts - lastTime) / 1000, 0.05);
     lastTime = ts;
     try {
-      if (state === 'playing') {
-        if (hitStop > 0) { hitStop -= dt; }
-        else { update(); updateHUD(); }
-      }
+      if (state === 'playing') { update(); updateHUD(); }
       render();
     } catch (err) {
       if (__errs.length < 10) {
@@ -3008,9 +2792,6 @@ var text = t('top10');
     // weapons
     fireAuto(p.weapons);
     fireMines(p.weapons);
-    fireSaws(p.weapons);
-    fireChain(p.weapons);
-    updateSaws();
     updateOrbits();
     updateHelper();
     updatePet();
@@ -3099,14 +2880,6 @@ var text = t('top10');
     }
     // mines timer flash
     for (var mi2 = magnet.length - 1; mi2 >= 0; mi2--) { if (magnet[mi2].t <= 0) { mineExplode(magnet[mi2]); magnet.splice(mi2, 1); } }
-
-    // лужи (опасные зоны) от взрывов
-    for (var pdi = puddles.length - 1; pdi >= 0; pdi--) {
-      var pdl = puddles[pdi];
-      pdl.t -= dt;
-      if (pdl.t <= 0) { puddles.splice(pdi, 1); continue; }
-      if (dist(pdl, p) < pdl.r) { p.slowT = Math.max(p.slowT || 0, 0.35); }
-    }
 
     // enemies
     var nearElite = [];
@@ -3228,7 +3001,6 @@ var text = t('top10');
           boom(en.x, en.y, '#ff5', 30);
           shake = Math.min(shake + 5, 12);
           if (fx.length < 260) fx.push({ type: 'boom', x: en.x, y: en.y, r: 70, life: 0.4, maxLife: 0.4, c: '#ff5' });
-          if (puddles.length < 24) puddles.push({ x: en.x, y: en.y, r: 78, t: 3.2, c: '#f60' });
           soundBoom();
           if (p.iframes <= 0) { if (hitPlayer(Math.round(en.dmg * 1.6))) return; }
           enemies.splice(i2, 1);
@@ -4003,77 +3775,6 @@ var text = t('top10');
         ctx.stroke();
         ctx.restore();
       }
-    }
-
-    // лужи
-    for (var pdr = 0; pdr < puddles.length; pdr++) {
-      var pd = puddles[pdr];
-      var pdA = Math.min(0.5, pd.t / 1.2) * (0.75 + 0.25 * Math.sin(gameTime * 6 + pd.x));
-      ctx.save();
-      ctx.globalAlpha = pdA;
-      ctx.fillStyle = pd.c || '#7d3';
-      ctx.beginPath();
-      ctx.arc(pd.x, pd.y, pd.r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalAlpha = pdA * 0.5;
-      ctx.fillStyle = '#fff';
-      ctx.beginPath();
-      ctx.arc(pd.x, pd.y, pd.r * 0.6, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-
-    // пилы
-    for (var swi = 0; swi < sawShots.length; swi++) {
-      var sw2 = sawShots[swi];
-      ctx.save();
-      ctx.translate(sw2.x, sw2.y);
-      ctx.rotate(sw2.spin);
-      ctx.globalAlpha = 0.35;
-      ctx.fillStyle = '#cfe0ff';
-      ctx.beginPath();
-      ctx.arc(0, 0, sw2.r * 1.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = '#e6eef7';
-      ctx.strokeStyle = '#8899aa';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      for (var sg2 = 0; sg2 < 10; sg2++) {
-        var sa2 = sg2 / 10 * Math.PI * 2;
-        var sr2 = sg2 % 2 ? sw2.r * 0.72 : sw2.r;
-        if (sg2 === 0) ctx.moveTo(Math.cos(sa2) * sr2, Math.sin(sa2) * sr2);
-        else ctx.lineTo(Math.cos(sa2) * sr2, Math.sin(sa2) * sr2);
-      }
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    // цепная молния
-    for (var chi2 = chainFx.length - 1; chi2 >= 0; chi2--) {
-      var chf = chainFx[chi2];
-      chf.life -= dt;
-      if (chf.life <= 0) { chainFx.splice(chi2, 1); continue; }
-      ctx.save();
-      ctx.globalAlpha = Math.max(0, chf.life / chf.maxLife);
-      ctx.strokeStyle = '#bfe6ff';
-      ctx.lineWidth = 3;
-      ctx.shadowColor = '#7fd0ff';
-      ctx.shadowBlur = 12;
-      ctx.beginPath();
-      ctx.moveTo(chf.x1, chf.y1);
-      var segs = 5;
-      for (var csg = 1; csg < segs; csg++) {
-        var cfr = csg / segs;
-        var cpx = chf.x1 + (chf.x2 - chf.x1) * cfr + (Math.random() - 0.5) * 26;
-        var cpy = chf.y1 + (chf.y2 - chf.y1) * cfr + (Math.random() - 0.5) * 26;
-        ctx.lineTo(cpx, cpy);
-      }
-      ctx.lineTo(chf.x2, chf.y2);
-      ctx.stroke();
-      ctx.restore();
     }
 
     // mines
