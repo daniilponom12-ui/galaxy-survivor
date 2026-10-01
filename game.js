@@ -2542,7 +2542,6 @@ function quitToMenu() {
       '<button class="btn-play" onclick="window.__play()">' + t('play') + '</button>' +
       '<button class="btn-shop" onclick="window.__shop()">' + t('shop') + '</button>' +
       '<button class="btn-ach" onclick="window.__ach()">🏆 ' + t('achBtn') + '</button>' +
-      '<button class="btn-leaderboard" onclick="window.__snd()">' + (sndOn ? t('sndOn') : t('sndOff')) + '</button>' +
       '<button class="btn-leaderboard" onclick="window.__showLB()">' + t('top') + '</button>' +
       '<div class="subtitle" style="font-size:13px;color:#666;margin-top:20px">' + t('controls') + '</div>' +
       '<div id="build-tag" style="font:11px monospace;color:#4a5;opacity:.55;margin-top:8px;letter-spacing:1px">build ' + BUILD_ID + '</div>' +
@@ -4669,7 +4668,7 @@ function quitToMenu() {
   }
 
 /* ============ MUSIC DEBUG (?dbg=1) ============ */
-var BUILD_ID = 'm68';
+var BUILD_ID = 'm69';
 function musicDebugOn() { try { return /(\?|&)dbg=1/.test(location.search); } catch (e) { return false; } }
 function initMusicDebug() {
   if (!musicDebugOn()) return;
