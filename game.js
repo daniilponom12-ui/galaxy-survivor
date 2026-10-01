@@ -120,6 +120,7 @@
       pu_magnet: 'Сбор +20%', pu_magnet_d: 'Увеличивает радиус подбора кристаллов',
       diamNo: 'Не хватает алмазов!', diamBuy: 'Куплено!', diamGot: 'Алмаз!',
       contLbl: 'Продолжить (∞)', sndOn: '🔊 Звук: ВКЛ', sndOff: '🔇 Звук: ВЫКЛ',
+      musBtnOn: '🎵 Музыка: ВКЛ', musBtnOff: '🎵 Музыка: ВЫКЛ',
       statDmg: 'Урон выдан', statCombo: 'Макс. комбо', statAcc: 'Точность',
       puPower: 'БОНУС!'
     },
@@ -213,6 +214,7 @@
       pu_magnet: 'Pickup +20%', pu_magnet_d: 'Increases crystal pickup radius',
       diamNo: 'Not enough gems!', diamBuy: 'Bought!', diamGot: 'Gem!',
       contLbl: 'Continue (∞)', sndOn: '🔊 Sound: ON', sndOff: '🔇 Sound: OFF',
+      musBtnOn: '🎵 Music: ON', musBtnOff: '🎵 Music: OFF',
       statDmg: 'Damage dealt', statCombo: 'Max combo', statAcc: 'Accuracy',
       puPower: 'BONUS!'
     }
@@ -1067,7 +1069,10 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   var musIntensity = 0, musBoss = false, musStarted = 0, musFade = 0, musStingerAt = 0;
   var musLiveTrack = '', musSavedStep = 0, musSavedBar = 0, musPaused = false, musMuted = false;
   var musChainSeq = 0, musChainId = 0, actxCount = 0;
-  var MUSIC_ENABLED = false;
+  var MUSIC_ENABLED = true;
+  // музыка по умолчанию выключена и включается только кнопкой в меню
+  var musWanted = false;
+  try { musWanted = localStorage.getItem('gs_mus') === '1'; } catch (e) {}
   function musicTargetVol() { return Math.max(0.02, musicVol * 0.55); }
 
   function musTheme() { return MUSIC_THEMES[musTrack] || MUSIC_THEMES.m1; }
@@ -1362,6 +1367,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
 
   function startMusic(trackId, resume) {
     if (!MUSIC_ENABLED) return null;
+    if (!musWanted) return null;
     if (!sndOn) return null;
     var a = audio(); if (!a) return null;
     if (trackId) musTrack = MUSIC_THEMES[trackId] ? trackId : musTrack;
@@ -2170,7 +2176,6 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
 
   /* ============ SOUND ============ */
   var sndOn = true;
-  try { sndOn = localStorage.getItem('gs_snd') !== '0'; } catch (e) {}
   var actx = null;
   function audio() {
     if (!sndOn) return null;
@@ -2211,6 +2216,20 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       musPaused = true;
     }
     return sndOn;
+  }
+  // музыка включается/выключается только этой кнопкой, сама по себе не стартует
+  function toggleMusic() {
+    musWanted = !musWanted;
+    try { localStorage.setItem('gs_mus', musWanted ? '1' : '0'); } catch (e) {}
+    if (musWanted) {
+      sndOn = true; musMuted = false; musPaused = false;
+      audio();
+      startMusic();
+    } else {
+      musMuted = false; musPaused = false;
+      stopMusic(280);
+    }
+    return musWanted;
   }
   function blip(f, d, type, vol) {
     try {
@@ -2542,6 +2561,7 @@ function quitToMenu() {
       '<button class="btn-play" onclick="window.__play()">' + t('play') + '</button>' +
       '<button class="btn-shop" onclick="window.__shop()">' + t('shop') + '</button>' +
       '<button class="btn-ach" onclick="window.__ach()">🏆 ' + t('achBtn') + '</button>' +
+      '<button class="btn-leaderboard" onclick="window.__mus()">' + (musWanted ? t('musBtnOn') : t('musBtnOff')) + '</button>' +
       '<button class="btn-leaderboard" onclick="window.__showLB()">' + t('top') + '</button>' +
       '<div class="subtitle" style="font-size:13px;color:#666;margin-top:20px">' + t('controls') + '</div>' +
       '<div id="build-tag" style="font:11px monospace;color:#4a5;opacity:.55;margin-top:8px;letter-spacing:1px">build ' + BUILD_ID + '</div>' +
@@ -2563,6 +2583,8 @@ function quitToMenu() {
     };
     window.__showLB = function () { showLB(); };
     window.__snd = function () { toggleSound(); showMenu(); };
+    window.__mus = function () { toggleMusic(); showMenu(); };
+    window.__musGet = function () { return musWanted ? 1 : 0; };
     window.__sndGet = function () { return sndOn ? 1 : 0; };
     window.__setMode = function (m) { progress.mode = m; saveProgress(); showMenu(); };
     window.__getMode = function () { return progress.mode; };
@@ -4668,7 +4690,7 @@ function quitToMenu() {
   }
 
 /* ============ MUSIC DEBUG (?dbg=1) ============ */
-var BUILD_ID = 'm69';
+var BUILD_ID = 'm70';
 function musicDebugOn() { try { return /(\?|&)dbg=1/.test(location.search); } catch (e) { return false; } }
 function initMusicDebug() {
   if (!musicDebugOn()) return;
@@ -4692,6 +4714,7 @@ function initMusicDebug() {
     try { g = musMaster ? Math.round(musMaster.gain.value * 100) / 100 : -1; } catch (e) {}
     var txt =
       'ЗВУК: ' + (sndOn ? 'ВКЛ' : 'ВЫКЛ')
+      + '\nМУЗЫКА: ' + (musWanted ? 'ВКЛ' : 'ВЫКЛ')
       + '\nЦЕПЕЙ: ' + (musChainId || 0)
       + '\nТЕМП: ' + Math.round(musTempo())
       + '\nГРОМКОСТЬ: ' + g
