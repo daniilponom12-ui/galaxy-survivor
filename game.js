@@ -7,15 +7,28 @@
 
   var WORLD_W = 4200, WORLD_H = 4200;
   var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var LOW_POWER = false;
+  try {
+    // слабые телефоны: меньше пикселей -> выше fps
+    var mem = navigator.deviceMemory || 8;
+    var cores = navigator.hardwareConcurrency || 8;
+    LOW_POWER = (mem <= 3 || cores <= 3);
+    if (window.__forceLowPower != null) LOW_POWER = !!window.__forceLowPower;
+    if (LOW_POWER) dpr = Math.min(dpr, 1);
+  } catch (e) {}
 
   var W, H;
   function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, LOW_POWER ? 1 : 2);
     W = window.innerWidth; H = window.innerHeight;
-    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
     canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
   window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', function () { setTimeout(resize, 120); });
+  // на телефоне адресная строка меняет высоту окна - ловим visualViewport
+  if (window.visualViewport) { window.visualViewport.addEventListener('resize', resize); }
   resize();
 
   /* ============ LOCALIZATION ============ */
@@ -34,7 +47,7 @@
       play: '▶ ИГРАТЬ', shop: '🛒 Магазин (реклама)', top: '🏆 Топ игроков',
       recordLbl: 'Рекорд: ',
       subtitle: 'Выживай среди орд космических монстров!<br>Собирай XP, прокачивайся и ставь рекорды',
-      controls: 'WASD/стрелки/тач-джойстик — движение<br>Пробел — заморозка врагов',
+      controls: '🕹 Джойстик или касание экрана — движение<br>❄ Кнопка снизу справа или Пробел — заморозка врагов<br>⏸ Кнопка сверху справа или Esc — пауза',
       gameOver: 'GAME OVER', waveReached: 'Достигнута волна: ', kills: 'Убито врагов: ',
       scoreFinal: 'Очки: ', timeSurv: 'Время выживания: ', recordFinal: 'Рекорд: ',
       newRecord: 'НОВЫЙ РЕКОРД!', again: 'Играть снова',
@@ -128,7 +141,7 @@
       play: '▶ PLAY', shop: '🛒 Shop (ads)', top: '🏆 Leaderboards',
       recordLbl: 'Best: ',
       subtitle: 'Survive hordes of space monsters!<br>Collect XP, level up and set records',
-      controls: 'WASD / arrows / touch stick — move<br>Space — freeze enemies',
+      controls: 'Joystick or touch — move<br>Bottom-right button or Space — freeze enemies<br>Top-right button or Esc — pause',
       gameOver: 'GAME OVER', waveReached: 'Reached wave: ', kills: 'Enemies killed: ',
       scoreFinal: 'Score: ', timeSurv: 'Survival time: ', recordFinal: 'Best: ',
       newRecord: 'NEW RECORD!', again: 'Play again',
@@ -488,7 +501,7 @@ var text = t('top10');
     }
     for (var l = 0; l < 3; l++) {
       starLayers[l] = [];
-      var count = l === 0 ? 420 : (l === 1 ? 170 : 60);
+      var count = LOW_POWER ? (l === 0 ? 190 : (l === 1 ? 80 : 28)) : (l === 0 ? 420 : (l === 1 ? 170 : 60));
       for (var s = 0; s < count; s++) {
         starLayers[l].push({
           x: Math.random() * WORLD_W, y: Math.random() * WORLD_H,
@@ -2205,6 +2218,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
 
   function showLevelUp() {
     state = 'levelup';
+    joyEnd(); // на экране выбора улучшения палец не должен держать движение
     var options = pickUpgrades(3);
     var scr = document.createElement('div');
     scr.className = 'levelup-screen';
@@ -2339,25 +2353,82 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     keys[e.code] = false;
   });
 
+  /* ---- МОБИЛЬНОЕ УПРАВЛЕНИЕ: виртуальный джойстик + кнопка заморозки ---- */
+  var IS_TOUCH = window.__forceTouch != null ? !!window.__forceTouch
+      : ((('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) && !window.__forceDesktop);
+  var joy = { active: false, id: null, baseX: 0, baseY: 0, dx: 0, dy: 0, r: 58 };
+
+  function joyStart(t) {
+    joy.active = true; joy.id = t.identifier;
+    joy.baseX = t.clientX; joy.baseY = t.clientY;
+    joy.dx = 0; joy.dy = 0;
+  }
+  function joyMove(t) {
+    var vx = t.clientX - joy.baseX, vy = t.clientY - joy.baseY;
+    var len = Math.sqrt(vx * vx + vy * vy);
+    var max = joy.r;
+    if (len > max) {
+      // палец ушёл дальше - база тянется за пальцем, иначе управление "залипает"
+      joy.baseX += vx * (1 - max / len);
+      joy.baseY += vy * (1 - max / len);
+      vx = (t.clientX - joy.baseX); vy = (t.clientY - joy.baseY);
+      len = Math.sqrt(vx * vx + vy * vy) || 1;
+    }
+    joy.dx = vx / max; joy.dy = vy / max;
+  }
+  function joyEnd() { joy.active = false; joy.id = null; joy.dx = 0; joy.dy = 0; }
+
+  function drawJoystick() {
+    if (!IS_TOUCH || state !== 'playing') return;
+    if (!joy.active) return;
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.strokeStyle = '#8fd0ff';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(joy.baseX, joy.baseY, joy.r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = '#8fd0ff';
+    ctx.fill();
+    var kx = joy.baseX + joy.dx * joy.r, ky = joy.baseY + joy.dy * joy.r;
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle = '#dff2ff';
+    ctx.beginPath();
+    ctx.arc(kx, ky, 26, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
   canvas.addEventListener('touchstart', function (e) {
     e.preventDefault();
-    var t = e.changedTouches[0];
-    touchId = t.identifier;
-    mouse.x = t.clientX; mouse.y = t.clientY; mouse.down = true;
+    for (var i = 0; i < e.changedTouches.length; i++) {
+      var t = e.changedTouches[i];
+      // нижняя левая часть экрана - джойстик, остальное - движение "палец ведёт"
+      if (IS_TOUCH && t.clientY > H * 0.3 && t.clientX < W * 0.55) { joyStart(t); }
+      else if (touchId === null) { touchId = t.identifier; mouse.x = t.clientX; mouse.y = t.clientY; mouse.down = true; }
+    }
   }, { passive: false });
   canvas.addEventListener('touchmove', function (e) {
     e.preventDefault();
     for (var i = 0; i < e.changedTouches.length; i++) {
-      if (e.changedTouches[i].identifier === touchId) {
-        mouse.x = e.changedTouches[i].clientX; mouse.y = e.changedTouches[i].clientY;
-      }
+      var t2 = e.changedTouches[i];
+      if (joy.active && t2.identifier === joy.id) { joyMove(t2); }
+      else if (t2.identifier === touchId) { mouse.x = t2.clientX; mouse.y = t2.clientY; }
     }
   }, { passive: false });
-  canvas.addEventListener('touchend', function (e) {
+  function touchFinish(e) {
     for (var i = 0; i < e.changedTouches.length; i++) {
-      if (e.changedTouches[i].identifier === touchId) { mouse.down = false; touchId = null; }
+      var t3 = e.changedTouches[i];
+      if (joy.active && t3.identifier === joy.id) { joyEnd(); }
+      else if (t3.identifier === touchId) { mouse.down = false; touchId = null; }
     }
-  });
+  }
+  canvas.addEventListener('touchend', touchFinish);
+  canvas.addEventListener('touchcancel', touchFinish);
+  // не даём странице скроллиться/зумиться/выпадать меню контекста
+  document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
+  document.addEventListener('dblclick', function (e) { e.preventDefault(); }, { passive: false });
   canvas.addEventListener('mousemove', function (e) { mouse.x = e.clientX; mouse.y = e.clientY; });
   canvas.addEventListener('mousedown', function (e) { mouse.down = true; });
   canvas.addEventListener('mouseup', function () { mouse.down = false; });
@@ -2373,7 +2444,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   }
 
   function togglePause() {
-    if (state === 'playing') { state = 'paused'; showPaused(); }
+    if (state === 'playing') { state = 'paused'; joyEnd(); showPaused(); }
     else if (state === 'paused') { state = 'playing'; hidePaused(); }
   }
 
@@ -2391,6 +2462,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
 
 function quitToMenu() {
   state = 'menu';
+  joyEnd();
   musPaused = false;
   stopMusic();
     enemies = []; gems = []; projectiles = []; parts = []; fx = []; magnet = [];
@@ -2403,6 +2475,7 @@ function quitToMenu() {
     audio(); // unlock audio
     startMusic();
     state = 'playing';
+    joyEnd(); // сбрасываем джойстик, иначе персонаж "убегает" сам после рестарта
     player = makePlayer();
     enemies = []; projectiles = []; gems = []; parts = []; fx = []; orbHit = []; magnet = [];
     helper = null;
@@ -2442,8 +2515,9 @@ function quitToMenu() {
 
   function endGame() {
     if (state === 'gameover' || state === 'victory') return;
-    if (victory) { state = 'victory'; showVictory(); return; }
+    if (victory) { state = 'victory'; joyEnd(); showVictory(); return; }
     state = 'gameover';
+    joyEnd();
     musicStinger('lose');
     if (gameMode === 'hardcore') { score *= 2; xpEarned *= 2; }
     if (gameMode === 'endless') score = Math.round(score * (1 + Math.floor(waveNum / 20) * 0.25));
@@ -2715,6 +2789,37 @@ function quitToMenu() {
       }
       return { live: enemies.length, orbiters: orb, orbDist: orbSample, closest: Math.round(minD), farthest: Math.round(maxD), worstOverlap: Math.round(worstOverlap * 100) / 100, wave: waveNum, state: state };
     };
+    window.__test.mob = function () {
+      var fb = document.querySelector('.mob-btn.freeze');
+      var pb2 = document.querySelector('.mob-btn.pause');
+      return {
+        isTouch: IS_TOUCH, lowPower: LOW_POWER, dpr: Math.round(dpr * 100) / 100,
+        W: W, H: H, joyActive: joy.active, joy: [Math.round(joy.dx * 100) / 100, Math.round(joy.dy * 100) / 100],
+        freezeBtn: fb ? { shown: fb.style.display !== 'none', text: fb.textContent, cls: fb.className } : null,
+        pauseBtn: pb2 ? { shown: pb2.style.display !== 'none' } : null,
+        touchAction: getComputedStyle(canvas).touchAction,
+        vx: Math.round(player.vx * 100) / 100, vy: Math.round(player.vy * 100) / 100,
+        px: Math.round(player.x), py: Math.round(player.y),
+        stars: (function () { var n = 0; for (var q = 0; q < starLayers.length; q++) n += starLayers[q].length; return n; })(),
+        canvasPx: canvas.width + 'x' + canvas.height,
+        lowPowerStars: LOW_POWER
+      };
+    };
+    window.__test.joy = function (dx, dy, on) {
+      if (on === false) { joyEnd(); return window.__test.mob(); }
+      joy.active = true; joy.id = -1; joy.dx = dx; joy.dy = dy; return window.__test.mob();
+    };
+    window.__test.unlockFreeze = function () {
+      player.freezeUnlocked = true; player.freezeCd = 0;
+      updateHUD();
+      return window.__test.mob();
+    };
+    window.__test.tap = function (sel) {
+      var el = document.querySelector(sel);
+      if (!el) return 'no element ' + sel;
+      el.click();
+      return sel + ' clicked, cd=' + Math.round(player.freezeCd * 10) / 10;
+    };
     window.__test.god = function () {
       player.maxHp = 99999; player.hp = 99999;
       if (window.__godTimer) clearInterval(window.__godTimer);
@@ -2799,9 +2904,9 @@ function quitToMenu() {
   }
 
   /* ============ HUD ============ */
-  var hudEl = null;
+  var hudEl = null, mobFreezeBtn = null, mobPauseBtn = null;
   function addHUD() {
-    document.querySelectorAll('.hud,.pause-btn,.weapon-hud').forEach(function (el) { el.remove(); });
+    document.querySelectorAll('.hud,.pause-btn,.weapon-hud,.mob-btn').forEach(function (el) { el.remove(); });
     hudEl = document.createElement('div');
     hudEl.className = 'hud';
     hudEl.innerHTML = '<div class="hp-bar"><div class="hp-fill" id="hpfill"></div></div>' +
@@ -2813,6 +2918,21 @@ function quitToMenu() {
     pb.textContent = '⏸';
     pb.onclick = function () { togglePause(); };
     document.body.appendChild(pb);
+
+    document.querySelectorAll('.mob-btn').forEach(function (el) { el.remove(); });
+    if (IS_TOUCH) {
+      mobFreezeBtn = document.createElement('button');
+      mobFreezeBtn.className = 'mob-btn freeze';
+      mobFreezeBtn.textContent = '❄';
+      mobFreezeBtn.onclick = function (e) { e.preventDefault(); e.stopPropagation(); if (state === 'playing') doFreeze(); };
+      document.body.appendChild(mobFreezeBtn);
+
+      mobPauseBtn = document.createElement('button');
+      mobPauseBtn.className = 'mob-btn pause';
+      mobPauseBtn.textContent = '⏸';
+      mobPauseBtn.onclick = function (e) { e.preventDefault(); e.stopPropagation(); togglePause(); };
+      document.body.appendChild(mobPauseBtn);
+    }
   }
 
   function updateHUD() {
@@ -2831,11 +2951,21 @@ function quitToMenu() {
       }
       infoEl.innerHTML = t('waveLbl') + waveNum + '  |  ' + t('lvlLbl') + player.lvl + '  |  ' + t('ptsLbl') + Math.round(score) + '  |  <span style="color:#4ff">💎' + progress.diamonds + '</span>' + (xpField > 0 ? '  <span style="color:#0f6">✦' + xpField + '</span>' : '') + (gameMode !== 'normal' ? '  <b style="color:' + (gameMode === 'hardcore' ? '#f44' : (gameMode === 'timer' ? '#f80' : '#6ff')) + '">' + t('mode' + (gameMode === 'hardcore' ? 'Hard' : (gameMode === 'endless' ? 'Endless' : 'Timer'))) + '</b>' : '') + (gameMode === 'timer' ? '  <b style="color:#f80">⏱' + fmtTime(Math.max(0, timerTime)) + '</b>' : '') + combHtml + (player.freezeUnlocked && player.freezeCd > 0 ? t('frozen') + Math.ceil(player.freezeCd) : '');
     }
+    if (mobFreezeBtn) {
+      if (!player.freezeUnlocked) { mobFreezeBtn.style.display = 'none'; }
+      else {
+        mobFreezeBtn.style.display = 'flex';
+        var cooling = player.freezeCd > 0;
+        mobFreezeBtn.className = 'mob-btn freeze' + (cooling ? ' cooling' : ' ready');
+        mobFreezeBtn.textContent = cooling ? String(Math.ceil(player.freezeCd)) : '❄';
+      }
+    }
   }
 
   /* ============ MAIN LOOP ============ */
   var dt = 0.016;
   var __errs = [];
+  window.__errs = __errs;
   function loop(ts) {
     dt = Math.min((ts - lastTime) / 1000, 0.05);
     lastTime = ts;
@@ -2898,7 +3028,14 @@ function quitToMenu() {
     if (keys['KeyS'] || keys['ArrowDown']) dy += 1;
     if (keys['KeyA'] || keys['ArrowLeft']) dx -= 1;
     if (keys['KeyD'] || keys['ArrowRight']) dx += 1;
-    if (mouse.down) {
+    if (joy.active) {
+      // виртуальный джойстик: аналоговая скорость, мёртвая зона в центре
+      var jlen = Math.sqrt(joy.dx * joy.dx + joy.dy * joy.dy);
+      if (jlen > 0.16) {
+        var jn = Math.min(1, (jlen - 0.16) / 0.84);
+        dx = (joy.dx / jlen) * jn; dy = (joy.dy / jlen) * jn;
+      } else { dx = 0; dy = 0; }
+    } else if (mouse.down) {
       var cx = W / 2, cy = H / 2;
       dx = mouse.x - cx; dy = mouse.y - cy;
       var mlen = Math.sqrt(dx * dx + dy * dy);
@@ -3100,7 +3237,8 @@ function quitToMenu() {
       var mvy = Math.sin(a2) * spd * dt;
       // мягкое расталкивание соседей, чтобы враги не слипались в одну кучу
       var sepX = 0, sepY = 0;
-      for (var sn = 0; sn < enemies.length; sn++) {
+      var sepLimit = LOW_POWER ? Math.min(enemies.length, 50) : enemies.length;
+      for (var sn = 0; sn < sepLimit; sn++) {
         if (sn === i2) continue;
         var ot = enemies[sn];
         var ddx = en.x - ot.x, ddy = en.y - ot.y;
@@ -3518,8 +3656,9 @@ function quitToMenu() {
       ctx.beginPath();
       ctx.arc(nbx, nby, nRadius, 0, Math.PI * 2);
       ctx.fill();
-      // внутренние клубы пыли
-      for (var nk = 0; nk < 3; nk++) {
+      // внутренние клубы пыли (на слабых телефонах отключаем - экономим CPU)
+      var dustCount = LOW_POWER ? 1 : 3;
+      for (var nk = 0; nk < dustCount; nk++) {
         var kx = nbx + Math.cos(nebulaSeeds[nb].a + nk * 2.1) * nRadius * 0.42;
         var ky = nby + Math.sin(nebulaSeeds[nb].a + nk * 2.1) * nRadius * 0.42;
         var kr = nRadius * 0.3;
@@ -3550,7 +3689,7 @@ function quitToMenu() {
         if (sl > 0 && st.r > 1.5) {
           ctx.globalAlpha = twinkle * 0.5;
           ctx.shadowColor = st.c;
-          ctx.shadowBlur = 8;
+          ctx.shadowBlur = LOW_POWER ? 0 : 8;
         } else {
           ctx.shadowBlur = 0;
           ctx.globalAlpha = twinkle;
@@ -4903,10 +5042,11 @@ function quitToMenu() {
       ctx.textAlign = 'left';
       break;
     }
+    drawJoystick();
   }
 
 /* ============ MUSIC DEBUG (?dbg=1) ============ */
-var BUILD_ID = 'm75';
+var BUILD_ID = 'm76';
 function musicDebugOn() { try { return /(\?|&)dbg=1/.test(location.search); } catch (e) { return false; } }
 function initMusicDebug() {
   if (!musicDebugOn()) return;
