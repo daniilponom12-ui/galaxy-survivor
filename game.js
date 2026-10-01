@@ -2966,6 +2966,34 @@ function quitToMenu() {
   var dt = 0.016;
   var __errs = [];
   window.__errs = __errs;
+  window.__probeScreen = function (sel) {
+    var s = document.querySelector(sel);
+    if (!s) return { err: 'no screen' };
+    var sr = s.getBoundingClientRect();
+    var cs = getComputedStyle(s);
+    var btns = s.querySelectorAll('button,input,.upgrade-choice,.ach-row');
+    var last = null;
+    for (var i = 0; i < btns.length; i++) {
+      var lr = btns[i].getBoundingClientRect();
+      last = { txt: (btns[i].textContent || btns[i].placeholder || '').trim().slice(0, 12), bot: Math.round(lr.bottom) };
+    }
+    var maxTop = s.scrollHeight - s.clientHeight;
+    s.scrollTop = maxTop;
+    var first = btns.length ? btns[0].getBoundingClientRect() : null;
+    var res = {
+      vpH: window.innerHeight,
+      scrollH: s.scrollHeight,
+      maxTop: Math.round(maxTop),
+      scrolledTo: Math.round(s.scrollTop),
+      touchAction: cs.touchAction,
+      overflowY: cs.overflowY,
+      lastBtn: last,
+      lastVisible: last ? (last.bot <= Math.round(sr.bottom) + 1 && last.bot > Math.round(sr.top)) : null,
+      firstVisible: first ? (first.top >= Math.round(sr.top) - 1) : null
+    };
+    s.scrollTop = 0;
+    return res;
+  };
   function loop(ts) {
     dt = Math.min((ts - lastTime) / 1000, 0.05);
     lastTime = ts;
@@ -5046,7 +5074,7 @@ function quitToMenu() {
   }
 
 /* ============ MUSIC DEBUG (?dbg=1) ============ */
-var BUILD_ID = 'm76';
+var BUILD_ID = 'm77';
 function musicDebugOn() { try { return /(\?|&)dbg=1/.test(location.search); } catch (e) { return false; } }
 function initMusicDebug() {
   if (!musicDebugOn()) return;

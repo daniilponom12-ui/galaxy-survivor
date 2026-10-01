@@ -1,7 +1,7 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Segoe UI',Arial,sans-serif;
   -webkit-user-select:none;-webkit-touch-callout:none;user-select:none;
-  -webkit-tap-highlight-color:transparent;overscroll-behavior:none;touch-action:none;position:fixed;inset:0}
+  -webkit-tap-highlight-color:transparent;overscroll-behavior:none;position:fixed;inset:0}
 canvas{display:block;width:100%;height:100%;touch-action:none}
 #ui-overlay{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
 #ui-overlay *{pointer-events:auto}
@@ -10,7 +10,13 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 .hp-bar,.xp-bar{width:200px;height:14px;background:#333;border-radius:7px;overflow:hidden;border:1px solid #555}
 .hp-fill{height:100%;background:linear-gradient(90deg,#f44,#f77);transition:width .3s;border-radius:7px}
 .xp-fill{height:100%;background:linear-gradient(90deg,#4af,#7cf);transition:width .3s;border-radius:7px}
-.menu-screen{position:fixed;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.85);z-index:50;color:#fff}
+/* экраны меню: контент центрируется, но если он длиннее экрана - появляется прокрутка.
+   Псевдоэлементы с margin:auto центрируют содержимое, когда есть свободное место,
+   и "схлопываются" в ноль, когда контент не влезает - тогда прокрутка работает. */
+.menu-screen{position:fixed;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;background:rgba(0,0,0,.85);z-index:50;color:#fff;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;padding:calc(10px + env(safe-area-inset-top,0px)) 10px calc(10px + env(safe-area-inset-bottom,0px))}
+.menu-screen::before,.menu-screen::after{content:'';margin:auto}
+.gameover-screen::before,.gameover-screen::after{content:'';margin:auto}
+.levelup-screen::before,.levelup-screen::after{content:'';margin:auto}
 .menu-screen h1{font-size:48px;margin-bottom:10px;background:linear-gradient(135deg,#f0a,#4af);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .menu-screen .subtitle{font-size:16px;color:#aaa;margin-bottom:30px}
 .menu-screen button{padding:14px 48px;font-size:20px;border:none;border-radius:12px;cursor:pointer;margin:8px;font-weight:700;transition:transform .15s,box-shadow .15s}
@@ -40,7 +46,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 .nick-box input{padding:10px 14px;border-radius:10px;border:2px solid #4af;background:rgba(0,0,0,.5);color:#fff;font-size:16px;width:220px;outline:none;text-align:center}
 .nick-box input:focus{box-shadow:0 0 12px rgba(74,170,255,.5)}
 .nick-box button{padding:10px 16px;font-size:16px;margin:0;background:linear-gradient(135deg,#4af,#28f);color:#fff;border:none;border-radius:10px;cursor:pointer;font-weight:700}
-.lb-list{width:min(90%,420px);max-height:60vh;overflow-y:auto;margin:0 auto}
+.lb-list{width:min(90%,420px);max-height:none;overflow:visible;margin:0 auto}
 .lb-row{display:flex;align-items:center;gap:10px;padding:10px 14px;margin:4px 0;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid #444;color:#fff;font-size:15px}
 .lb-row.lb-mine{border-color:#ffd700;box-shadow:0 0 12px rgba(255,215,0,.35);background:rgba(255,215,0,.08)}
 .lb-pos{color:#4af;font-weight:700;min-width:28px}
@@ -58,20 +64,25 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 .garage-item .g-desc{font-size:11px;color:#aaa;margin-top:2px}
 .garage-item .g-hint{margin-top:8px;font-size:12px;font-weight:700;color:#fa2}
 .garage-item .g-selected{color:#4af;font-size:12px}
-.btn-close{position:absolute;top:10px;right:16px;background:none;border:none;color:#fff;font-size:34px;cursor:pointer;line-height:1}
-.menu-scroll{overflow-y:auto;max-height:90vh;width:100%;display:flex;flex-direction:column;align-items:center}
+/* fixed, а не absolute: экран теперь прокручиваемый, и кнопка закрытия
+   не должна уезжать вверх вместе с контентом */
+.btn-close{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:14px;z-index:60;background:rgba(0,0,0,.35);border:none;color:#fff;font-size:34px;cursor:pointer;line-height:1;width:44px;height:44px;border-radius:50%}
+/* .menu-screen сам является единственным прокручиваемым контейнером,
+   поэтому внутри .menu-scroll вложенный скролл не нужен - иначе на телефоне
+   жест конфликтует между двумя скролл-контейнерами и страница "залипает". */
+.menu-scroll{overflow:visible;max-height:none;width:100%;display:flex;flex-direction:column;align-items:center;padding-bottom:8px}
 .booster-row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:6px}
 .booster-chip{padding:10px 16px;border-radius:10px;border:2px solid #555;background:rgba(255,255,255,.07);color:#fff;cursor:pointer;text-align:center;font-size:13px;transition:all .15s}
 .booster-chip:hover{transform:scale(1.05)}
 .booster-chip.active{border-color:#ff0;background:rgba(255,255,0,.15);box-shadow:0 0 12px rgba(255,255,0,.3)}
 .booster-chip .b-cost{display:block;margin-top:4px;color:#fa2;font-size:11px;font-weight:700}
-.levelup-screen{position:fixed;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.8);z-index:50;color:#fff}
+.levelup-screen{position:fixed;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;background:rgba(0,0,0,.8);z-index:50;color:#fff;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;padding:calc(10px + env(safe-area-inset-top,0px)) 10px calc(10px + env(safe-area-inset-bottom,0px))}
 .levelup-screen h2{font-size:32px;margin-bottom:20px;color:#ff0}
 .upgrade-choice{padding:14px 24px;margin:8px;border:2px solid #555;border-radius:10px;background:rgba(255,255,255,.08);color:#fff;font-size:16px;cursor:pointer;min-width:260px;text-align:left;transition:all .15s}
 .upgrade-choice:hover{border-color:#4af;background:rgba(74,170,255,.15);transform:scale(1.03)}
 .upgrade-choice .uname{font-weight:700;color:#4af}
 .upgrade-choice .udesc{font-size:13px;color:#aaa;margin-top:2px}
-.gameover-screen{position:fixed;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.9);z-index:50;color:#fff}
+.gameover-screen{position:fixed;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;background:rgba(0,0,0,.9);z-index:50;color:#fff;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;padding:calc(10px + env(safe-area-inset-top,0px)) 10px calc(10px + env(safe-area-inset-bottom,0px))}
 .gameover-screen h2{font-size:42px;color:#f44;margin-bottom:10px}
 .gameover-screen .stats{font-size:18px;margin:6px;color:#ccc}
 .pause-btn{position:fixed;top:10px;right:10px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.15);border:2px solid #fff;color:#fff;font-size:20px;cursor:pointer;z-index:30;display:flex;align-items:center;justify-content:center}
