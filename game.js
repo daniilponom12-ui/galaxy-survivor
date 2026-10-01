@@ -473,14 +473,29 @@ var text = t('top10');
     asteroids.push({ x: Math.random() * WORLD_W, y: Math.random() * WORLD_H, r: 12 + Math.random() * 40, h: Math.random() * Math.PI * 2 });
   }
 
-  // космический фон: звёзды (3 слоя параллакса) — только звёзды и туманности
+  // космический фон: звёзды (3 слоя параллакса), туманности, сетка мира
   var starLayers = [];
+  var nebulaSeeds = [];
+  var starColors = ['#ffffff', '#dbe9ff', '#fff4d6', '#ffd9e8', '#d9fff4', '#e8dfff'];
   (function () {
+    for (var ns = 0; ns < 6; ns++) {
+      nebulaSeeds.push({
+        x: Math.random() * WORLD_W,
+        y: Math.random() * WORLD_H,
+        r: 320 + Math.random() * 420,
+        a: Math.random() * Math.PI * 2
+      });
+    }
     for (var l = 0; l < 3; l++) {
       starLayers[l] = [];
-      var count = l === 0 ? 220 : (l === 1 ? 90 : 30);
+      var count = l === 0 ? 420 : (l === 1 ? 170 : 60);
       for (var s = 0; s < count; s++) {
-        starLayers[l].push({ x: Math.random() * WORLD_W, y: Math.random() * WORLD_H, r: l === 0 ? (0.4 + Math.random() * 0.6) : (l === 1 ? (1.1 + Math.random() * 0.9) : (1.8 + Math.random() * 1.4)), tw: Math.random() * Math.PI * 2 });
+        starLayers[l].push({
+          x: Math.random() * WORLD_W, y: Math.random() * WORLD_H,
+          r: l === 0 ? (0.4 + Math.random() * 0.6) : (l === 1 ? (1.1 + Math.random() * 0.9) : (1.8 + Math.random() * 1.4)),
+          tw: Math.random() * Math.PI * 2,
+          c: starColors[Math.floor(Math.random() * starColors.length)]
+        });
       }
     }
   })();
@@ -2678,6 +2693,28 @@ function quitToMenu() {
     window.__test.musicVol = function (v) { setMusicVolume(v); return window.__test.music(); };
     window.__test.gems = function (v) { progress.diamonds = Math.max(0, v | 0); saveProgress(); return progress.diamonds; };
     window.__state = function () { return state; };
+    window.__test.bg = function () {
+      var starTotal = 0;
+      for (var i = 0; i < starLayers.length; i++) starTotal += starLayers[i].length;
+      return { nebulae: nebulaSeeds.length, stars: starTotal, gridStep: 200, world: WORLD_W + 'x' + WORLD_H };
+    };
+    window.__test.ai = function () {
+      var p = player, orb = 0, orbSample = [], minD = 1e9, maxD = 0, worstOverlap = 999;
+      for (var i = 0; i < enemies.length; i++) {
+        var e = enemies[i];
+        var d = Math.hypot(e.x - p.x, e.y - p.y);
+        if (i < 60) { if (d < minD) minD = d; if (d > maxD) maxD = d; }
+        if (e.orbit) { orb++; if (orbSample.length < 6) orbSample.push(Math.round(d)); }
+      }
+      for (var a = 0; a < enemies.length; a++) {
+        for (var b = a + 1; b < enemies.length; b++) {
+          var dd = Math.hypot(enemies[a].x - enemies[b].x, enemies[a].y - enemies[b].y);
+          var md = enemies[a].r + enemies[b].r;
+          if (dd < md && md - dd < worstOverlap) worstOverlap = md - dd;
+        }
+      }
+      return { live: enemies.length, orbiters: orb, orbDist: orbSample, closest: Math.round(minD), farthest: Math.round(maxD), worstOverlap: Math.round(worstOverlap * 100) / 100, wave: waveNum, state: state };
+    };
     window.__test.god = function () {
       player.maxHp = 99999; player.hp = 99999;
       if (window.__godTimer) clearInterval(window.__godTimer);
@@ -3059,8 +3096,26 @@ function quitToMenu() {
       }
       var spd = en.speed * (hasFreezeFreeze ? 0.3 : 1) * (en.slowT > 0 ? 0.35 : 1) * (isBuff ? 1.45 : 1);
       var a2 = Math.atan2(p.y - en.y, p.x - en.x);
-      en.x += Math.cos(a2) * spd * dt;
-      en.y += Math.sin(a2) * spd * dt;
+      var mvx = Math.cos(a2) * spd * dt;
+      var mvy = Math.sin(a2) * spd * dt;
+      // мягкое расталкивание соседей, чтобы враги не слипались в одну кучу
+      var sepX = 0, sepY = 0;
+      for (var sn = 0; sn < enemies.length; sn++) {
+        if (sn === i2) continue;
+        var ot = enemies[sn];
+        var ddx = en.x - ot.x, ddy = en.y - ot.y;
+        var dd2 = ddx * ddx + ddy * ddy;
+        var minD = en.r + ot.r;
+        if (dd2 > 0.0001 && dd2 < minD * minD) {
+          var dd = Math.sqrt(dd2);
+          var push = (minD - dd) / minD;
+          sepX += (ddx / dd) * push;
+          sepY += (ddy / dd) * push;
+        }
+      }
+      var sepK = spd * 1.2 * dt;
+      en.x += mvx + sepX * sepK;
+      en.y += mvy + sepY * sepK;
       if (en.shoot || en.boss) {
         en.shootTimer -= dt;
         if (en.shootTimer <= 0) {
@@ -3206,12 +3261,8 @@ function quitToMenu() {
           blip(300, 0.1, 'sine', 0.03);
         }
       }
-      // ОРБИТЕР: кружится вокруг игрока и стреляет
+      // ОРБИТЕР: идёт напрямую на игрока и стреляет (был орбитальный круг - убран)
       if (en.orbit) {
-        en.orT = (en.orT === undefined ? Math.random() * 6.28 : en.orT);
-        en.orT += dt * (1.1 + waveNum * 0.01);
-        en.x = p.x + Math.cos(en.orT) * 180;
-        en.y = p.y + Math.sin(en.orT) * 180;
         en.shootTimer = (en.shootTimer === undefined ? 1.5 : en.shootTimer) - dt;
         if (en.shootTimer <= 0) {
           en.shootTimer = 2.4;
@@ -3444,21 +3495,43 @@ function quitToMenu() {
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, W, H);
 
-    // туманности (мягкие цветные пятна)
+    // туманности: многослойные пятна с рваным краем и параллаксом
     ctx.save();
-    ctx.globalAlpha = 0.16;
-    for (var nb = 0; nb < 4; nb++) {
-      var nbx = (Math.sin(gameTime * 0.03 + nb * 1.7) + 1) * 0.5 * W;
-      var nby = (Math.cos(gameTime * 0.02 + nb * 2.3) + 1) * 0.5 * H;
-      var nbl = 0.5 + Math.sin(gameTime * 0.05 + nb) * 0.1;
-      var ng = ctx.createRadialGradient(nbx, nby, 0, nbx, nby, 380);
-      ng.addColorStop(0, ['#2b4dff', '#ff2bd4', '#2bffd4', '#ff8b2b'][nb] || '#2b4dff');
+    var nebCols = ['#2b4dff', '#ff2bd4', '#2bffd4', '#ff8b2b', '#7b2bff', '#ff2b5b'];
+    for (var nb = 0; nb < 6; nb++) {
+      var nPar = 0.06 + (nb % 3) * 0.03;
+      var nbx = (((nebulaSeeds[nb].x - camX * nPar) % WORLD_W) + WORLD_W) % WORLD_W;
+      var nby = (((nebulaSeeds[nb].y - camY * nPar) % WORLD_H) + WORLD_H) % WORLD_H;
+      // рисуем пятно только если оно рядом с камерой, иначе оно не видно
+      var nDist = Math.hypot(Math.abs(nbx - camX), Math.abs(nby - camY));
+      if (nDist > 1500) continue;
+      var nRadius = nebulaSeeds[nb].r;
+      var nPulse = 0.78 + 0.22 * Math.sin(gameTime * 0.09 + nb * 1.9);
+      ctx.globalCompositeOperation = 'lighter';
+      var ng = ctx.createRadialGradient(nbx, nby, 0, nbx, nby, nRadius);
+      ng.addColorStop(0, nebCols[nb] + '55');
+      ng.addColorStop(0.35, nebCols[nb] + '2a');
+      ng.addColorStop(0.7, nebCols[nb] + '0e');
       ng.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.globalAlpha = 0.16 * nbl;
+      ctx.globalAlpha = 0.5 * nPulse;
       ctx.fillStyle = ng;
       ctx.beginPath();
-      ctx.arc(nbx, nby, 380, 0, Math.PI * 2);
+      ctx.arc(nbx, nby, nRadius, 0, Math.PI * 2);
       ctx.fill();
+      // внутренние клубы пыли
+      for (var nk = 0; nk < 3; nk++) {
+        var kx = nbx + Math.cos(nebulaSeeds[nb].a + nk * 2.1) * nRadius * 0.42;
+        var ky = nby + Math.sin(nebulaSeeds[nb].a + nk * 2.1) * nRadius * 0.42;
+        var kr = nRadius * 0.3;
+        var kg = ctx.createRadialGradient(kx, ky, 0, kx, ky, kr);
+        kg.addColorStop(0, nebCols[nb] + '30');
+        kg.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.globalAlpha = 0.45 * nPulse;
+        ctx.fillStyle = kg;
+        ctx.beginPath();
+        ctx.arc(kx, ky, kr, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
     ctx.restore();
 
@@ -3472,13 +3545,21 @@ function quitToMenu() {
         var sy = (((st.y - camY * par) % WORLD_H) + WORLD_H) % WORLD_H;
         var adx = Math.abs(sx - camX), ady = Math.abs(sy - camY);
         if (adx > W / 2 + 60 || ady > H / 2 + 60) continue;
-        ctx.globalAlpha = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(gameTime * (sl === 2 ? 1.2 : 2) + st.tw));
-        if (sl === 0) ctx.fillStyle = (st.x % 11 < 2) ? 'rgba(255,240,200,0.8)' : '#fff';
-        else if (sl === 1) ctx.fillStyle = (st.x % 7 < 2) ? '#bfe0ff' : '#fff';
-        else ctx.fillStyle = (st.x % 5 < 2) ? '#ffe9a8' : '#e8f4ff';
+        var twinkle = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(gameTime * (sl === 2 ? 1.2 : 2) + st.tw));
+        // крупные звёзды получают мягкое свечение
+        if (sl > 0 && st.r > 1.5) {
+          ctx.globalAlpha = twinkle * 0.5;
+          ctx.shadowColor = st.c;
+          ctx.shadowBlur = 8;
+        } else {
+          ctx.shadowBlur = 0;
+          ctx.globalAlpha = twinkle;
+        }
+        ctx.fillStyle = st.c;
         ctx.beginPath();
         ctx.arc(sx, sy, st.r, 0, Math.PI * 2);
         ctx.fill();
+        ctx.shadowBlur = 0;
       }
       ctx.restore();
     }
@@ -3500,6 +3581,27 @@ function quitToMenu() {
       ctx.moveTo(sx2, sy2 - sparkR); ctx.lineTo(sx2, sy2 + sparkR);
       ctx.stroke();
     }
+    ctx.restore();
+
+    // сетка мира: даёт ощущение масштаба и границы арены
+    ctx.save();
+    var GRID = 200;
+    var gPar = 0.5;
+    var gx0 = Math.floor((camX - W / 2 - GRID) / GRID) * GRID;
+    var gy0 = Math.floor((camY - H / 2 - GRID) / GRID) * GRID;
+    ctx.globalAlpha = 0.055;
+    ctx.strokeStyle = '#8fb4ff';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (var gx = gx0; gx <= camX + W / 2 + GRID; gx += GRID) {
+      var gpx = gx - camX * (1 - gPar);
+      ctx.moveTo(gpx, 0); ctx.lineTo(gpx, H);
+    }
+    for (var gy = gy0; gy <= camY + H / 2 + GRID; gy += GRID) {
+      var gpy = gy - camY * (1 - gPar);
+      ctx.moveTo(0, gpy); ctx.lineTo(W, gpy);
+    }
+    ctx.stroke();
     ctx.restore();
 
     // космическая пыль: мелкие светящиеся точки, парящие в слое игрока
@@ -3545,6 +3647,39 @@ function quitToMenu() {
       ctx.fill();
       ctx.restore();
     }
+
+    // граница арены: светящийся энергетический контур по краям мира
+    ctx.save();
+    var bw = 26;
+    var pulseB = 0.55 + 0.2 * Math.sin(gameTime * 1.4);
+    var bx0 = -camX, by0 = -camY, bx1 = WORLD_W - camX, by1 = WORLD_H - camY;
+    if (bx1 > -bw && by1 > -bw && bx0 < W + bw && by0 < H + bw) {
+      var bGrad = ctx.createLinearGradient(0, 0, W, H);
+      bGrad.addColorStop(0, 'rgba(80,180,255,' + (0.5 * pulseB) + ')');
+      bGrad.addColorStop(0.5, 'rgba(180,110,255,' + (0.5 * pulseB) + ')');
+      bGrad.addColorStop(1, 'rgba(80,255,220,' + (0.5 * pulseB) + ')');
+      ctx.strokeStyle = bGrad;
+      ctx.shadowColor = 'rgba(120,190,255,0.9)';
+      ctx.shadowBlur = 22;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      if (bx1 > -bw) { ctx.moveTo(bx1, Math.max(0, by0)); ctx.lineTo(bx1, Math.min(H, by1)); }
+      if (by1 > -bw) { ctx.moveTo(Math.max(0, bx0), by1); ctx.lineTo(Math.min(W, bx1), by1); }
+      if (bx0 < W + bw) { ctx.moveTo(bx0, Math.min(H, by1)); ctx.lineTo(bx0, Math.max(0, by0)); }
+      if (by0 < H + bw) { ctx.moveTo(Math.min(W, bx1), by0); ctx.lineTo(Math.max(0, bx0), by0); }
+      ctx.stroke();
+      // внутренние полосы
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 0.25;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      if (bx1 > -bw) { ctx.moveTo(bx1 - bw, Math.max(0, by0)); ctx.lineTo(bx1 - bw, Math.min(H, by1)); }
+      if (by1 > -bw) { ctx.moveTo(Math.max(0, bx0), by1 - bw); ctx.lineTo(Math.min(W, bx1), by1 - bw); }
+      if (bx0 < W + bw) { ctx.moveTo(bx0 + bw, Math.min(H, by1)); ctx.lineTo(bx0 + bw, Math.max(0, by0)); }
+      if (by0 < H + bw) { ctx.moveTo(Math.min(W, bx1), by0 + bw); ctx.lineTo(Math.max(0, bx0), by0 + bw); }
+      ctx.stroke();
+    }
+    ctx.restore();
 
     if (state === 'menu' || (state !== 'playing' && state !== 'paused' && state !== 'gameover' && state !== 'reviving')) {
       ctx.save();
@@ -4771,7 +4906,7 @@ function quitToMenu() {
   }
 
 /* ============ MUSIC DEBUG (?dbg=1) ============ */
-var BUILD_ID = 'm74';
+var BUILD_ID = 'm75';
 function musicDebugOn() { try { return /(\?|&)dbg=1/.test(location.search); } catch (e) { return false; } }
 function initMusicDebug() {
   if (!musicDebugOn()) return;
