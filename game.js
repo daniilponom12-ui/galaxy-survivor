@@ -1205,7 +1205,12 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
 
   // насколько сейчас «жарко»: 0 — меню, 1 — крупный босс
   function musTarget() {
-    if (typeof state === 'string' && state !== 'playing') { musBoss = false; return 0.22; }
+    var st = typeof state === 'string' ? state : 'playing';
+    if (st === 'levelup' || st === 'paused') {
+      // экран выбора способности не должен "просаживать" музыку - держим боевой уровень
+      return musIntensity < 0.62 ? 0.62 : musIntensity;
+    }
+    if (st !== 'playing') { musBoss = false; return 0.22; }
     var boss = 0, big = 0, n = 0;
     try {
       n = enemies.length;
@@ -1361,6 +1366,9 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
           musBass(a, t + i * 0.13, mfreq(th.root + seq[i]), 0.16, 0.1);
         }
         musNoiseHit(a, t, 0.06, 0.5, 240, 1.2, 'lowpass', musMaster);
+      } else if (kind === 'level') {
+        var lv = [0, 4, 7, 12];
+        for (var q = 0; q < lv.length; q++) musLead(a, t + q * 0.06, mfreq(76 + lv[q]), 0.28, 0.05);
       } else if (kind === 'win') {
         var maj = [0, 4, 7, 12, 16];
         for (var w = 0; w < maj.length; w++) musLead(a, t + w * 0.11, mfreq(69 + maj[w]), 0.42, 0.05);
@@ -2152,6 +2160,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         applyUpgrade(u.id);
         scr.remove();
         state = 'playing';
+        musicStinger('level');
         if (SDK.inited && player.lvl % 5 === 0) { SDK.showInterstitial(function () {}); }
       };
       scr.appendChild(b);
@@ -2626,6 +2635,8 @@ function quitToMenu() {
     };
     window.__test.musicVol = function (v) { setMusicVolume(v); return window.__test.music(); };
     window.__test.gems = function (v) { progress.diamonds = Math.max(0, v | 0); saveProgress(); return progress.diamonds; };
+    window.__state = function () { return state; };
+    window.__test.giveXp = function (v) { gainXp(v); return { state: state, lvl: player.lvl }; };
     window.__test.stinger = function (k) { musicStinger(k); return 'ok:' + k; };
     window.__test.bp = function (w) { return pickBossPool(w); };
     window.__test.thanosDist = function () {
@@ -4697,7 +4708,7 @@ function quitToMenu() {
   }
 
 /* ============ MUSIC DEBUG (?dbg=1) ============ */
-var BUILD_ID = 'm72';
+var BUILD_ID = 'm73';
 function musicDebugOn() { try { return /(\?|&)dbg=1/.test(location.search); } catch (e) { return false; } }
 function initMusicDebug() {
   if (!musicDebugOn()) return;
