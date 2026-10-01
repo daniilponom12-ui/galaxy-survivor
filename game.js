@@ -724,12 +724,14 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   var UPG_ICONS = { dmg: '🔥', hp: '❤', magnet: '🧲', rate: '🔁', speed: '💨', shield: '🛡', crit: '🎯', xp: '⭐' };
 
   function buyWithGems(type, id) {
-    var spec = type === 'skin' ? SKINS[id] : AMMO_TYPES[id];
+    var spec = type === 'skin' ? SKINS[id] : (type === 'music' ? MUSIC[id] : AMMO_TYPES[id]);
     var cost = spec && spec.gcost;
     if (!cost) return;
     if ((progress.diamonds || 0) < cost) { hud(t('diamNo'), '#f44'); return; }
     progress.diamonds -= cost;
-    if (type === 'skin') unlockSkin(id); else unlockAmmo(id);
+    if (type === 'skin') unlockSkin(id);
+    else if (type === 'music') { unlockMusic(id); setMusicTrack(id); }
+    else unlockAmmo(id);
     achInc('shopBuys', 1);
     saveProgress();
     hud(t('diamBuy'), '#0f0');
@@ -2623,6 +2625,7 @@ function quitToMenu() {
       return { set: okSet, music: window.__test.music() };
     };
     window.__test.musicVol = function (v) { setMusicVolume(v); return window.__test.music(); };
+    window.__test.gems = function (v) { progress.diamonds = Math.max(0, v | 0); saveProgress(); return progress.diamonds; };
     window.__test.stinger = function (k) { musicStinger(k); return 'ok:' + k; };
     window.__test.bp = function (w) { return pickBossPool(w); };
     window.__test.thanosDist = function () {
@@ -4694,7 +4697,7 @@ function quitToMenu() {
   }
 
 /* ============ MUSIC DEBUG (?dbg=1) ============ */
-var BUILD_ID = 'm71';
+var BUILD_ID = 'm72';
 function musicDebugOn() { try { return /(\?|&)dbg=1/.test(location.search); } catch (e) { return false; } }
 function initMusicDebug() {
   if (!musicDebugOn()) return;
