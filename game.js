@@ -877,6 +877,10 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       '<div class="garage-grid" id="gg-ammo"></div>' +
       '<div style="width:100%;max-width:680px;color:#fff;margin:14px 0 4px;font-size:14px;text-align:left">' + t('ammoCountSec') + '</div>' +
       '<div class="booster-row" id="bb-ammo-count"></div>' +
+      '<div style="width:100%;max-width:680px;color:#fff;margin:24px 0 4px;font-size:18px;text-align:left">' + t('musSec') + '</div>' +
+      '<div class="garage-grid" id="gg-music"></div>' +
+      '<div style="width:100%;max-width:680px;color:#fff;margin:14px 0 4px;font-size:14px;text-align:left">' + t('musVol') + ' <span id="musvolval">' + Math.round(musicVol * 100) + '%</span></div>' +
+      '<div class="booster-row"><input id="musvol" type="range" min="0" max="100" value="' + Math.round(musicVol * 100) + '" style="width:100%;max-width:340px"></div>' +
       '<div style="width:100%;max-width:680px;color:#fff;margin:24px 0 4px;font-size:18px;text-align:left">' + t('boostSec') + '</div>' +
       '<div class="booster-row" id="bb-boost"></div>' +
       '<div style="width:100%;max-width:680px;color:#fff;margin:24px 0 4px;font-size:18px;text-align:left">' + t('petSec') + '</div>' +
@@ -1226,9 +1230,9 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
 
   function musTempo() {
     var th = musTheme();
-    var mul = 0.82;
+    // темп всегда ровный: в меню, в игре и после смерти музыка не замедляется
+    var mul = 1;
     if (typeof state === 'string' && state === 'playing') mul = musBoss ? 1.1 : 1;
-    else if (typeof state === 'string' && (state === 'gameover' || state === 'victory')) mul = 0.7;
     return th.bpm * mul;
   }
 
@@ -4690,7 +4694,7 @@ function quitToMenu() {
   }
 
 /* ============ MUSIC DEBUG (?dbg=1) ============ */
-var BUILD_ID = 'm70';
+var BUILD_ID = 'm71';
 function musicDebugOn() { try { return /(\?|&)dbg=1/.test(location.search); } catch (e) { return false; } }
 function initMusicDebug() {
   if (!musicDebugOn()) return;
