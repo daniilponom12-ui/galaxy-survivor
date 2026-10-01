@@ -875,10 +875,6 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
       '<div class="garage-grid" id="gg-ammo"></div>' +
       '<div style="width:100%;max-width:680px;color:#fff;margin:14px 0 4px;font-size:14px;text-align:left">' + t('ammoCountSec') + '</div>' +
       '<div class="booster-row" id="bb-ammo-count"></div>' +
-      '<div style="width:100%;max-width:680px;color:#fff;margin:24px 0 4px;font-size:18px;text-align:left">' + t('musSec') + '</div>' +
-      '<div class="garage-grid" id="gg-music"></div>' +
-      '<div style="width:100%;max-width:680px;color:#fff;margin:14px 0 4px;font-size:14px;text-align:left">' + t('musVol') + ' <span id="musvolval">' + Math.round(musicVol * 100) + '%</span></div>' +
-      '<div class="booster-row"><input id="musvol" type="range" min="0" max="100" value="' + Math.round(musicVol * 100) + '" style="width:100%;max-width:340px"></div>' +
       '<div style="width:100%;max-width:680px;color:#fff;margin:24px 0 4px;font-size:18px;text-align:left">' + t('boostSec') + '</div>' +
       '<div class="booster-row" id="bb-boost"></div>' +
       '<div style="width:100%;max-width:680px;color:#fff;margin:24px 0 4px;font-size:18px;text-align:left">' + t('petSec') + '</div>' +
@@ -1071,6 +1067,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   var musIntensity = 0, musBoss = false, musStarted = 0, musFade = 0, musStingerAt = 0;
   var musLiveTrack = '', musSavedStep = 0, musSavedBar = 0, musPaused = false, musMuted = false;
   var musChainSeq = 0, musChainId = 0, actxCount = 0;
+  var MUSIC_ENABLED = false;
   function musicTargetVol() { return Math.max(0.02, musicVol * 0.55); }
 
   function musTheme() { return MUSIC_THEMES[musTrack] || MUSIC_THEMES.m1; }
@@ -1364,6 +1361,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   }
 
   function startMusic(trackId, resume) {
+    if (!MUSIC_ENABLED) return null;
     if (!sndOn) return null;
     var a = audio(); if (!a) return null;
     if (trackId) musTrack = MUSIC_THEMES[trackId] ? trackId : musTrack;
@@ -1423,6 +1421,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   }
 
   function setMusicTrack(id) {
+    if (!MUSIC_ENABLED) return false;
     if (!MUSIC[id] || !isMusicOwned(id)) return false;
     progress.selectedMusic = id; saveProgress();
     musTrack = id;
@@ -4670,7 +4669,7 @@ function quitToMenu() {
   }
 
 /* ============ MUSIC DEBUG (?dbg=1) ============ */
-var BUILD_ID = 'm67';
+var BUILD_ID = 'm68';
 function musicDebugOn() { try { return /(\?|&)dbg=1/.test(location.search); } catch (e) { return false; } }
 function initMusicDebug() {
   if (!musicDebugOn()) return;
