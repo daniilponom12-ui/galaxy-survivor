@@ -359,7 +359,7 @@ var text = t('top10');
 
   var player = null;
   var enemies = [], projectiles = [], gems = [], parts = [], fx = [], orbHit = [], magnet = [];
-  var waves = [], spawnTimer = 0;
+  var waves = [], spawnTimer = 0, spawnQueue = [], dripTimer = 0, waveClock = 0;
   var helper = null;
   var gameTime = 0, waveNum = 0, score = 0, kills = 0, xpEarned = 0;
   var gameMode = 'normal', endlessRun = false;
@@ -1564,11 +1564,14 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     var liveBoss = 0;
     for (var lb = 0; lb < enemies.length; lb++) { if (enemies[lb].boss) liveBoss++; }
     if (!endlessRun && waveNum === 10) {
-      // три повелителя: сложно убить, огромное хп
+      // три повелителя: сложно убить, огромное хп, выходят по одному
       for (var ovc = 0; ovc < 3; ovc++) {
         var ovAng = ovc / 3 * Math.PI * 2 + Math.PI / 6;
         var ovR = 550;
-        spawnEnemy('boss_overlord', player.x + Math.cos(ovAng) * ovR, player.y + Math.sin(ovAng) * ovR);
+        var ovT = waveClock + 0.4 + ovc * 1.3;
+        var ox = player.x + Math.cos(ovAng) * ovR, oy = player.y + Math.sin(ovAng) * ovR;
+        if (ovc === 0) spawnEnemy('boss_overlord', ox, oy);
+        else queueSpawn('boss_overlord', ovT, ox, oy);
       }
       hud('THREE OVERLORDS!', '#f0f');
       musicStinger('boss');
@@ -1582,6 +1585,7 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
         enemies.splice(ci, 1);
       }
       projectiles = [];
+      spawnQueue.length = 0;
       spawnEnemy('boss_thanos', player.x, player.y - 400);
       hud('★ THANOS AWAKENS ★', '#e33');
       musicStinger('boss');
@@ -1594,13 +1598,19 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
     if (waveNum >= 16) bossCount = 4;
     if (waveNum >= 22) bossCount = 5;
     if (bossCount > 5) bossCount = 5;
+    // не копим боссов в очереди: лишние просто не ставятся, чтобы поле не забивалось
+    var queuedBosses = 0;
+    for (var qb = 0; qb < spawnQueue.length; qb++) { if (spawnQueue[qb].type.indexOf('boss') === 0) queuedBosses++; }
+    if (bossCount > queuedBosses + 1) bossCount = queuedBosses + 1;
     if (!endlessRun && waveNum === 10) bossCount = 0;
     if (!endlessRun && waveNum === 12) bossCount = 0;
     var maxLive = 4 + Math.floor(waveNum / 6);
     if (bossCount > maxLive - liveBoss) bossCount = Math.max(0, maxLive - liveBoss);
+    // боссы выходят по одному через равные интервалы, а не все сразу
+    var bpool = pickBossPool(waveNum);
+    var bGap = Math.max(1.5, 3.2 - waveNum * 0.06);
     for (var bi = 0; bi < bossCount; bi++) {
-      var pool = pickBossPool(waveNum);
-      spawnEnemy(pool[Math.min(bi, pool.length - 1)]);
+      queueSpawn(bpool[Math.min(bi, bpool.length - 1)], waveClock + 0.5 + bi * bGap);
     }
     if (bossCount > 0) hud(t('bossAlert'), '#f44');
     if (SDK.showInterstitial && waveNum % 3 === 0) {
@@ -1636,6 +1646,38 @@ else if (id === 'life') { p.lives = (p.lives || 0) + 1; }
   }
 
   function nextWaveTime() { return Math.max(11 - waveNum * 0.35, 4.5); }
+
+  /* ---- равномерный и постепенный спавн вместо вывала всей волны в один кадр ---- */
+  function queueSpawn(type, at, x, y) { spawnQueue.push({ type: type, t: at, x: x, y: y }); }
+
+  function queueEven(count, from, to, pool) {
+    if (count <= 0) return;
+    if (spawnQueue.length > 90) spawnQueue.splice(0, spawnQueue.length - 90);
+    var span = Math.max(0, to - from);
+    var gap = count > 1 ? span / (count - 1) : 0;
+    for (var i = 0; i < count; i++) {
+      // небольшой джиттер, чтобы спавн не выглядел метрономом, но оставался равномерным
+      var jit = gap > 0 ? (Math.random() - 0.5) * gap * 0.4 : 0;
+      queueSpawn(pool[Math.floor(Math.random() * pool.length)], from + gap * i + jit);
+    }
+  }
+
+  function updateSpawnQueue() {
+    if (!spawnQueue.length) return;
+    // жесткий лимит выдачи за кадр - очередь не имеет права вываливаться пачкой
+    var budget = 3;
+    for (var i = spawnQueue.length - 1; i >= 0; i--) {
+      var s = spawnQueue[i];
+      if (s.t > waveClock) continue;
+      if (budget > 0 && enemies.length < 240) {
+        if (s.x === undefined) spawnEnemy(s.type); else spawnEnemy(s.type, s.x, s.y);
+        budget--;
+      } else if (enemies.length >= 240) {
+        return; // поле переполнено - ждём, пока освободится
+      }
+      spawnQueue.splice(i, 1);
+    }
+  }
 
   /* ============ LIBRARY ============ */
   function dist(a, b) { var dx = a.x - b.x, dy = a.y - b.y; return Math.sqrt(dx * dx + dy * dy); }
@@ -2350,7 +2392,7 @@ function quitToMenu() {
     enemies = []; projectiles = []; gems = []; parts = []; fx = []; orbHit = []; magnet = [];
     helper = null;
     victory = false; victoryTime = 0;
-    xpEarned = 0; waves = []; gameTime = 0; waveNum = 0; spawnTimer = 0; kills = 0; score = 0; freezeTimer = 0; shake = 0;
+    xpEarned = 0; waves = []; gameTime = 0; waveNum = 0; spawnTimer = 0; spawnQueue.length = 0; dripTimer = 0; waveClock = 0; kills = 0; score = 0; freezeTimer = 0; shake = 0;
     combo = 0; comboTimer = 0; revivesUsed = 0; shotsFired = 0; shotsHit = 0; dmgDealt = 0; hurtFx = 0; player.slowT = 0; player.rapidT = 0; player.magnetT = 0; player.coinT = 0;
     autoTimers = {}; hasSplash = false; hasFreezeFreeze = false; victory = false; victoryTime = 0;
 
@@ -2636,6 +2678,22 @@ function quitToMenu() {
     window.__test.musicVol = function (v) { setMusicVolume(v); return window.__test.music(); };
     window.__test.gems = function (v) { progress.diamonds = Math.max(0, v | 0); saveProgress(); return progress.diamonds; };
     window.__state = function () { return state; };
+    window.__test.god = function () {
+      player.maxHp = 99999; player.hp = 99999;
+      if (window.__godTimer) clearInterval(window.__godTimer);
+      window.__godTimer = setInterval(function () { player.hp = 99999; }, 80);
+      return { hp: player.hp, state: state };
+    };
+    window.__test.spawnInfo = function () {
+      var bq = [], rq = [];
+      for (var i = 0; i < spawnQueue.length; i++) {
+        var isBoss = spawnQueue[i].type.indexOf('boss') === 0;
+        (isBoss ? bq : rq).push(Math.round((spawnQueue[i].t - waveClock) * 100) / 100);
+      }
+      bq.sort(function (a, b) { return a - b; });
+      rq.sort(function (a, b) { return a - b; });
+      return { state: state, waveNum: waveNum, live: enemies.length, queued: spawnQueue.length, spawnTimer: Math.round(spawnTimer * 100) / 100, waveClock: Math.round(waveClock * 100) / 100, bosses: enemies.filter(function (e) { return e.boss; }).length, bossAt: bq, regAt: rq };
+    };
     window.__test.giveXp = function (v) { gainXp(v); return { state: state, lvl: player.lvl }; };
     window.__test.stinger = function (k) { musicStinger(k); return 'ok:' + k; };
     window.__test.bp = function (w) { return pickBossPool(w); };
@@ -2864,24 +2922,29 @@ function quitToMenu() {
     hasSplash = p.weapons.some(function (w) { return w === 'splash'; });
 
     // waves
-    spawnTimer -= dt * (gameMode === 'timer' ? 1.8 : 1);
+    var waveSpeed = gameMode === 'timer' ? 1.8 : 1;
+    waveClock += dt * waveSpeed;
+    spawnTimer -= dt * waveSpeed;
+    dripTimer -= dt * waveSpeed;
+    updateSpawnQueue();
     if (spawnTimer <= 0 && enemies.length < 240 && (endlessRun || waveNum !== 12)) {
       var pool = waveEnemyPool();
       var n = Math.min(22 + Math.floor(waveNum * 2.5), 55);
-      for (var i = 0; i < n; i++) {
-        var t = pool[Math.floor(Math.random() * pool.length)];
-        spawnEnemy(t);
-      }
+      // вся волна растягивается равномерно на её длительность, а не появляется разом
+      var win = Math.max(nextWaveTime() * 0.9, n / 5.5);
+      queueEven(n, waveClock + 0.35, waveClock + win, pool);
       spawnTimer = nextWaveTime();
     }
     // дополнительные мини-волны между основными (если на поле мало врагов)
     if (enemies.length < waveNum * 4 + 10 && enemies.length < 150 && spawnTimer > 1.2 && (endlessRun || waveNum !== 12)) {
-      spawnTimer = Math.max(spawnTimer - 0.5, 0);
-      var miniN = Math.min(5 + Math.floor(waveNum / 2), 15);
-      for (var mi6 = 0; mi6 < miniN; mi6++) {
-        spawnEnemy(waveEnemyPool()[Math.floor(Math.random() * waveEnemyPool().length)]);
+      if (dripTimer <= 0) {
+        var miniN = Math.min(5 + Math.floor(waveNum / 2), 15);
+        queueEven(miniN, waveClock + 0.05, waveClock + 1.3, waveEnemyPool());
+        dripTimer = Math.max(0.85, 2.3 - waveNum * 0.06);
       }
     }
+    // страховка от переполнения очереди: если она растёт, подрезаем хвост
+    if (spawnQueue.length > 70) spawnQueue.splice(0, spawnQueue.length - 70);
     // hoard harder over time
     if (waveNum < 1 && spawnTimer < 0.4) { spawnWave(); }
 
@@ -4708,7 +4771,7 @@ function quitToMenu() {
   }
 
 /* ============ MUSIC DEBUG (?dbg=1) ============ */
-var BUILD_ID = 'm73';
+var BUILD_ID = 'm74';
 function musicDebugOn() { try { return /(\?|&)dbg=1/.test(location.search); } catch (e) { return false; } }
 function initMusicDebug() {
   if (!musicDebugOn()) return;
